@@ -13,7 +13,7 @@ import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, differenceInBusinessDays } from 'date-fns';
+import { addDays, differenceInBusinessDays, startOfDay } from 'date-fns';
 
 const initialTasks: Task[] = [
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), progress: 100, dependencies: [] },
@@ -60,6 +60,45 @@ export default function GanttasticApp() {
     }
   }, [tasks]);
 
+  const updateDependentTasks = (updatedTaskId: string, tasks: Task[]): Task[] => {
+    const newTasks = [...tasks];
+    const updatedTask = newTasks.find(t => t.id === updatedTaskId);
+    if (!updatedTask) return newTasks;
+  
+    const tasksToUpdate = newTasks.filter(t => t.dependencies.includes(updatedTaskId));
+  
+    tasksToUpdate.forEach(taskToUpdate => {
+      const parentTasks = taskToUpdate.dependencies
+        .map(depId => newTasks.find(t => t.id === depId))
+        .filter((t): t is Task => !!t);
+  
+      if (parentTasks.length > 0) {
+        const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
+        const newStartDate = startOfDay(addDays(latestParentEndDate, 1));
+        const duration = differenceInBusinessDays(taskToUpdate.end, taskToUpdate.start);
+        
+        const updatedChildTaskIndex = newTasks.findIndex(t => t.id === taskToUpdate.id);
+        if (updatedChildTaskIndex !== -1) {
+          newTasks[updatedChildTaskIndex].start = newStartDate;
+          newTasks[updatedChildTaskIndex].end = addDays(newStartDate, duration >= 0 ? duration : 0);
+          
+          // Recursively update children of this task
+          const result = updateDependentTasks(taskToUpdate.id, newTasks);
+          // sync the changes from the recursive call
+          result.forEach(updatedTaskFromResult => {
+            const indexToUpdate = newTasks.findIndex(t => t.id === updatedTaskFromResult.id);
+            if (indexToUpdate !== -1) {
+              newTasks[indexToUpdate] = updatedTaskFromResult;
+            }
+          });
+        }
+      }
+    });
+  
+    return newTasks;
+  };
+  
+
   const handleAddTask = (task: Omit<Task, 'id'>) => {
     const newTask: Task = { ...task, id: `task-${Date.now()}` };
     setTasks(prev => [...prev, newTask]);
@@ -68,11 +107,11 @@ export default function GanttasticApp() {
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
-    setTasks(prev => prev.map(task => (task.id === updatedTask.id ? updatedTask : task)));
+    setTasks(prev => {
+      const newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
+      return updateDependentTasks(updatedTask.id, newTasks);
+    });
     toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
-    // Keep sidebar open for dependency updates
-    // setSidebarOpen(false);
-    // setSelectedTask(null);
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -89,65 +128,46 @@ export default function GanttasticApp() {
 
   const handleUpdateDependencies = (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => {
       setTasks(prevTasks => {
-          let newTasks = [...prevTasks];
+          let tasksWithUpdatedDeps = [...prevTasks];
 
-          // 1. Update the current task's dependencies and dates
-          const currentTaskIndex = newTasks.findIndex(t => t.id === taskId);
+          // 1. Update the current task's dependencies
+          const currentTaskIndex = tasksWithUpdatedDeps.findIndex(t => t.id === taskId);
           if (currentTaskIndex > -1) {
-              const currentTask = { ...newTasks[currentTaskIndex] };
+              const currentTask = { ...tasksWithUpdatedDeps[currentTaskIndex] };
               currentTask.dependencies = newDependencies;
-
-              // Auto-adjust start date based on the latest dependency
-              if (newDependencies.length > 0) {
-                  const parentTasks = newDependencies.map(depId => newTasks.find(t => t.id === depId)).filter(Boolean) as Task[];
-                  if (parentTasks.length > 0) {
-                      const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
-                      const newStartDate = addDays(latestParentEndDate, 1);
-                      const duration = differenceInBusinessDays(currentTask.end, currentTask.start);
-                      currentTask.start = newStartDate;
-                      currentTask.end = addDays(newStartDate, duration >= 0 ? duration : 0);
-                  }
-              }
-              newTasks[currentTaskIndex] = currentTask;
+              tasksWithUpdatedDeps[currentTaskIndex] = currentTask;
           }
 
-          // 2. Manage "Blocks" relationship
-          // First, remove the current task's ID from any task that is NO LONGER blocked by it
+          // 2. Remove the current task's ID from any task that is NO LONGER blocked by it
           prevTasks.forEach((task, index) => {
-              if (task.id === taskId) return;
-              const wasBlocked = task.dependencies.includes(taskId);
-              const isStillBlocked = newBlockedTasks.includes(task.id);
-              if (wasBlocked && !isStillBlocked) {
-                  const updatedTask = { ...newTasks[index] };
+              if (task.dependencies.includes(taskId) && !newBlockedTasks.includes(task.id)) {
+                  const updatedTask = { ...tasksWithUpdatedDeps[index] };
                   updatedTask.dependencies = updatedTask.dependencies.filter(dep => dep !== taskId);
-                  newTasks[index] = updatedTask;
+                  tasksWithUpdatedDeps[index] = updatedTask;
               }
           });
           
-          // Second, add the current task's ID to any task that IS NOW blocked by it and update its dates
+          // 3. Add the current task's ID to any task that IS NOW blocked by it
           newBlockedTasks.forEach(blockedTaskId => {
-              const blockedTaskIndex = newTasks.findIndex(t => t.id === blockedTaskId);
+              const blockedTaskIndex = tasksWithUpdatedDeps.findIndex(t => t.id === blockedTaskId);
               if (blockedTaskIndex > -1) {
-                  const blockedTask = { ...newTasks[blockedTaskIndex] };
+                  const blockedTask = { ...tasksWithUpdatedDeps[blockedTaskIndex] };
                   if (!blockedTask.dependencies.includes(taskId)) {
                       blockedTask.dependencies.push(taskId);
-
-                      // Also update the start date of the newly blocked task
-                      const currentTask = newTasks[currentTaskIndex];
-                      if(currentTask) {
-                        const newStartDate = addDays(currentTask.end, 1);
-                        const duration = differenceInBusinessDays(blockedTask.end, blockedTask.start);
-                        blockedTask.start = newStartDate;
-                        blockedTask.end = addDays(newStartDate, duration >= 0 ? duration : 0);
-                      }
-                      newTasks[blockedTaskIndex] = blockedTask;
+                      tasksWithUpdatedDeps[blockedTaskIndex] = blockedTask;
                   }
               }
           });
 
-          return newTasks;
+          // 4. Recalculate dates for all affected tasks
+          let finalTasks = updateDependentTasks(taskId, tasksWithUpdatedDeps);
+          newBlockedTasks.forEach(blockedTaskId => {
+            finalTasks = updateDependentTasks(blockedTaskId, finalTasks);
+          });
+
+
+          return finalTasks;
       });
-      // We don't close the sidebar here so the user can see the changes.
       toast({ title: "Dependencies Updated", description: "Task dates have been adjusted automatically." });
   };
 

@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import type { Task } from '@/types';
-import { addDays, differenceInDays, format, startOfDay } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
@@ -174,6 +174,8 @@ export default function GanttasticChart({ tasks, onTaskClick, projectName }: Gan
                 {tasks.map((task, index) => {
                   const pos = taskPositions.get(task.id);
                   if(!pos) return null;
+                  const duration = differenceInBusinessDays(task.end, task.start);
+
 
                   return (
                       <TooltipProvider key={task.id} delayDuration={100}>
@@ -198,6 +200,7 @@ export default function GanttasticChart({ tasks, onTaskClick, projectName }: Gan
                             {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
                             <p>Start: {format(task.start, 'MMM d, yyyy')}</p>
                             <p>End: {format(task.end, 'MMM d, yyyy')}</p>
+                            <p>Duration: {duration} day{duration === 1 ? '' : 's'}</p>
                             <p>Progress: {task.progress}%</p>
                           </TooltipContent>
                         </Tooltip>

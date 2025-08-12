@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Trash2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, differenceInBusinessDays, addDays } from 'date-fns';
 import type { Task } from '@/types';
 import { Slider } from '@/components/ui/slider';
 import { useEffect, useMemo, useState } from 'react';
@@ -32,6 +32,7 @@ const taskSchema = z.object({
   description: z.string().optional(),
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
+  duration: z.number().min(0, "Duration must be positive."),
   progress: z.number().min(0).max(100),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
@@ -55,10 +56,12 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     defaultValues: {
       name: '',
       description: '',
+      duration: 1,
       progress: 0,
     },
   });
-
+  
+  const [duration, setDuration] = useState(1);
   const [dependsOn, setDependsOn] = useState<string[]>([]);
   const [blocks, setBlocks] = useState<string[]>([]);
   
@@ -67,29 +70,38 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     return tasks.filter(task => task.dependencies.includes(selectedTask.id)).map(t => t.id);
   }, [tasks, selectedTask]);
 
+
   useEffect(() => {
     if (selectedTask) {
+      const taskDuration = differenceInBusinessDays(selectedTask.end, selectedTask.start);
+      const currentDuration = taskDuration >= 0 ? taskDuration : 0;
       form.reset({
         name: selectedTask.name,
         description: selectedTask.description || '',
         start: selectedTask.start,
         end: selectedTask.end,
         progress: selectedTask.progress,
+        duration: currentDuration,
       });
+      setDuration(currentDuration);
       setDependsOn(selectedTask.dependencies);
       setBlocks(blockedByThisTask);
     } else {
+      const defaultDuration = 1;
       form.reset({
         name: '',
         description: '',
-        start: undefined,
-        end: undefined,
+        start: new Date(),
+        end: addDays(new Date(), defaultDuration),
         progress: 0,
+        duration: defaultDuration
       });
+      setDuration(defaultDuration);
       setDependsOn([]);
       setBlocks([]);
     }
   }, [selectedTask, tasks, form, blockedByThisTask]);
+
 
   const availableTasksForDependsOn = useMemo(() => {
       if(!selectedTask) return tasks;
@@ -104,6 +116,21 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     const unselectableIds = new Set([selectedTask.id, ...dependsOn, ...blocks]);
     return tasks.filter(t => !unselectableIds.has(t.id));
   }, [tasks, selectedTask, dependsOn, blocks]);
+
+  const handleStartDateChange = (date: Date) => {
+    form.setValue('start', date);
+    const currentDuration = form.getValues('duration');
+    form.setValue('end', addDays(date, currentDuration));
+  }
+  
+  const handleDurationChange = (newDuration: number) => {
+    setDuration(newDuration);
+    form.setValue('duration', newDuration);
+    const startDate = form.getValues('start');
+    if (startDate) {
+      form.setValue('end', addDays(startDate, newDuration));
+    }
+  }
 
 
   const onSubmit = (data: TaskFormValues) => {
@@ -260,7 +287,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        <Calendar mode="single" selected={field.value} onSelect={(date) => date && handleStartDateChange(date)} initialFocus />
                       </PopoverContent>
                     </Popover>
                   <FormMessage />
@@ -268,34 +295,23 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               )}
             />
              <FormField
-              control={form.control}
-              name="end"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date</FormLabel>
-                  <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duration (days)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        value={duration}
+                        onChange={(e) => handleDurationChange(parseInt(e.target.value, 10))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
           </div>
           
            <FormField
