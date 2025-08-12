@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import TaskEditor from './task-editor';
 import SmartScheduler from './smart-scheduler';
 import type { Task } from '@/types';
@@ -32,9 +33,6 @@ export default function GanttasticSidebarContent({
         <h2 className="text-lg font-semibold font-headline">
           {view === 'TASK_EDITOR' ? (selectedTask ? 'Edit Task' : 'New Task') : 'Smart Scheduler'}
         </h2>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
-          <X className="h-4 w-4" />
-        </Button>
       </div>
       <Tabs defaultValue={view} value={view} className="flex-grow flex flex-col">
         {/* The TabsList can be hidden if we control the view from outside */}
