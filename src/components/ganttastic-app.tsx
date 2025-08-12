@@ -85,10 +85,17 @@ export default function GanttasticApp() {
     setSelectedTask(task || null);
     setSidebarOpen(true);
   }, []);
+  
+  const handleSidebarOpenChange = (open: boolean) => {
+    setSidebarOpen(open);
+    if (!open) {
+      setSelectedTask(null);
+    }
+  }
 
   return (
-    <SidebarProvider open={isSidebarOpen} onOpenChange={setSidebarOpen}>
-      <Sidebar side="right" className="transition-all duration-300" collapsible="icon">
+    <SidebarProvider open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
+      <Sidebar side="right">
         <SidebarContent>
           <GanttasticSidebarContent
             view={sidebarView}
@@ -112,3 +119,5 @@ export default function GanttasticApp() {
     </SidebarProvider>
   );
 }
+
+    
