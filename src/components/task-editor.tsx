@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +25,7 @@ import { Slider } from '@/components/ui/slider';
 import { useEffect, useMemo } from 'react';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
+import { Label } from './ui/label';
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
