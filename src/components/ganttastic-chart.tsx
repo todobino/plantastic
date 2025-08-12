@@ -18,6 +18,7 @@ const DAY_WIDTH = 40; // width of a day column in pixels
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
+const HEADER_HEIGHT = 48;
 
 export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartProps) {
   const { projectStart, projectEnd, totalDays, timeline, taskPositions } = useMemo(() => {
@@ -68,10 +69,10 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
         <div className="grid grid-cols-12 w-full h-full">
           {/* Task List */}
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm">Task Name</div>
-            <div className='flex flex-col gap-2 pt-2'>
-              {tasks.map(task => (
-                <div key={task.id} className="text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer h-10 flex items-center" onClick={() => onTaskClick(task)}>
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-end pb-3">Task Name</div>
+            <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
+              {tasks.map((task, index) => (
+                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center border-b" onClick={() => onTaskClick(task)}>
                   {task.name}
                 </div>
               ))}
@@ -79,19 +80,18 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
           </div>
 
           {/* Gantt Timeline */}
-          <div className="col-span-9 overflow-x-auto">
-             <ScrollArea className="w-full h-full">
-              <div style={{ width: `${totalDays * DAY_WIDTH}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
-                {/* Timeline Header */}
-                <div className="sticky top-0 bg-card z-20 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${DAY_WIDTH}px)` }}>
-                  {timeline.map(day => (
-                    <div key={day.toString()} className="text-center text-xs py-2 border-r border-b">
-                      <div>{format(day, 'dd')}</div>
-                      <div className="text-muted-foreground">{format(day, 'E')}</div>
-                    </div>
-                  ))}
-                </div>
+          <div className="col-span-9 overflow-auto">
+             <div className="relative">
+              <div style={{ width: `${totalDays * DAY_WIDTH}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${DAY_WIDTH}px)` }}>
+                {timeline.map(day => (
+                  <div key={day.toString()} className="text-center text-xs py-2 border-r border-b">
+                    <div>{format(day, 'dd')}</div>
+                    <div className="text-muted-foreground">{format(day, 'E')}</div>
+                  </div>
+                ))}
+              </div>
 
+              <div style={{ width: `${totalDays * DAY_WIDTH}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
                 {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${DAY_WIDTH}px)` }}>
                   {timeline.map((day, i) => (
@@ -190,7 +190,7 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </CardContent>
