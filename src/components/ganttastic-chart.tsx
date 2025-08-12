@@ -70,9 +70,9 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
-      <CardHeader className="flex flex-row items-start justify-between">
+      <CardHeader className="flex flex-row items-start justify-between border-b">
         <div>
-          <CardTitle>Project Timeline: {projectName}</CardTitle>
+          <CardTitle>{projectName}</CardTitle>
           {tasks.length > 0 && (
             <CardDescription className="mt-1">
               {format(projectStart, 'MMM d, yyyy')} - {format(projectEnd, 'MMM d, yyyy')}
