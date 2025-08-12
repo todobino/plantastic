@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import type { Task } from '@/types';
+import { useMemo, useState } from 'react';
+import type { Task, Milestone } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,9 @@ import { Pencil, Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import MilestoneEditor from './milestone-editor';
+
 
 type GanttasticChartProps = {
   tasks: Task[];
@@ -25,6 +28,7 @@ const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
 export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, projectName }: GanttasticChartProps) {
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const { projectStart, projectEnd, totalDays, timeline, taskPositions } = useMemo(() => {
     if (tasks.length === 0) {
       const today = startOfDay(new Date());
@@ -76,10 +80,17 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
           )}
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-            <Pencil />
-            Edit
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Pencil />
+                  Edit Milestones
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <MilestoneEditor milestones={milestones} setMilestones={setMilestones} />
+              </DialogContent>
+            </Dialog>
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
