@@ -1,11 +1,17 @@
 'use client';
 
-import { GanttChartSquare, Sparkles, Plus, LogIn } from 'lucide-react';
+import { GanttChartSquare, Plus, LogIn, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type GanttasticHeaderProps = {
-  openSidebar: (view: 'TASK_EDITOR' | 'SMART_SCHEDULER') => void;
+  openSidebar: (view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: any) => void;
 };
 
 export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps) {
@@ -18,16 +24,26 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={() => openSidebar('SMART_SCHEDULER')}>
-          <Sparkles />
-          Smart Schedule
-        </Button>
-        <Button size="sm" onClick={() => openSidebar('TASK_EDITOR')}>
-          <Plus />
-          Add Task
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm">
+              <Plus />
+              Add New
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openSidebar('TASK_EDITOR')}>
+              Add new task
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('New Project functionality coming soon!')}>
+              Add new project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="hidden md:flex items-center gap-2 ml-4">
-           <Button asChild variant="ghost" size="sm">
+           <Button asChild variant="secondary" size="sm">
             <Link href="/login">
               <LogIn />
               Login
