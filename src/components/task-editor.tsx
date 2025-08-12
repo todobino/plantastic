@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Trash2, X, ChevronsUpDown, Check } from 'lucide-react';
+import { CalendarIcon, Trash2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { Task } from '@/types';
@@ -349,7 +348,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
-          <Button type="submit" className="bg-accent hover:bg-accent/90">
+          <Button type="submit">
             {selectedTask ? 'Save Changes' : 'Add Task'}
           </Button>
           {selectedTask && (

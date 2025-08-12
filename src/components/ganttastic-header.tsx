@@ -18,11 +18,11 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => openSidebar('SMART_SCHEDULER')}>
+        <Button variant="secondary" size="sm" onClick={() => openSidebar('SMART_SCHEDULER')}>
           <Sparkles />
           Smart Schedule
         </Button>
-        <Button size="sm" onClick={() => openSidebar('TASK_EDITOR')} className="bg-accent hover:bg-accent/90">
+        <Button size="sm" onClick={() => openSidebar('TASK_EDITOR')}>
           <Plus />
           Add Task
         </Button>
