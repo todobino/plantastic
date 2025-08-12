@@ -22,9 +22,11 @@ import { format } from 'date-fns';
 import type { Task } from '@/types';
 import { Slider } from '@/components/ui/slider';
 import { useEffect } from 'react';
+import { Textarea } from './ui/textarea';
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
+  description: z.string().optional(),
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
   progress: z.number().min(0).max(100),
@@ -49,6 +51,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     resolver: zodResolver(taskSchema),
     defaultValues: {
       name: '',
+      description: '',
       progress: 0,
       dependencies: '',
     },
@@ -58,6 +61,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     if (selectedTask) {
       form.reset({
         name: selectedTask.name,
+        description: selectedTask.description || '',
         start: selectedTask.start,
         end: selectedTask.end,
         progress: selectedTask.progress,
@@ -66,6 +70,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     } else {
       form.reset({
         name: '',
+        description: '',
         start: undefined,
         end: undefined,
         progress: 0,
@@ -78,6 +83,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   const onSubmit = (data: TaskFormValues) => {
     const taskData = {
       name: data.name,
+      description: data.description,
       start: data.start,
       end: data.end,
       progress: data.progress,
@@ -94,7 +100,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full">
-        <div className="space-y-4 flex-grow">
+        <div className="space-y-4 flex-grow overflow-y-auto pr-2">
           <FormField
             control={form.control}
             name="name"
@@ -103,6 +109,20 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 <FormLabel>Task Name</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g., Design homepage" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Add a short description of the task..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -208,7 +228,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
           />
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center pt-4 border-t">
           <Button type="submit" className="bg-accent hover:bg-accent/90">
             {selectedTask ? 'Save Changes' : 'Add Task'}
           </Button>

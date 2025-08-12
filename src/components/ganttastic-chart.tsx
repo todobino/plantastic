@@ -181,6 +181,7 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
                           </TooltipTrigger>
                           <TooltipContent className="bg-card border-primary">
                             <p className="font-bold">{task.name}</p>
+                            {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
                             <p>Start: {format(task.start, 'MMM d, yyyy')}</p>
                             <p>End: {format(task.end, 'MMM d, yyyy')}</p>
                             <p>Progress: {task.progress}%</p>
