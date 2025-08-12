@@ -33,7 +33,6 @@ const taskSchema = z.object({
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
   progress: z.number().min(0).max(100),
-  dependencies: z.array(z.string()),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -57,14 +56,13 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       name: '',
       description: '',
       progress: 0,
-      dependencies: [],
     },
   });
 
   const [dependsOn, setDependsOn] = useState<string[]>([]);
-  const [isBlockedBy, setIsBlockedBy] = useState<string[]>([]);
+  const [blocks, setBlocks] = useState<string[]>([]);
   
-  const blockedTasks = useMemo(() => {
+  const blockedByThisTask = useMemo(() => {
     if (!selectedTask) return [];
     return tasks.filter(task => task.dependencies.includes(selectedTask.id)).map(t => t.id);
   }, [tasks, selectedTask]);
@@ -77,10 +75,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: selectedTask.start,
         end: selectedTask.end,
         progress: selectedTask.progress,
-        dependencies: selectedTask.dependencies,
       });
       setDependsOn(selectedTask.dependencies);
-      setIsBlockedBy(blockedTasks);
+      setBlocks(blockedByThisTask);
     } else {
       form.reset({
         name: '',
@@ -88,26 +85,25 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: undefined,
         end: undefined,
         progress: 0,
-        dependencies: [],
       });
       setDependsOn([]);
-      setIsBlockedBy([]);
+      setBlocks([]);
     }
-  }, [selectedTask, tasks, form, blockedTasks]);
+  }, [selectedTask, tasks, form, blockedByThisTask]);
 
   const availableTasksForDependsOn = useMemo(() => {
       if(!selectedTask) return tasks;
       // Cannot depend on itself or tasks that depend on it (circular)
-      const unselectableIds = new Set([selectedTask.id, ...blockedTasks, ...dependsOn]);
+      const unselectableIds = new Set([selectedTask.id, ...blockedByThisTask, ...dependsOn]);
       return tasks.filter(t => !unselectableIds.has(t.id));
-  }, [tasks, selectedTask, dependsOn, blockedTasks]);
+  }, [tasks, selectedTask, dependsOn, blockedByThisTask]);
 
   const availableTasksForBlocks = useMemo(() => {
     if(!selectedTask) return tasks;
     // Cannot block itself or tasks it depends on (circular)
-    const unselectableIds = new Set([selectedTask.id, ...dependsOn, ...isBlockedBy]);
+    const unselectableIds = new Set([selectedTask.id, ...dependsOn, ...blocks]);
     return tasks.filter(t => !unselectableIds.has(t.id));
-  }, [tasks, selectedTask, dependsOn, isBlockedBy]);
+  }, [tasks, selectedTask, dependsOn, blocks]);
 
 
   const onSubmit = (data: TaskFormValues) => {
@@ -121,11 +117,10 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     };
     if (selectedTask) {
       onUpdateTask({ ...taskData, id: selectedTask.id });
-      onUpdateDependencies(selectedTask.id, dependsOn, isBlockedBy);
+      onUpdateDependencies(selectedTask.id, dependsOn, blocks);
     } else {
       onAddTask(taskData);
     }
-    form.reset();
   };
 
   const handleAddDependency = (taskId: string) => {
@@ -139,13 +134,13 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   }
 
   const handleAddBlockedTask = (taskId: string) => {
-     if (!isBlockedBy.includes(taskId)) {
-      setIsBlockedBy([...isBlockedBy, taskId]);
+     if (!blocks.includes(taskId)) {
+      setBlocks([...blocks, taskId]);
     }
   }
 
   const handleRemoveBlockedTask = (taskId: string) => {
-    setIsBlockedBy(isBlockedBy.filter(id => id !== taskId));
+    setBlocks(blocks.filter(id => id !== taskId));
   }
   
   const DependencySelector = ({
@@ -200,7 +195,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     const task = tasks.find(t => t.id === taskId);
     if (!task) return null;
     return (
-      <Badge variant="secondary" className="font-normal flex items-center gap-1.5">
+      <Badge variant="secondary" className="font-normal flex items-center gap-1.5 cursor-pointer">
         {task.name}
         <button onClick={() => onRemove(taskId)} className="rounded-full hover:bg-muted-foreground/20">
           <X className="h-3 w-3" />
@@ -337,7 +332,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                  <div className="space-y-2">
                     <Label>Proceeds</Label>
                     <div className="flex flex-wrap gap-2">
-                        {isBlockedBy.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
+                        {blocks.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
                          <DependencySelector availableTasks={availableTasksForBlocks} onSelect={handleAddBlockedTask}>
                            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
                         </DependencySelector>
