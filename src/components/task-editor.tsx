@@ -334,7 +334,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
                         </DependencySelector>
                     </div>
-                     <FormDescription>Tasks that must be completed before this one can start.</FormDescription>
                 </div>
                  <div className="space-y-2">
                     <Label>Proceeds</Label>
@@ -344,7 +343,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
                         </DependencySelector>
                     </div>
-                     <FormDescription>Tasks that cannot start until this one is completed.</FormDescription>
                 </div>
             </div>
           )}
