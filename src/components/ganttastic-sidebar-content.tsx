@@ -5,16 +5,15 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import TaskEditor from './task-editor';
 import SmartScheduler from './smart-scheduler';
 import type { Task } from '@/types';
-import { Button } from './ui/button';
-import { X } from 'lucide-react';
 
 type GanttasticSidebarContentProps = {
   view: 'TASK_EDITOR' | 'SMART_SCHEDULER';
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id'>) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onUpdateDependencies: (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => void;
   onClose: () => void;
 };
 
@@ -25,6 +24,7 @@ export default function GanttasticSidebarContent({
   onAddTask,
   onUpdateTask,
   onDeleteTask,
+  onUpdateDependencies,
   onClose
 }: GanttasticSidebarContentProps) {
   return (
@@ -35,11 +35,6 @@ export default function GanttasticSidebarContent({
         </h2>
       </div>
       <Tabs defaultValue={view} value={view} className="flex-grow flex flex-col">
-        {/* The TabsList can be hidden if we control the view from outside */}
-        {/* <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="TASK_EDITOR">Task Editor</TabsTrigger>
-          <TabsTrigger value="SMART_SCHEDULER">Smart Scheduler</TabsTrigger>
-        </TabsList> */}
         <TabsContent value="TASK_EDITOR" className="flex-grow">
           <TaskEditor
             tasks={tasks}
@@ -47,6 +42,7 @@ export default function GanttasticSidebarContent({
             onAddTask={onAddTask}
             onUpdateTask={onUpdateTask}
             onDeleteTask={onDeleteTask}
+            onUpdateDependencies={onUpdateDependencies}
           />
         </TabsContent>
         <TabsContent value="SMART_SCHEDULER" className="flex-grow">
@@ -56,3 +52,5 @@ export default function GanttasticSidebarContent({
     </div>
   );
 }
+
+    

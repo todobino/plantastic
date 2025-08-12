@@ -17,15 +17,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Trash2 } from 'lucide-react';
+import { CalendarIcon, Trash2, X, ChevronsUpDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { Task } from '@/types';
 import { Slider } from '@/components/ui/slider';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Label } from './ui/label';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
@@ -33,7 +34,7 @@ const taskSchema = z.object({
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
   progress: z.number().min(0).max(100),
-  dependencies: z.string().optional(),
+  dependencies: z.array(z.string()),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -44,25 +45,29 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type TaskEditorProps = {
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id'>) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onUpdateDependencies: (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => void;
 };
 
-export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask }: TaskEditorProps) {
+export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, onUpdateDependencies }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       name: '',
       description: '',
       progress: 0,
-      dependencies: '',
+      dependencies: [],
     },
   });
 
-  const dependentTasks = useMemo(() => {
+  const [dependsOn, setDependsOn] = useState<string[]>([]);
+  const [isBlockedBy, setIsBlockedBy] = useState<string[]>([]);
+  
+  const blockedTasks = useMemo(() => {
     if (!selectedTask) return [];
-    return tasks.filter(task => task.dependencies.includes(selectedTask.id));
+    return tasks.filter(task => task.dependencies.includes(selectedTask.id)).map(t => t.id);
   }, [tasks, selectedTask]);
 
   useEffect(() => {
@@ -73,8 +78,10 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: selectedTask.start,
         end: selectedTask.end,
         progress: selectedTask.progress,
-        dependencies: selectedTask.dependencies.join(', '),
+        dependencies: selectedTask.dependencies,
       });
+      setDependsOn(selectedTask.dependencies);
+      setIsBlockedBy(blockedTasks);
     } else {
       form.reset({
         name: '',
@@ -82,10 +89,26 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: undefined,
         end: undefined,
         progress: 0,
-        dependencies: '',
+        dependencies: [],
       });
+      setDependsOn([]);
+      setIsBlockedBy([]);
     }
-  }, [selectedTask, form]);
+  }, [selectedTask, tasks, form, blockedTasks]);
+
+  const availableTasksForDependsOn = useMemo(() => {
+      if(!selectedTask) return tasks;
+      // Cannot depend on itself or tasks that depend on it (circular)
+      const unselectableIds = new Set([selectedTask.id, ...blockedTasks, ...dependsOn]);
+      return tasks.filter(t => !unselectableIds.has(t.id));
+  }, [tasks, selectedTask, dependsOn, blockedTasks]);
+
+  const availableTasksForBlocks = useMemo(() => {
+    if(!selectedTask) return tasks;
+    // Cannot block itself or tasks it depends on (circular)
+    const unselectableIds = new Set([selectedTask.id, ...dependsOn, ...isBlockedBy]);
+    return tasks.filter(t => !unselectableIds.has(t.id));
+  }, [tasks, selectedTask, dependsOn, isBlockedBy]);
 
 
   const onSubmit = (data: TaskFormValues) => {
@@ -95,15 +118,98 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       start: data.start,
       end: data.end,
       progress: data.progress,
-      dependencies: data.dependencies ? data.dependencies.split(',').map(d => d.trim()).filter(Boolean) : [],
+      dependencies: dependsOn,
     };
     if (selectedTask) {
       onUpdateTask({ ...taskData, id: selectedTask.id });
+      onUpdateDependencies(selectedTask.id, dependsOn, isBlockedBy);
     } else {
       onAddTask(taskData);
     }
     form.reset();
   };
+
+  const handleAddDependency = (taskId: string) => {
+    if (!dependsOn.includes(taskId)) {
+      setDependsOn([...dependsOn, taskId]);
+    }
+  }
+
+  const handleRemoveDependency = (taskId: string) => {
+    setDependsOn(dependsOn.filter(id => id !== taskId));
+  }
+
+  const handleAddBlockedTask = (taskId: string) => {
+     if (!isBlockedBy.includes(taskId)) {
+      setIsBlockedBy([...isBlockedBy, taskId]);
+    }
+  }
+
+  const handleRemoveBlockedTask = (taskId: string) => {
+    setIsBlockedBy(isBlockedBy.filter(id => id !== taskId));
+  }
+  
+  const DependencySelector = ({
+    availableTasks,
+    onSelect,
+    children
+  }: {
+    availableTasks: Task[],
+    onSelect: (taskId: string) => void,
+    children: React.ReactNode
+  }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+       <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          {children}
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search tasks..." />
+            <CommandList>
+              <CommandEmpty>No tasks found.</CommandEmpty>
+              <CommandGroup>
+                {availableTasks.map((task) => (
+                  <CommandItem
+                    key={task.id}
+                    value={task.name}
+                    onSelect={() => {
+                      onSelect(task.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        "opacity-0" // We are just adding, not marking selection
+                      )}
+                    />
+                    {task.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    )
+  }
+
+  const DependencyBadge = ({ taskId, onRemove }: { taskId: string, onRemove: (taskId: string) => void }) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return null;
+    return (
+      <Badge variant="secondary" className="font-normal flex items-center gap-1.5">
+        {task.name}
+        <button onClick={() => onRemove(taskId)} className="rounded-full hover:bg-muted-foreground/20">
+          <X className="h-3 w-3" />
+        </button>
+      </Badge>
+    );
+  };
+
 
   return (
     <Form {...form}>
@@ -217,36 +323,30 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="dependencies"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dependencies</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., task-1, task-2" {...field} />
-                </FormControl>
-                 <FormDescription>
-                  Comma-separated list of task IDs this task depends on.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           {selectedTask && dependentTasks.length > 0 && (
-            <div className="space-y-2">
-              <Label>Dependent Tasks</Label>
-              <div className="flex flex-wrap gap-2">
-                {dependentTasks.map(task => (
-                  <Badge key={task.id} variant="secondary" className="font-normal">
-                    {task.name}
-                  </Badge>
-                ))}
-              </div>
-               <p className="text-sm text-muted-foreground">
-                  Tasks that depend on this task.
-                </p>
+          
+          {selectedTask && (
+            <div className="space-y-4 rounded-lg border p-4">
+                <h4 className="font-medium">Dependencies</h4>
+                <div className="space-y-2">
+                    <Label>Depends On</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {dependsOn.map(id => <DependencyBadge key={`dep-${id}`} taskId={id} onRemove={handleRemoveDependency} />)}
+                         <DependencySelector availableTasks={availableTasksForDependsOn} onSelect={handleAddDependency}>
+                           <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
+                        </DependencySelector>
+                    </div>
+                     <FormDescription>Tasks that must be completed before this task can start.</FormDescription>
+                </div>
+                 <div className="space-y-2">
+                    <Label>Blocks</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {isBlockedBy.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
+                         <DependencySelector availableTasks={availableTasksForBlocks} onSelect={handleAddBlockedTask}>
+                           <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
+                        </DependencySelector>
+                    </div>
+                     <FormDescription>Tasks that cannot start until this task is completed.</FormDescription>
+                </div>
             </div>
           )}
         </div>
@@ -265,3 +365,5 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
+    

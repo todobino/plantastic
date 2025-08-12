@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -68,17 +69,61 @@ export default function GanttasticApp() {
   const handleUpdateTask = (updatedTask: Task) => {
     setTasks(prev => prev.map(task => (task.id === updatedTask.id ? updatedTask : task)));
     toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
-    setSidebarOpen(false);
-    setSelectedTask(null);
+    // Keep sidebar open for dependency updates
+    // setSidebarOpen(false);
+    // setSelectedTask(null);
   };
 
   const handleDeleteTask = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+    // Also remove this task from any other task's dependency list
+    setTasks(prev => prev.filter(task => task.id !== taskId).map(t => ({
+      ...t,
+      dependencies: t.dependencies.filter(depId => depId !== taskId)
+    })));
     toast({ title: "Task Deleted", description: `"${taskToDelete?.name}" has been deleted.`, variant: "destructive" });
     setSidebarOpen(false);
     setSelectedTask(null);
   }
+
+  const handleUpdateDependencies = (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => {
+      setTasks(prev => {
+          const newTasks = [...prev];
+
+          // 1. Update the current task's dependencies
+          const currentTaskIndex = newTasks.findIndex(t => t.id === taskId);
+          if (currentTaskIndex > -1) {
+              newTasks[currentTaskIndex] = { ...newTasks[currentTaskIndex], dependencies: newDependencies };
+          }
+
+          // 2. Manage "Blocks" relationship
+          // First, remove the current task's ID from any task that is NO LONGER blocked by it
+          prev.forEach((task, index) => {
+              const wasBlocked = task.dependencies.includes(taskId);
+              const isStillBlocked = newBlockedTasks.includes(task.id);
+              if (wasBlocked && !isStillBlocked) {
+                  const updatedTask = { ...newTasks[index] };
+                  updatedTask.dependencies = updatedTask.dependencies.filter(dep => dep !== taskId);
+                  newTasks[index] = updatedTask;
+              }
+          });
+          
+          // Second, add the current task's ID to any task that IS NOW blocked by it
+          newBlockedTasks.forEach(blockedTaskId => {
+              const blockedTaskIndex = newTasks.findIndex(t => t.id === blockedTaskId);
+              if (blockedTaskIndex > -1) {
+                  const blockedTask = { ...newTasks[blockedTaskIndex] };
+                  if (!blockedTask.dependencies.includes(taskId)) {
+                      blockedTask.dependencies.push(taskId);
+                      newTasks[blockedTaskIndex] = blockedTask;
+                  }
+              }
+          });
+
+          return newTasks;
+      });
+      // We don't close the sidebar here so the user can see the changes.
+  };
 
   const openSidebar = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
     setSidebarView(view);
@@ -104,6 +149,7 @@ export default function GanttasticApp() {
             onAddTask={handleAddTask}
             onUpdateTask={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
+            onUpdateDependencies={handleUpdateDependencies}
             onClose={() => setSidebarOpen(false)}
           />
         </SidebarContent>
@@ -119,3 +165,5 @@ export default function GanttasticApp() {
     </SidebarProvider>
   );
 }
+
+    
