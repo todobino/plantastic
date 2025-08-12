@@ -6,7 +6,7 @@ import type { Task } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 type GanttasticChartProps = {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onAddTaskClick: () => void;
   projectName: string;
 };
 
@@ -23,7 +24,7 @@ const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
-export default function GanttasticChart({ tasks, onTaskClick, projectName }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, projectName }: GanttasticChartProps) {
   const { projectStart, projectEnd, totalDays, timeline, taskPositions } = useMemo(() => {
     if (tasks.length === 0) {
       const today = startOfDay(new Date());
@@ -74,10 +75,16 @@ export default function GanttasticChart({ tasks, onTaskClick, projectName }: Gan
             </CardDescription>
           )}
         </div>
-        <Button variant="outline" size="sm">
-          <Pencil />
-          Edit
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+            <Pencil />
+            Edit
+            </Button>
+            <Button size="sm" onClick={onAddTaskClick}>
+                <Plus />
+                Add Task
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="flex-grow flex overflow-hidden">
         <div className="grid grid-cols-12 w-full h-full">

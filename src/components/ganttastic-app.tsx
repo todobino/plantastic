@@ -208,6 +208,7 @@ export default function GanttasticApp() {
             <GanttasticChart
               tasks={tasks}
               onTaskClick={(task) => openSidebar('TASK_EDITOR', task)}
+              onAddTaskClick={() => openSidebar('TASK_EDITOR')}
               projectName={projectName}
             />
           </div>
