@@ -1,7 +1,8 @@
 'use client';
 
-import { GanttChartSquare, Sparkles, Plus, LogIn, UserPlus } from 'lucide-react';
+import { GanttChartSquare, Sparkles, Plus, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type GanttasticHeaderProps = {
   openSidebar: (view: 'TASK_EDITOR' | 'SMART_SCHEDULER') => void;
@@ -26,13 +27,11 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
           Add Task
         </Button>
         <div className="hidden md:flex items-center gap-2 ml-4">
-           <Button variant="ghost" size="sm">
-            <LogIn />
-            Login
-          </Button>
-          <Button variant="ghost" size="sm">
-            <UserPlus />
-            Sign Up
+           <Button asChild variant="ghost" size="sm">
+            <Link href="/login">
+              <LogIn />
+              Login
+            </Link>
           </Button>
         </div>
       </div>
