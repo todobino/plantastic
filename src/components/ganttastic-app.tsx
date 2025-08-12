@@ -203,7 +203,7 @@ export default function GanttasticApp() {
       </Sidebar>
       <SidebarInset>
         <div className="flex h-screen flex-col">
-          <GanttasticHeader openSidebar={openSidebar} />
+          <GanttasticHeader openSidebar={openSidebar} projectName={projectName} />
           <div className="flex-grow overflow-auto p-4 md:p-6">
             <GanttasticChart
               tasks={tasks}
