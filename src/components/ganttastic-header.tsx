@@ -1,6 +1,6 @@
 'use client';
 
-import { GanttChartSquare, Plus, LogIn, ChevronDown } from 'lucide-react';
+import { GanttChartSquare, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -27,7 +27,6 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm">
-              <Plus />
               Add New
               <ChevronDown className="h-4 w-4" />
             </Button>
@@ -42,10 +41,9 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="hidden md:flex items-center gap-2 ml-4">
+        <div className="hidden md:flex items-center gap-2">
            <Button asChild variant="secondary" size="sm">
             <Link href="/login">
-              <LogIn />
               Login
             </Link>
           </Button>
