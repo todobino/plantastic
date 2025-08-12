@@ -1,6 +1,7 @@
+
 'use client';
 
-import { GanttChartSquare, ChevronDown } from 'lucide-react';
+import { GanttChartSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -24,22 +25,10 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm">
-              Add New
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => openSidebar('TASK_EDITOR')}>
-              Add new task
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => alert('New Project functionality coming soon!')}>
-              Add new project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
+          <Plus className="h-4 w-4" />
+          Add Project
+        </Button>
 
         <div className="hidden md:flex items-center gap-2">
            <Button asChild variant="secondary" size="sm">
