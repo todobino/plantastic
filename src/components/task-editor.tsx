@@ -21,8 +21,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { Task } from '@/types';
 import { Slider } from '@/components/ui/slider';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Textarea } from './ui/textarea';
+import { Badge } from './ui/badge';
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
@@ -56,6 +57,11 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       dependencies: '',
     },
   });
+
+  const dependentTasks = useMemo(() => {
+    if (!selectedTask) return [];
+    return tasks.filter(task => task.dependencies.includes(selectedTask.id));
+  }, [tasks, selectedTask]);
 
   useEffect(() => {
     if (selectedTask) {
@@ -220,12 +226,27 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                   <Input placeholder="e.g., task-1, task-2" {...field} />
                 </FormControl>
                  <FormDescription>
-                  Comma-separated list of task IDs.
+                  Comma-separated list of task IDs this task depends on.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+           {selectedTask && dependentTasks.length > 0 && (
+            <div className="space-y-2">
+              <Label>Dependent Tasks</Label>
+              <div className="flex flex-wrap gap-2">
+                {dependentTasks.map(task => (
+                  <Badge key={task.id} variant="secondary" className="font-normal">
+                    {task.name}
+                  </Badge>
+                ))}
+              </div>
+               <p className="text-sm text-muted-foreground">
+                  Tasks that depend on this task.
+                </p>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
