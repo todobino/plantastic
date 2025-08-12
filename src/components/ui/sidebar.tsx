@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -123,10 +123,10 @@ const SidebarProvider = React.forwardRef<
         setOpen,
         isMobile,
         openMobile,
-        setOpenMobile,
+        setOpenMobile: setOpenProp || setOpenMobile,
         toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, setOpenProp]
     )
 
     return (
@@ -165,7 +165,7 @@ const Sidebar = React.forwardRef<
 >(
   (
     {
-      side = "left",
+      side = "right",
       collapsible = "icon",
       className,
       children,
@@ -173,10 +173,10 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { open, openMobile, setOpenMobile } = useSidebar()
+    const { open, setOpen } = useSidebar()
 
     return (
-      <Sheet open={open} onOpenChange={setOpenMobile}>
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           data-sidebar="sidebar"
           className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
