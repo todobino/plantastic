@@ -165,7 +165,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         <PopoverTrigger asChild>
           {children}
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent className="w-80 p-0" align="start">
           <Command>
             <CommandInput placeholder="Search tasks..." />
             <CommandList>
