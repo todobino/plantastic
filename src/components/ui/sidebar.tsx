@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -182,6 +182,10 @@ const Sidebar = React.forwardRef<
           className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
           side={side}
         >
+          <SheetHeader className="hidden">
+            <SheetTitle>Sidebar</SheetTitle>
+            <SheetDescription>Sidebar navigation and content</SheetDescription>
+          </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
@@ -692,5 +696,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
