@@ -70,8 +70,7 @@ export function AuthForm() {
             Ganttastic
             </h1>
         </div>
-        <CardTitle>Welcome</CardTitle>
-        <CardDescription>Log in or create an account to continue</CardDescription>
+        <CardDescription>Quick and Easy Project Management</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="login" className="w-full">
