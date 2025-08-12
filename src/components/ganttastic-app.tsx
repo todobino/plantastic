@@ -27,6 +27,7 @@ const initialTasks: Task[] = [
 
 export default function GanttasticApp() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [projectName, setProjectName] = useState('Ganttastic Plan');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -150,7 +151,7 @@ export default function GanttasticApp() {
             onUpdateTask={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
             onUpdateDependencies={handleUpdateDependencies}
-            onClose={() => setSidebarOpen(false)}
+            onClose={() => handleSidebarOpenChange(false)}
           />
         </SidebarContent>
       </Sidebar>
@@ -158,12 +159,14 @@ export default function GanttasticApp() {
         <div className="flex h-screen flex-col">
           <GanttasticHeader openSidebar={openSidebar} />
           <div className="flex-grow overflow-auto p-4 md:p-6">
-            <GanttasticChart tasks={tasks} onTaskClick={(task) => openSidebar('TASK_EDITOR', task)} />
+            <GanttasticChart
+              tasks={tasks}
+              onTaskClick={(task) => openSidebar('TASK_EDITOR', task)}
+              projectName={projectName}
+            />
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-    

@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 type GanttasticChartProps = {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  projectName: string;
 };
 
 const DAY_WIDTH = 40; // width of a day column in pixels
@@ -22,7 +23,7 @@ const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
-export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, onTaskClick, projectName }: GanttasticChartProps) {
   const { projectStart, projectEnd, totalDays, timeline, taskPositions } = useMemo(() => {
     if (tasks.length === 0) {
       const today = startOfDay(new Date());
@@ -66,7 +67,7 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-start justify-between">
         <div>
-          <CardTitle>Project Timeline</CardTitle>
+          <CardTitle>Project Timeline: {projectName}</CardTitle>
           {tasks.length > 0 && (
             <CardDescription className="mt-1">
               {format(projectStart, 'MMM d, yyyy')} - {format(projectEnd, 'MMM d, yyyy')}
