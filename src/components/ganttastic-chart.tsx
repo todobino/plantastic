@@ -4,7 +4,9 @@
 import { useMemo } from 'react';
 import type { Task } from '@/types';
 import { addDays, differenceInDays, format, startOfDay } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -62,8 +64,19 @@ export default function GanttasticChart({ tasks, onTaskClick }: GanttasticChartP
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
-      <CardHeader>
-        <CardTitle>Project Timeline</CardTitle>
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div>
+          <CardTitle>Project Timeline</CardTitle>
+          {tasks.length > 0 && (
+            <CardDescription className="mt-1">
+              {format(projectStart, 'MMM d, yyyy')} - {format(projectEnd, 'MMM d, yyyy')}
+            </CardDescription>
+          )}
+        </div>
+        <Button variant="outline" size="sm">
+          <Pencil />
+          Edit
+        </Button>
       </CardHeader>
       <CardContent className="flex-grow flex overflow-hidden">
         <div className="grid grid-cols-12 w-full h-full">
