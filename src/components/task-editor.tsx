@@ -165,7 +165,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         <PopoverTrigger asChild>
           {children}
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="start">
+        <PopoverContent className="w-[300px] p-0" align="start">
           <Command>
             <CommandInput placeholder="Search tasks..." />
             <CommandList>
@@ -326,26 +326,25 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
           
           {selectedTask && (
             <div className="space-y-4 rounded-lg border p-4">
-                <h4 className="font-medium">Dependencies</h4>
                 <div className="space-y-2">
-                    <Label>Depends On</Label>
+                    <Label>Follows</Label>
                     <div className="flex flex-wrap gap-2">
                         {dependsOn.map(id => <DependencyBadge key={`dep-${id}`} taskId={id} onRemove={handleRemoveDependency} />)}
                          <DependencySelector availableTasks={availableTasksForDependsOn} onSelect={handleAddDependency}>
                            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
                         </DependencySelector>
                     </div>
-                     <FormDescription>Tasks that must be completed before this task can start.</FormDescription>
+                     <FormDescription>Tasks that must be completed before this one can start.</FormDescription>
                 </div>
                  <div className="space-y-2">
-                    <Label>Blocks</Label>
+                    <Label>Proceeds</Label>
                     <div className="flex flex-wrap gap-2">
                         {isBlockedBy.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
                          <DependencySelector availableTasks={availableTasksForBlocks} onSelect={handleAddBlockedTask}>
                            <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
                         </DependencySelector>
                     </div>
-                     <FormDescription>Tasks that cannot start until this task is completed.</FormDescription>
+                     <FormDescription>Tasks that cannot start until this one is completed.</FormDescription>
                 </div>
             </div>
           )}
@@ -365,5 +364,3 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
-
-    
