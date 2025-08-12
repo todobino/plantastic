@@ -86,7 +86,7 @@ export default function GanttasticChart({ tasks, onTaskClick, projectName }: Gan
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-end pb-3">Task Name</div>
             <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
               {tasks.map((task, index) => (
-                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center border-b" onClick={() => onTaskClick(task)}>
+                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center" onClick={() => onTaskClick(task)}>
                   {task.name}
                 </div>
               ))}
