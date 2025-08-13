@@ -21,7 +21,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "24rem" // Adjusted width
+const SIDEBAR_WIDTH = "20rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -135,13 +135,13 @@ const SidebarProvider = React.forwardRef<
           <div
             style={
               {
-                "--sidebar-width": SIDEBAR_WIDTH,
+                "--sidebar-width": isMobile ? SIDEBAR_WIDTH_MOBILE : SIDEBAR_WIDTH,
                 "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
                 ...style,
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              "group/sidebar-wrapper flex min-h-svh w-full",
               className
             )}
             ref={ref}
@@ -156,43 +156,64 @@ const SidebarProvider = React.forwardRef<
 )
 SidebarProvider.displayName = "SidebarProvider"
 
-const Sidebar = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    collapsible?: "icon" | "none"
-  }
->(
-  (
-    {
-      side = "right",
-      collapsible = "icon",
-      className,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const { open, setOpen } = useSidebar()
 
+type SidebarProps = React.ComponentProps<"div"> & {
+  side?: "left" | "right";
+  collapsible?: "icon" | "none";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: React.ReactNode;
+}
+
+const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
+  ({ side = "left", collapsible = "icon", className, children, open, onOpenChange, ...props }, ref) => {
+    const { isMobile } = useSidebar();
+    
+    // For right sidebar, we use a sheet (drawer)
+    if (side === 'right') {
+      return (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent
+            data-sidebar="sidebar"
+            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
+            side={side}
+          >
+            <SheetHeader className="hidden">
+              <SheetTitle>Sidebar</SheetTitle>
+              <SheetDescription>Sidebar navigation and content</SheetDescription>
+            </SheetHeader>
+            <div className="flex h-full w-full flex-col">{children}</div>
+          </SheetContent>
+        </Sheet>
+      );
+    }
+    
+    const { open: isLeftSidebarOpen } = useSidebar();
+
+    // For left sidebar, we use a div that pushes content
     return (
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          data-sidebar="sidebar"
-          className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
-          side={side}
-        >
-          <SheetHeader className="hidden">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Sidebar navigation and content</SheetDescription>
-          </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
-    )
+      <div
+        ref={ref}
+        data-state={isLeftSidebarOpen ? 'expanded' : 'collapsed'}
+        data-side={side}
+        data-collapsible={collapsible}
+        className={cn(
+          "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
+          "h-screen sticky top-0",
+          isLeftSidebarOpen ? "w-[var(--sidebar-width)]" : "w-0",
+           "overflow-hidden",
+          className
+        )}
+        {...props}
+      >
+        <div className="flex h-full flex-col w-[var(--sidebar-width)]">
+          {children}
+        </div>
+      </div>
+    );
   }
-)
-Sidebar.displayName = "Sidebar"
+);
+Sidebar.displayName = "Sidebar";
 
 
 const SidebarTrigger = React.forwardRef<

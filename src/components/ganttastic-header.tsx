@@ -4,14 +4,8 @@
 import { GanttChartSquare, Plus, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+import { useSidebar } from '@/components/ui/sidebar';
+
 
 type GanttasticHeaderProps = {
   openSidebar: (view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: any) => void;
@@ -19,11 +13,7 @@ type GanttasticHeaderProps = {
 };
 
 export default function GanttasticHeader({ openSidebar, projectName }: GanttasticHeaderProps) {
-  const projects = [
-    { id: 'proj-1', name: 'Ganttastic Plan' },
-    { id: 'proj-2', name: 'Marketing Campaign' },
-    { id: 'proj-3', name: 'Website Redesign' },
-  ]
+  const { toggleSidebar } = useSidebar();
   
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -32,23 +22,10 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
         <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
           Ganttastic
         </h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <span className="text-lg font-medium">{projectName}</span>
-              <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {projects.map((project) => (
-                <DropdownMenuItem key={project.id} onClick={() => alert(`Switching to ${project.name}`)}>
-                    {project.name}
-                </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="ghost" className="flex items-center gap-2" onClick={toggleSidebar}>
+          <span className="text-lg font-medium">{projectName}</span>
+          <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+        </Button>
       </div>
       <div className="flex items-center gap-2">
         <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>

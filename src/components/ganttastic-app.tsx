@@ -4,16 +4,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Task } from '@/types';
 import {
-  SidebarProvider,
   Sidebar,
-  SidebarInset,
   SidebarContent,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { useToast } from '@/hooks/use-toast';
 import { addDays, differenceInBusinessDays, startOfDay } from 'date-fns';
+import ProjectSidebar from './project-sidebar';
 
 const getInitialTasks = (): Task[] => [
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), progress: 100, dependencies: [] },
@@ -194,8 +194,11 @@ export default function GanttasticApp() {
   }
 
   return (
-    <SidebarProvider open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
-      <Sidebar side="right">
+    <>
+      <Sidebar side="left">
+        <ProjectSidebar currentProjectName={projectName} onProjectChange={setProjectName} />
+      </Sidebar>
+      <Sidebar side="right" open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
         <SidebarContent>
           <GanttasticSidebarContent
             view={sidebarView}
@@ -222,6 +225,6 @@ export default function GanttasticApp() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }
