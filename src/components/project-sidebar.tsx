@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, DragEvent } from 'react';
 import {
   SidebarHeader,
   SidebarInput,
@@ -9,27 +9,36 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Search, PanelLeftClose } from 'lucide-react';
+import { Search, PanelLeftClose, GripVertical } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
+
+type Project = {
+  id: string;
+  name: string;
+};
 
 type ProjectSidebarProps = {
   currentProjectName: string;
   onProjectChange: (name: string) => void;
 };
 
+const initialProjects: Project[] = [
+  { id: 'proj-1', name: 'Ganttastic Plan' },
+  { id: 'proj-2', name: 'Marketing Campaign' },
+  { id: 'proj-3', name: 'Website Redesign' },
+  { id: 'proj-4', name: 'New Feature Launch' },
+  { id: 'proj-5', name: 'Mobile App Development' },
+];
+
 export default function ProjectSidebar({ currentProjectName, onProjectChange }: ProjectSidebarProps) {
   const [search, setSearch] = useState('');
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
   const { setOpen, toggleSidebar } = useSidebar();
-  const projects = [
-    { id: 'proj-1', name: 'Ganttastic Plan' },
-    { id: 'proj-2', name: 'Marketing Campaign' },
-    { id: 'proj-3', name: 'Website Redesign' },
-    { id: 'proj-4', name: 'New Feature Launch' },
-    { id: 'proj-5', name: 'Mobile App Development' },
-  ];
+  
 
   const filteredProjects = projects.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -38,6 +47,36 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const handleProjectClick = (name: string) => {
     onProjectChange(name);
     setOpen(false); // Close sidebar on selection
+  };
+
+  const handleDragStart = (e: DragEvent<HTMLLIElement>, projectId: string) => {
+    setDraggedProjectId(projectId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: DragEvent<HTMLLIElement>, dropProjectId: string) => {
+    e.preventDefault();
+    if (!draggedProjectId || draggedProjectId === dropProjectId) {
+      setDraggedProjectId(null);
+      return;
+    }
+
+    const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
+    const dropIndex = projects.findIndex(p => p.id === dropProjectId);
+
+    if (draggedIndex === -1 || dropIndex === -1) return;
+
+    const reorderedProjects = [...projects];
+    const [draggedItem] = reorderedProjects.splice(draggedIndex, 1);
+    reorderedProjects.splice(dropIndex, 0, draggedItem);
+    
+    setProjects(reorderedProjects);
+    setDraggedProjectId(null);
   };
 
   return (
@@ -62,11 +101,23 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       <SidebarContent className="px-2">
         <SidebarMenu>
           {filteredProjects.map((project) => (
-            <SidebarMenuItem key={project.id}>
+            <SidebarMenuItem 
+              key={project.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, project.id)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, project.id)}
+              className={cn(
+                "transition-colors",
+                draggedProjectId === project.id && "opacity-50"
+              )}
+            >
               <SidebarMenuButton
                 isActive={project.name === currentProjectName}
                 onClick={() => handleProjectClick(project.name)}
+                className="justify-start"
               >
+                <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab mr-2" />
                 <span>{project.name}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
