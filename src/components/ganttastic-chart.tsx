@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useMemo, useState, DragEvent, useRef, useCallback } from 'react';
 import type { Task, Milestone, Project } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus, GripVertical } from 'lucide-react';
@@ -36,10 +35,16 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
 
-  const [taskBarDraggedId, setTaskBarDraggedId] = useState<string | null>(null);
-  const taskDragStartX = useRef<number>(0);
-  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [dragState, setDragState] = useState<{
+    id: string | null;
+    startX: number;
+    startLeftPx: number;
+    previewDeltaPx: number;
+  }>({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
+
+  const dragging = dragState.id !== null;
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -133,6 +138,52 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const headerGroups = getHeaderGroups();
 
+  const pxPerDay = dayWidth;
+
+  const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
+  const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
+
+  const taskDurationDays = (t: Task) =>
+    Math.max(1, differenceInDays(startOfDay(t.end), startOfDay(t.start)) + 1);
+
+  // Build reverse deps once
+  const successorsById = useMemo(() => {
+    const m = new Map<string, string[]>();
+    tasks.forEach(t => {
+      t.dependencies.forEach(dep => {
+        if (!m.has(dep)) m.set(dep, []);
+        m.get(dep)!.push(t.id);
+      });
+    });
+    return m;
+  }, [tasks]);
+
+  // Compute draggable bounds for a task (in dates)
+  const getTaskBounds = useCallback((task: Task) => {
+    const preds = task.dependencies
+      .map(id => tasks.find(t => t.id === id))
+      .filter(Boolean) as Task[];
+    const succs = (successorsById.get(task.id) || [])
+      .map(id => tasks.find(t => t.id === id))
+      .filter(Boolean) as Task[];
+
+    const leftBoundStartDate = preds.length
+      ? addDays(startOfDay(new Date(Math.max(...preds.map(p => startOfDay(p.end).getTime())))), 1)
+      : startOfDay(projectStart);
+
+    const rightLimitStartDate = succs.length
+      ? addDays(
+          startOfDay(new Date(Math.min(...succs.map(s => startOfDay(s.start).getTime())))),
+          -taskDurationDays(task)
+        )
+      : startOfDay(projectEnd); // can slide to the padding
+
+    return {
+      minStart: leftBoundStartDate,
+      maxStart: rightLimitStartDate,
+    };
+  }, [tasks, projectStart, projectEnd, successorsById, taskDurationDays]);
+
   const handleDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
     setDraggedTaskId(taskId);
     e.dataTransfer.effectAllowed = 'move';
@@ -162,45 +213,62 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     onReorderTasks(reorderedTasks);
     setDraggedTaskId(null);
   };
-
-   const handleTaskBarDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
-    setTaskBarDraggedId(taskId);
-    setDragOffset(0);
-    taskDragStartX.current = e.clientX;
-    e.dataTransfer.effectAllowed = 'move';
-     // Use a transparent image to hide the default drag preview
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
-    e.dataTransfer.setDragImage(img, 0, 0);
-  };
-
-  const handleTaskBarDrag = (e: DragEvent<HTMLDivElement>) => {
-    if (!taskBarDraggedId || e.clientX === 0) return;
-    const deltaX = e.clientX - taskDragStartX.current;
-    setDragOffset(deltaX);
-  }
-
-  const handleTaskBarDragEnd = () => {
-    if (!taskBarDraggedId) return;
-
-    const draggedTask = tasks.find(t => t.id === taskBarDraggedId);
-    if (!draggedTask) return;
-
-    const dayDelta = Math.round(dragOffset / dayWidth);
-
-    const duration = differenceInBusinessDays(draggedTask.end, draggedTask.start);
-    const newStart = addDays(draggedTask.start, dayDelta);
-    const newEnd = addDays(newStart, duration);
-
-    onTaskUpdate({
-      ...draggedTask,
-      start: newStart,
-      end: newEnd,
-    });
     
-    setTaskBarDraggedId(null);
-    taskDragStartX.current = 0;
-    setDragOffset(0);
+  const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    document.body.style.userSelect = 'none';
+    setDragState({ id: task.id, startX: e.clientX, startLeftPx: currentLeftPx, previewDeltaPx: 0 });
+  };
+  
+  const onBarPointerMove = (e: React.PointerEvent<HTMLDivElement>, task: Task) => {
+    if (dragState.id !== task.id) return;
+  
+    // delta in pixels
+    const rawDeltaPx = e.clientX - dragState.startX;
+  
+    // compute pixel bounds from date bounds
+    const { minStart, maxStart } = getTaskBounds(task);
+  
+    const minLeftPx = dateToX(minStart);
+    const maxLeftPx = dateToX(maxStart);
+
+    let nextLeftPx = dragState.startLeftPx + rawDeltaPx;
+
+    if (maxStart < minStart) {
+       nextLeftPx = dragState.startLeftPx;
+    } else {
+       nextLeftPx = Math.max(minLeftPx, Math.min(maxLeftPx, nextLeftPx));
+    }
+  
+    // snap to day grid in preview
+    const snapDeltaPx = xToDayDelta(nextLeftPx - dragState.startLeftPx) * pxPerDay;
+  
+    // auto-scroll when near edges
+    const scroller = timelineRef.current; 
+    if (scroller) {
+      const margin = 40;
+      if (e.clientX > scroller.getBoundingClientRect().right - margin) scroller.scrollLeft += pxPerDay;
+      else if (e.clientX < scroller.getBoundingClientRect().left + margin) scroller.scrollLeft -= pxPerDay;
+    }
+  
+    setDragState(s => ({ ...s, previewDeltaPx: snapDeltaPx }));
+  };
+  
+  const onBarPointerUp = (e: React.PointerEvent<HTMLDivElement>, task: Task) => {
+    if (dragState.id !== task.id) return;
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    document.body.style.userSelect = '';
+  
+    const dayDelta = xToDayDelta(dragState.previewDeltaPx);
+  
+    if (dayDelta !== 0) {
+      const dur = taskDurationDays(task);
+      const newStart = startOfDay(addDays(task.start, dayDelta));
+      const newEnd = startOfDay(addDays(newStart, dur - 1));
+      onTaskUpdate({ ...task, start: newStart, end: newEnd });
+    }
+  
+    setDragState({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
   };
 
 
@@ -284,7 +352,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           </div>
 
           {/* Gantt Timeline */}
-          <div className="col-span-9 overflow-auto" onDragOver={handleDragOver}>
+          <div ref={timelineRef} className="col-span-9 overflow-auto" onDragOver={handleDragOver}>
              <div className="relative">
               <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20">
                  {viewMode !== 'day' && (
@@ -306,7 +374,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 </div>
               </div>
 
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative" onDragOver={handleTaskBarDrag}>
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
                 {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
@@ -375,30 +443,34 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 {tasks.map((task, index) => {
                   const pos = taskPositions.get(task.id);
                   if(!pos) return null;
-                  const duration = differenceInBusinessDays(task.end, task.start);
-
+                  const duration = differenceInDays(task.end, task.start) + 1;
+                  
+                  const isDragging = dragState.id === task.id;
 
                   return (
                       <TooltipProvider key={task.id} delayDuration={100}>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                              draggable
-                              onDragStart={(e) => handleTaskBarDragStart(e, task.id)}
-                              onDragEnd={handleTaskBarDragEnd}
-                              onClick={() => onTaskClick(task)}
-                              className={cn(
-                                "absolute h-8 rounded-md bg-primary/80 hover:bg-primary transition-all duration-200 cursor-pointer flex items-center px-2 overflow-hidden shadow z-20",
-                                taskBarDraggedId === task.id && "opacity-50"
-                              )}
-                              style={{
+                               onPointerDown={(e) => onBarPointerDown(e, task, pos.x + 2)}
+                               onPointerMove={(e) => onBarPointerMove(e, task)}
+                               onPointerUp={(e) => onBarPointerUp(e, task)}
+                               onPointerCancel={(e) => onBarPointerUp(e, task)}
+                               onClick={() => onTaskClick(task)}
+                               className={cn(
+                                "absolute rounded-md bg-primary/80 hover:bg-primary transition-[background-color] cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
+                                isDragging && "opacity-90"
+                               )}
+                               style={{
                                 top: `${pos.y + BAR_TOP_MARGIN}px`,
-                                left: `${pos.x + 2 + (taskBarDraggedId === task.id ? dragOffset : 0)}px`,
+                                left: `${pos.x + 2}px`,
                                 width: `${pos.width - 4}px`,
-                                height: `${BAR_HEIGHT}px`
-                              }}
+                                height: `${BAR_HEIGHT}px`,
+                                transform: `translateX(${isDragging ? dragState.previewDeltaPx : 0}px)`,
+                                willChange: "transform",
+                               }}
                             >
-                              <div className="absolute top-0 left-0 h-full bg-primary rounded-md" style={{ width: `${task.progress}%` }}></div>
+                              <div className="absolute top-0 left-0 h-full bg-primary/60 rounded-md" style={{ width: `${task.progress}%` }}></div>
                               <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
                             </div>
                           </TooltipTrigger>

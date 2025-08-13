@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Trash2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, differenceInBusinessDays, addDays } from 'date-fns';
+import { format, differenceInDays, addDays } from 'date-fns';
 import type { Task } from '@/types';
 import { Slider } from '@/components/ui/slider';
 import { useEffect, useMemo, useState } from 'react';
@@ -73,8 +72,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
   useEffect(() => {
     if (selectedTask) {
-      const taskDuration = differenceInBusinessDays(selectedTask.end, selectedTask.start);
-      const currentDuration = taskDuration >= 0 ? taskDuration : 0;
+      const taskDuration = differenceInDays(selectedTask.end, selectedTask.start) + 1;
+      const currentDuration = taskDuration >= 0 ? taskDuration : 1;
       form.reset({
         name: selectedTask.name,
         description: selectedTask.description || '',
@@ -120,15 +119,16 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   const handleStartDateChange = (date: Date) => {
     form.setValue('start', date);
     const currentDuration = form.getValues('duration');
-    form.setValue('end', addDays(date, currentDuration));
+    form.setValue('end', addDays(date, currentDuration - 1));
   }
   
   const handleDurationChange = (newDuration: number) => {
+    if (newDuration < 1) newDuration = 1;
     setDuration(newDuration);
     form.setValue('duration', newDuration);
     const startDate = form.getValues('start');
     if (startDate) {
-      form.setValue('end', addDays(startDate, newDuration));
+      form.setValue('end', addDays(startDate, newDuration - 1));
     }
   }
 
@@ -272,7 +272,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               control={form.control}
               name="start"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem className="flex flex-col gap-2">
                   <FormLabel>Start Date</FormLabel>
                    <Popover>
                       <PopoverTrigger asChild>
@@ -301,14 +301,14 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 control={form.control}
                 name="duration"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem className="flex flex-col gap-2">
                     <FormLabel>Duration (days)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
-                        min="0" 
+                        min="1" 
                         value={duration}
-                        onChange={(e) => handleDurationChange(parseInt(e.target.value, 10))}
+                        onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -337,7 +337,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
             )}
           />}
           
-          {(selectedTask || true) && <div className="space-y-4 rounded-lg border p-4">
+          <div className="space-y-4 rounded-lg border p-4">
               <div className="space-y-2">
                   <Label>Follows</Label>
                   <div className="flex flex-wrap gap-2">
@@ -356,10 +356,10 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                       </DependencySelector>
                   </div>
               </div>
-          </div>}
+          </div>
         </div>
 
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-4 border-t mt-auto">
           <Button type="submit">
             {selectedTask ? 'Save Changes' : 'Add Task'}
           </Button>
@@ -373,6 +373,3 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
-
-
-
