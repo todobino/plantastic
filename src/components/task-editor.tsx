@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -91,7 +92,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         name: '',
         description: '',
         start: new Date(),
-        end: addDays(new Date(), defaultDuration),
+        end: addDays(new Date(), defaultDuration - 1),
         progress: 0,
         duration: defaultDuration
       });
@@ -237,8 +238,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full pb-4">
-        <div className="space-y-4 flex-grow overflow-y-auto pr-2">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full">
+        <div className="space-y-4 flex-grow overflow-y-auto pr-2 pb-4">
           <FormField
             control={form.control}
             name="name"
