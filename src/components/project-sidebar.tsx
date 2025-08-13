@@ -51,7 +51,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
           />
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarMenu>
           {filteredProjects.map((project) => (
             <SidebarMenuItem key={project.id}>
