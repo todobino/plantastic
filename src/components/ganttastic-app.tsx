@@ -79,43 +79,47 @@ export default function GanttasticApp() {
     }
   }, [tasks, project, isMounted]);
 
-  const updateDependentTasks = (updatedTaskId: string, tasks: Task[]): Task[] => {
-    const newTasks = [...tasks];
+  const updateDependentTasks = useCallback((updatedTaskId: string, tasksToUpdate: Task[]): Task[] => {
+    const newTasks = [...tasksToUpdate];
     const updatedTask = newTasks.find(t => t.id === updatedTaskId);
     if (!updatedTask) return newTasks;
   
-    const tasksToUpdate = newTasks.filter(t => t.dependencies.includes(updatedTaskId));
-  
-    tasksToUpdate.forEach(taskToUpdate => {
-      const parentTasks = taskToUpdate.dependencies
-        .map(depId => newTasks.find(t => t.id === depId))
-        .filter((t): t is Task => !!t);
-  
-      if (parentTasks.length > 0) {
-        const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
-        const newStartDate = startOfDay(addDays(latestParentEndDate, 1));
-        const duration = differenceInBusinessDays(taskToUpdate.end, taskToUpdate.start);
+    const queue: string[] = [updatedTaskId];
+    const visited = new Set<string>();
+
+    while(queue.length > 0) {
+      const currentTaskId = queue.shift()!;
+      if(visited.has(currentTaskId)) continue;
+      visited.add(currentTaskId);
+
+      const tasksThatDependOnCurrent = newTasks.filter(t => t.dependencies.includes(currentTaskId));
+
+      tasksThatDependOnCurrent.forEach(dependentTask => {
+        const parentTasks = dependentTask.dependencies
+          .map(depId => newTasks.find(t => t.id === depId))
+          .filter((t): t is Task => !!t);
         
-        const updatedChildTaskIndex = newTasks.findIndex(t => t.id === taskToUpdate.id);
-        if (updatedChildTaskIndex !== -1) {
-          newTasks[updatedChildTaskIndex].start = newStartDate;
-          newTasks[updatedChildTaskIndex].end = addDays(newStartDate, duration >= 0 ? duration : 0);
+        if (parentTasks.length > 0) {
+          const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
+          const newStartDate = startOfDay(addDays(latestParentEndDate, 1));
           
-          // Recursively update children of this task
-          const result = updateDependentTasks(taskToUpdate.id, newTasks);
-          // sync the changes from the recursive call
-          result.forEach(updatedTaskFromResult => {
-            const indexToUpdate = newTasks.findIndex(t => t.id === updatedTaskFromResult.id);
-            if (indexToUpdate !== -1) {
-              newTasks[indexToUpdate] = updatedTaskFromResult;
-            }
-          });
+          const duration = differenceInBusinessDays(dependentTask.end, dependentTask.start);
+          const newEndDate = addDays(newStartDate, duration >= 0 ? duration : 0);
+          
+          const taskIndex = newTasks.findIndex(t => t.id === dependentTask.id);
+          if (taskIndex !== -1) {
+             if (newTasks[taskIndex].start.getTime() !== newStartDate.getTime() || newTasks[taskIndex].end.getTime() !== newEndDate.getTime()) {
+                newTasks[taskIndex].start = newStartDate;
+                newTasks[taskIndex].end = newEndDate;
+                queue.push(dependentTask.id);
+             }
+          }
         }
-      }
-    });
-  
+      });
+    }
+    
     return newTasks;
-  };
+  }, []);
   
 
   const handleAddTask = (task: Omit<Task, 'id'>) => {
@@ -125,13 +129,13 @@ export default function GanttasticApp() {
     setSidebarOpen(false);
   };
 
-  const handleUpdateTask = (updatedTask: Task) => {
+  const handleUpdateTask = useCallback((updatedTask: Task) => {
     setTasks(prev => {
       const newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
       return updateDependentTasks(updatedTask.id, newTasks);
     });
     toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
-  };
+  }, [updateDependentTasks, toast]);
 
   const handleDeleteTask = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
@@ -145,7 +149,7 @@ export default function GanttasticApp() {
     setSelectedTask(null);
   }
 
-  const handleUpdateDependencies = (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => {
+  const handleUpdateDependencies = useCallback((taskId: string, newDependencies: string[], newBlockedTasks: string[]) => {
       setTasks(prevTasks => {
           let tasksWithUpdatedDeps = [...prevTasks];
 
@@ -188,7 +192,7 @@ export default function GanttasticApp() {
           return finalTasks;
       });
       toast({ title: "Dependencies Updated", description: "Task dates have been adjusted automatically." });
-  };
+  }, [updateDependentTasks, toast]);
   
   const handleProjectUpdate = (updatedProject: Project) => {
     setProject(updatedProject);
@@ -234,6 +238,7 @@ export default function GanttasticApp() {
               onAddTaskClick={() => openSidebar('TASK_EDITOR')}
               onProjectUpdate={handleProjectUpdate}
               onReorderTasks={handleReorderTasks}
+              onTaskUpdate={handleUpdateTask}
             />
           </div>
         </SidebarInset>

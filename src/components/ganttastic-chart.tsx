@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, DragEvent } from 'react';
+import { useMemo, useState, DragEvent, useRef, useCallback } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,7 @@ type GanttasticChartProps = {
   onAddTaskClick: () => void;
   onProjectUpdate: (project: Project) => void;
   onReorderTasks: (reorderedTasks: Task[]) => void;
+  onTaskUpdate: (task: Task) => void;
 };
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -31,10 +32,13 @@ const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
-export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  const [taskBarDraggedId, setTaskBarDraggedId] = useState<string | null>(null);
+  const taskDragStartX = useRef<number>(0);
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -158,6 +162,39 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     setDraggedTaskId(null);
   };
 
+   const handleTaskBarDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
+    setTaskBarDraggedId(taskId);
+    taskDragStartX.current = e.clientX;
+    e.dataTransfer.effectAllowed = 'move';
+     // Use a transparent image to hide the default drag preview
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  };
+
+  const handleTaskBarDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    if (!taskBarDraggedId) return;
+
+    const draggedTask = tasks.find(t => t.id === taskBarDraggedId);
+    if (!draggedTask) return;
+
+    const deltaX = e.clientX - taskDragStartX.current;
+    const dayDelta = Math.round(deltaX / dayWidth);
+
+    const duration = differenceInBusinessDays(draggedTask.end, draggedTask.start);
+    const newStart = addDays(draggedTask.start, dayDelta);
+    const newEnd = addDays(newStart, duration);
+
+    onTaskUpdate({
+      ...draggedTask,
+      start: newStart,
+      end: newEnd,
+    });
+    
+    setTaskBarDraggedId(null);
+    taskDragStartX.current = 0;
+  };
+
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
@@ -178,8 +215,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     </DialogContent>
                 </Dialog>
             </div>
-            {tasks.length === 0 && (
+            {tasks.length === 0 ? (
                 <CardDescription>No Start, No End</CardDescription>
+            ) : (
+                <CardDescription>{format(projectStart, "MMM d, yyyy")} - {format(projectEnd, "MMM d, yyyy")}</CardDescription>
             )}
           </div>
         </div>
@@ -237,7 +276,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           </div>
 
           {/* Gantt Timeline */}
-          <div className="col-span-9 overflow-auto">
+          <div className="col-span-9 overflow-auto" onDragOver={handleDragOver}>
              <div className="relative">
               <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20">
                  {viewMode !== 'day' && (
@@ -259,7 +298,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 </div>
               </div>
 
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative" onDragOver={handleDragOver}>
                 {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
@@ -336,6 +375,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
+                              draggable
+                              onDragStart={(e) => handleTaskBarDragStart(e, task.id)}
+                              onDragEnd={handleTaskBarDragEnd}
                               onClick={() => onTaskClick(task)}
                               className="absolute h-8 rounded-md bg-primary/80 hover:bg-primary transition-all duration-200 cursor-pointer flex items-center px-2 overflow-hidden shadow z-20"
                               style={{
