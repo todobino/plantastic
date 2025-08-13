@@ -300,11 +300,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex overflow-hidden">
+      <CardContent className="flex-grow flex overflow-hidden p-0">
         <div className="grid grid-cols-12 w-full h-full">
           {/* Task List */}
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-center justify-between pb-3">
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
               <span>Tasks &amp; Milestones</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -321,12 +321,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
+            <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative px-4'>
               {tasks.map((task, index) => (
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="group absolute w-full text-sm p-2 rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer"
+                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
@@ -343,7 +343,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                  {viewMode !== 'day' && (
                     <div className="flex">
                         {headerGroups.map((group, index) => (
-                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r truncate" style={{ width: `${group.days * dayWidth}px`}}>
                                 {group.label}
                             </div>
                         ))}
