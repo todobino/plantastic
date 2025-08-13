@@ -9,6 +9,12 @@ export interface Task {
   dependencies: string[];
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export interface Milestone {
     id: string;
     name: string;

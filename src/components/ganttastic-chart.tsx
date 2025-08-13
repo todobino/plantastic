@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Task, Milestone } from '@/types';
+import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,16 @@ import { Pencil, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import MilestoneEditor from './milestone-editor';
+import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 
 
 type GanttasticChartProps = {
   tasks: Task[];
+  project: Project;
   onTaskClick: (task: Task) => void;
   onAddTaskClick: () => void;
-  projectName: string;
+  onProjectUpdate: (project: Project) => void;
 };
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -28,7 +29,7 @@ const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
-export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, projectName }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
 
@@ -128,16 +129,16 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-center justify-between border-b">
         <div className="flex items-center gap-2">
-          <CardTitle>{projectName}</CardTitle>
+          <CardTitle>{project.name}</CardTitle>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Pencil className="h-4 w-4" />
-                <span className="sr-only">Edit Milestones</span>
+                <span className="sr-only">Edit Project</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <MilestoneEditor milestones={milestones} setMilestones={setMilestones} />
+              <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
             </DialogContent>
           </Dialog>
         </div>

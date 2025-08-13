@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Task } from '@/types';
+import type { Task, Project } from '@/types';
 import {
   Sidebar,
   SidebarContent,
@@ -25,10 +25,17 @@ const getInitialTasks = (): Task[] => [
   { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), progress: 0, dependencies: ['task-6'] },
 ];
 
+const getInitialProject = (): Project => ({
+  id: 'proj-1',
+  name: 'Ganttastic Plan',
+  description: 'A sample project plan for the Ganttastic application.',
+});
+
+
 export default function GanttasticApp() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const [projectName, setProjectName] = useState('Ganttastic Plan');
+  const [project, setProject] = useState<Project>(getInitialProject());
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -48,9 +55,16 @@ export default function GanttasticApp() {
       } else {
         setTasks(getInitialTasks());
       }
+      
+      const savedProject = localStorage.getItem('ganttastic-project');
+      if (savedProject) {
+        setProject(JSON.parse(savedProject));
+      }
+
     } catch (error) {
-      console.error("Failed to load tasks from localStorage", error);
+      console.error("Failed to load data from localStorage", error);
       setTasks(getInitialTasks());
+      setProject(getInitialProject());
     }
   }, []);
 
@@ -58,11 +72,12 @@ export default function GanttasticApp() {
     if (isMounted) {
         try {
             localStorage.setItem('ganttastic-tasks', JSON.stringify(tasks));
+            localStorage.setItem('ganttastic-project', JSON.stringify(project));
         } catch (error) {
-            console.error("Failed to save tasks to localStorage", error);
+            console.error("Failed to save data to localStorage", error);
         }
     }
-  }, [tasks, isMounted]);
+  }, [tasks, project, isMounted]);
 
   const updateDependentTasks = (updatedTaskId: string, tasks: Task[]): Task[] => {
     const newTasks = [...tasks];
@@ -174,6 +189,11 @@ export default function GanttasticApp() {
       });
       toast({ title: "Dependencies Updated", description: "Task dates have been adjusted automatically." });
   };
+  
+  const handleProjectUpdate = (updatedProject: Project) => {
+    setProject(updatedProject);
+    toast({ title: "Project Updated", description: `"${updatedProject.name}" has been successfully updated.` });
+  }
 
 
   const openSidebar = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
@@ -195,19 +215,20 @@ export default function GanttasticApp() {
 
   return (
     <div className="flex h-screen flex-col">
-      <GanttasticHeader openSidebar={openSidebar} projectName={projectName} />
+      <GanttasticHeader openSidebar={openSidebar} projectName={project.name} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar side="left">
-          <ProjectSidebar currentProjectName={projectName} onProjectChange={setProjectName} />
+        <Sidebar side="left" collapsible="icon">
+          <ProjectSidebar currentProjectName={project.name} onProjectChange={(name) => setProject({...project, name})} />
         </Sidebar>
 
         <SidebarInset>
           <div className="flex-grow overflow-auto p-4 md:p-6">
             <GanttasticChart
               tasks={tasks}
+              project={project}
               onTaskClick={(task) => openSidebar('TASK_EDITOR', task)}
               onAddTaskClick={() => openSidebar('TASK_EDITOR')}
-              projectName={projectName}
+              onProjectUpdate={handleProjectUpdate}
             />
           </div>
         </SidebarInset>
