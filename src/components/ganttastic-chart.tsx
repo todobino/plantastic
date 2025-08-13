@@ -324,11 +324,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="group absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
+                  className="group absolute w-full text-sm p-2 rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
-                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
                 </div>
               ))}
             </div>
