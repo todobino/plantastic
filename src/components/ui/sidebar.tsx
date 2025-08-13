@@ -172,11 +172,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     
     // For right sidebar, we use a sheet (drawer)
     if (side === 'right') {
+       if (!open) return null;
       return (
         <Sheet open={open} onOpenChange={onOpenChange}>
           <SheetContent
             data-sidebar="sidebar"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
+            className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground"
             side={side}
           >
             <SheetHeader className="hidden">
