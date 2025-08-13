@@ -3,11 +3,10 @@
 
 import { useMemo, useState } from 'react';
 import type { Task, Milestone } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -21,7 +20,8 @@ type GanttasticChartProps = {
   projectName: string;
 };
 
-const DAY_WIDTH = 40; // width of a day column in pixels
+type ViewMode = 'day' | 'week' | 'month';
+
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
@@ -29,57 +29,110 @@ const HEADER_HEIGHT = 48;
 
 export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, projectName }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const { projectStart, projectEnd, totalDays, timeline, taskPositions } = useMemo(() => {
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
+
+  const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
+    const today = startOfDay(new Date());
+    let projectStart: Date;
+    let projectEnd: Date;
+    let dayWidth: number;
+
     if (tasks.length === 0) {
-      const today = startOfDay(new Date());
-      return {
-        projectStart: today,
-        projectEnd: addDays(today, 30),
-        totalDays: 31,
-        timeline: Array.from({ length: 31 }, (_, i) => addDays(today, i)),
-        taskPositions: new Map(),
-      };
+      projectStart = startOfWeek(startOfMonth(today));
+      projectEnd = endOfWeek(endOfMonth(today));
+    } else {
+      const startDates = tasks.map(t => startOfDay(t.start));
+      const endDates = tasks.map(t => startOfDay(t.end));
+      projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
+      projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
     }
 
-    const startDates = tasks.map(t => startOfDay(t.start));
-    const endDates = tasks.map(t => startOfDay(t.end));
+    // Add padding around the project dates
+    projectStart = addDays(projectStart, -14);
+    projectEnd = addDays(projectEnd, 14);
 
-    const projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
-    const projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
-    const totalDays = differenceInDays(projectEnd, projectStart) + 1;
+    switch(viewMode) {
+      case 'week':
+        dayWidth = 20;
+        break;
+      case 'month':
+        dayWidth = 40;
+        break;
+      case 'day':
+      default:
+        dayWidth = 60;
+        break;
+    }
 
-    const timeline = Array.from({ length: totalDays }, (_, i) => addDays(projectStart, i));
-    
+    const timeline = eachDayOfInterval({ start: projectStart, end: projectEnd });
+    const totalDays = timeline.length;
+
     const taskPositions = new Map<string, { x: number; y: number; width: number }>();
     tasks.forEach((task, index) => {
         const offset = differenceInDays(startOfDay(task.start), projectStart);
         const duration = differenceInDays(startOfDay(task.end), startOfDay(task.start)) + 1;
-        const isOutside = offset < 0 || offset >= totalDays;
-
-        if (isOutside) return;
-
+        
         taskPositions.set(task.id, {
-            x: offset * DAY_WIDTH,
+            x: offset * dayWidth,
             y: index * ROW_HEIGHT,
-            width: duration * DAY_WIDTH,
+            width: duration * dayWidth,
         });
     });
 
-    return { projectStart, projectEnd, totalDays, timeline, taskPositions };
-  }, [tasks]);
+    const getHeaderGroups = () => {
+        if (viewMode === 'day') {
+            return [{ label: '', days: totalDays }]; // No grouping for day view
+        }
+        const groups: { label: string, days: number }[] = [];
+        let currentMonth = -1;
+        let currentWeek = -1;
+
+        timeline.forEach(day => {
+            if (viewMode === 'month') {
+                if (day.getMonth() !== currentMonth) {
+                    currentMonth = day.getMonth();
+                    const monthStart = startOfMonth(day);
+                    const monthEnd = endOfMonth(day);
+                    const daysInMonth = differenceInDays(monthEnd, day < monthStart ? monthStart : day) + 1;
+                    groups.push({ label: format(day, 'MMMM yyyy'), days: daysInMonth });
+                }
+            } else if (viewMode === 'week') {
+                 if (startOfWeek(day).getTime() !== currentWeek) {
+                    currentWeek = startOfWeek(day).getTime();
+                    const weekEnd = endOfWeek(day);
+                    const daysInWeek = differenceInDays(weekEnd, day) + 1;
+                    groups.push({ label: `Week of ${format(day, 'MMM d')}`, days: Math.min(daysInWeek, 7) });
+                 }
+            }
+        });
+
+        // Adjust last group to not overflow
+        if (groups.length > 0) {
+            const totalGroupedDays = groups.reduce((acc, g) => acc + g.days, 0);
+            if (totalGroupedDays > totalDays) {
+                groups[groups.length - 1].days -= (totalGroupedDays - totalDays);
+            }
+        }
+
+        return groups;
+    }
+
+
+    return { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups };
+  }, [tasks, viewMode]);
+
+  const headerGroups = getHeaderGroups();
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-start justify-between border-b">
         <div>
           <CardTitle>{projectName}</CardTitle>
-          {tasks.length > 0 && (
-            <CardDescription className="mt-1">
-              {format(projectStart, 'MMM d, yyyy')} - {format(projectEnd, 'MMM d, yyyy')}
-            </CardDescription>
-          )}
         </div>
         <div className="flex items-center gap-2">
+            <Button variant={viewMode === 'day' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('day')}>Day</Button>
+            <Button variant={viewMode === 'week' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('week')}>Week</Button>
+            <Button variant={viewMode === 'month' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('month')}>Month</Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -114,18 +167,29 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
           {/* Gantt Timeline */}
           <div className="col-span-9 overflow-auto">
              <div className="relative">
-              <div style={{ width: `${totalDays * DAY_WIDTH}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${DAY_WIDTH}px)` }}>
-                {timeline.map(day => (
-                  <div key={day.toString()} className="text-center text-xs py-2 border-r border-b">
-                    <div>{format(day, 'dd')}</div>
-                    <div className="text-muted-foreground">{format(day, 'E')}</div>
-                  </div>
-                ))}
+              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20">
+                 {viewMode !== 'day' && (
+                    <div className="flex">
+                        {headerGroups.map((group, index) => (
+                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                                {group.label}
+                            </div>
+                        ))}
+                    </div>
+                 )}
+                <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
+                    {timeline.map(day => (
+                      <div key={day.toString()} className="text-center text-xs py-1 border-r border-b">
+                        <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
+                        <div className="text-muted-foreground">{format(day, 'E')}</div>
+                      </div>
+                    ))}
+                </div>
               </div>
 
-              <div style={{ width: `${totalDays * DAY_WIDTH}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
                 {/* Grid Background */}
-                <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${DAY_WIDTH}px)` }}>
+                <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
                      <div key={`bg-${i}`} className="border-r h-full"></div>
                   ))}
