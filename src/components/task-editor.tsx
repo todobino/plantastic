@@ -284,7 +284,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -317,7 +317,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               />
           </div>
           
-           {selectedTask ? <FormField
+           {selectedTask && <FormField
             control={form.control}
             name="progress"
             render={({ field }) => (
@@ -335,9 +335,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 <FormMessage />
               </FormItem>
             )}
-          /> : null}
+          />}
           
-          <div className="space-y-4 rounded-lg border p-4">
+          {(selectedTask || true) && <div className="space-y-4 rounded-lg border p-4">
               <div className="space-y-2">
                   <Label>Follows</Label>
                   <div className="flex flex-wrap gap-2">
@@ -356,7 +356,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                       </DependencySelector>
                   </div>
               </div>
-          </div>
+          </div>}
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
@@ -373,4 +373,5 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
 
