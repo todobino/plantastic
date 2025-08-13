@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import MilestoneEditor from './milestone-editor';
+import { Separator } from './ui/separator';
 
 
 type GanttasticChartProps = {
@@ -125,25 +126,28 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
-      <CardHeader className="flex flex-row items-start justify-between border-b">
-        <div>
+      <CardHeader className="flex flex-row items-center justify-between border-b">
+        <div className="flex items-center gap-2">
           <CardTitle>{projectName}</CardTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Edit Milestones</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <MilestoneEditor milestones={milestones} setMilestones={setMilestones} />
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="flex items-center gap-2">
             <Button variant={viewMode === 'day' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('day')}>Day</Button>
             <Button variant={viewMode === 'week' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('week')}>Week</Button>
             <Button variant={viewMode === 'month' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('month')}>Month</Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Pencil />
-                  Edit
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <MilestoneEditor milestones={milestones} setMilestones={setMilestones} />
-              </DialogContent>
-            </Dialog>
+            
+            <Separator orientation="vertical" className="h-6" />
+
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
