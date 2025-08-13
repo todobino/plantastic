@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -141,7 +142,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full",
+              "group/sidebar-wrapper flex w-full",
               className
             )}
             ref={ref}
@@ -199,8 +200,8 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         data-collapsible={collapsible}
         className={cn(
           "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
-          "h-screen sticky top-0",
-          isLeftSidebarOpen ? "w-[var(--sidebar-width)]" : "w-0",
+          "h-full",
+          isLeftSidebarOpen ? "w-[var(--sidebar-width)] border-r" : "w-0",
            "overflow-hidden",
           className
         )}
@@ -279,7 +280,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background",
+        "relative flex flex-1 flex-col bg-background",
         className
       )}
       {...props}
