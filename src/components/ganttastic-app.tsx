@@ -194,27 +194,14 @@ export default function GanttasticApp() {
   }
 
   return (
-    <>
-      <Sidebar side="left">
-        <ProjectSidebar currentProjectName={projectName} onProjectChange={setProjectName} />
-      </Sidebar>
-      <Sidebar side="right" open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
-        <SidebarContent>
-          <GanttasticSidebarContent
-            view={sidebarView}
-            tasks={tasks}
-            selectedTask={selectedTask}
-            onAddTask={handleAddTask}
-            onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
-            onUpdateDependencies={handleUpdateDependencies}
-            onClose={() => handleSidebarOpenChange(false)}
-          />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <div className="flex h-screen flex-col">
-          <GanttasticHeader openSidebar={openSidebar} projectName={projectName} />
+    <div className="flex h-screen flex-col">
+      <GanttasticHeader openSidebar={openSidebar} projectName={projectName} />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar side="left">
+          <ProjectSidebar currentProjectName={projectName} onProjectChange={setProjectName} />
+        </Sidebar>
+
+        <SidebarInset>
           <div className="flex-grow overflow-auto p-4 md:p-6">
             <GanttasticChart
               tasks={tasks}
@@ -223,8 +210,23 @@ export default function GanttasticApp() {
               projectName={projectName}
             />
           </div>
-        </div>
-      </SidebarInset>
-    </>
+        </SidebarInset>
+
+        <Sidebar side="right" open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
+          <SidebarContent>
+            <GanttasticSidebarContent
+              view={sidebarView}
+              tasks={tasks}
+              selectedTask={selectedTask}
+              onAddTask={handleAddTask}
+              onUpdateTask={handleUpdateTask}
+              onDeleteTask={handleDeleteTask}
+              onUpdateDependencies={handleUpdateDependencies}
+              onClose={() => handleSidebarOpenChange(false)}
+            />
+          </SidebarContent>
+        </Sidebar>
+      </div>
+    </div>
   );
 }

@@ -3,10 +3,10 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 
 export default function Home() {
   return (
-    <main>
-      <SidebarProvider>
+    <SidebarProvider>
+      <main>
         <GanttasticApp />
-      </SidebarProvider>
-    </main>
+      </main>
+    </SidebarProvider>
   );
 }
