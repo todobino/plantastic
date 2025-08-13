@@ -39,6 +39,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const [taskBarDraggedId, setTaskBarDraggedId] = useState<string | null>(null);
   const taskDragStartX = useRef<number>(0);
+  const [dragOffset, setDragOffset] = useState<number>(0);
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -164,6 +165,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
    const handleTaskBarDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
     setTaskBarDraggedId(taskId);
+    setDragOffset(0);
     taskDragStartX.current = e.clientX;
     e.dataTransfer.effectAllowed = 'move';
      // Use a transparent image to hide the default drag preview
@@ -172,14 +174,19 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     e.dataTransfer.setDragImage(img, 0, 0);
   };
 
-  const handleTaskBarDragEnd = (e: DragEvent<HTMLDivElement>) => {
+  const handleTaskBarDrag = (e: DragEvent<HTMLDivElement>) => {
+    if (!taskBarDraggedId || e.clientX === 0) return;
+    const deltaX = e.clientX - taskDragStartX.current;
+    setDragOffset(deltaX);
+  }
+
+  const handleTaskBarDragEnd = () => {
     if (!taskBarDraggedId) return;
 
     const draggedTask = tasks.find(t => t.id === taskBarDraggedId);
     if (!draggedTask) return;
 
-    const deltaX = e.clientX - taskDragStartX.current;
-    const dayDelta = Math.round(deltaX / dayWidth);
+    const dayDelta = Math.round(dragOffset / dayWidth);
 
     const duration = differenceInBusinessDays(draggedTask.end, draggedTask.start);
     const newStart = addDays(draggedTask.start, dayDelta);
@@ -193,6 +200,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     
     setTaskBarDraggedId(null);
     taskDragStartX.current = 0;
+    setDragOffset(0);
   };
 
 
@@ -298,7 +306,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 </div>
               </div>
 
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative" onDragOver={handleDragOver}>
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative" onDragOver={handleTaskBarDrag}>
                 {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
@@ -315,7 +323,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <svg className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none">
                   <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--foreground))" />
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--primary))" />
                     </marker>
                   </defs>
                   {tasks.map(task => {
@@ -340,7 +348,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                            <path
                             key={`${depId}-${task.id}`}
                             d={`M ${fromX} ${fromY} C ${fromX + 20} ${fromY}, ${toX - 20} ${toY}, ${toX - 8} ${toY}`}
-                            stroke="hsl(var(--foreground))"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             fill="none"
                             markerEnd="url(#arrow)"
@@ -353,7 +361,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           <path
                             key={`${depId}-${task.id}`}
                             d={`M ${fromX} ${fromY} H ${fromX + 10} V ${(toY + fromY)/2} H ${toX - 10} V ${toY} H ${toX - 8}`}
-                            stroke="hsl(var(--foreground))"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             fill="none"
                             markerEnd="url(#arrow)"
@@ -379,10 +387,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                               onDragStart={(e) => handleTaskBarDragStart(e, task.id)}
                               onDragEnd={handleTaskBarDragEnd}
                               onClick={() => onTaskClick(task)}
-                              className="absolute h-8 rounded-md bg-primary/80 hover:bg-primary transition-all duration-200 cursor-pointer flex items-center px-2 overflow-hidden shadow z-20"
+                              className={cn(
+                                "absolute h-8 rounded-md bg-primary/80 hover:bg-primary transition-all duration-200 cursor-pointer flex items-center px-2 overflow-hidden shadow z-20",
+                                taskBarDraggedId === task.id && "opacity-50"
+                              )}
                               style={{
                                 top: `${pos.y + BAR_TOP_MARGIN}px`,
-                                left: `${pos.x + 2}px`,
+                                left: `${pos.x + 2 + (taskBarDraggedId === task.id ? dragOffset : 0)}px`,
                                 width: `${pos.width - 4}px`,
                                 height: `${BAR_HEIGHT}px`
                               }}
