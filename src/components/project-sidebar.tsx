@@ -9,9 +9,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Search } from 'lucide-react';
+import { Search, PanelLeftClose } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { Button } from './ui/button';
 
 type ProjectSidebarProps = {
   currentProjectName: string;
@@ -20,7 +22,7 @@ type ProjectSidebarProps = {
 
 export default function ProjectSidebar({ currentProjectName, onProjectChange }: ProjectSidebarProps) {
   const [search, setSearch] = useState('');
-  const { setOpen } = useSidebar();
+  const { setOpen, toggleSidebar } = useSidebar();
   const projects = [
     { id: 'proj-1', name: 'Ganttastic Plan' },
     { id: 'proj-2', name: 'Marketing Campaign' },
@@ -41,7 +43,12 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   return (
     <>
       <SidebarHeader>
-        <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
+          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+            <PanelLeftClose />
+          </Button>
+        </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <SidebarInput
