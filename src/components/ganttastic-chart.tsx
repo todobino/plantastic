@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, DragEvent, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -267,7 +267,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             <Dialog>
               <div className="flex items-center gap-2 group">
                 <DialogTrigger asChild>
-                  <CardTitle className="group-hover:underline cursor-pointer">{project.name}</CardTitle>
+                  <button className="group-hover:underline cursor-pointer">
+                    <CardTitle>{project.name}</CardTitle>
+                  </button>
                 </DialogTrigger>
                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 pointer-events-none">
                   <Pencil className="h-4 w-4" />
@@ -337,7 +339,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           {/* Gantt Timeline */}
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
-              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20">
+              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-30">
                  {viewMode !== 'day' && (
                     <div className="flex">
                         {headerGroups.map((group, index) => (
@@ -477,5 +479,3 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </Card>
   );
 }
-
-    
