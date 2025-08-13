@@ -301,7 +301,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 control={form.control}
                 name="duration"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Duration (days)</FormLabel>
                     <FormControl>
                       <Input 
@@ -317,7 +317,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               />
           </div>
           
-           {selectedTask && <FormField
+           {selectedTask ? <FormField
             control={form.control}
             name="progress"
             render={({ field }) => (
@@ -335,7 +335,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 <FormMessage />
               </FormItem>
             )}
-          />}
+          /> : null}
           
           <div className="space-y-4 rounded-lg border p-4">
               <div className="space-y-2">
@@ -373,3 +373,4 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
