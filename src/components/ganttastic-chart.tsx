@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useCallback } from 'react';
 import type { Task, Milestone, Project } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus, GripVertical } from 'lucide-react';
@@ -54,18 +54,32 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     let dayWidth: number;
 
     if (tasks.length === 0) {
-      projectStart = startOfWeek(startOfMonth(today));
-      projectEnd = endOfWeek(endOfMonth(today));
+        if (viewMode === 'week') {
+            projectStart = startOfWeek(subWeeks(today, 6));
+            projectEnd = endOfWeek(addWeeks(today, 6));
+        } else {
+            projectStart = startOfWeek(startOfMonth(today));
+            projectEnd = endOfWeek(endOfMonth(today));
+        }
     } else {
-      const startDates = tasks.map(t => startOfDay(t.start));
-      const endDates = tasks.map(t => startOfDay(t.end));
-      projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
-      projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
+        const startDates = tasks.map(t => startOfDay(t.start));
+        const endDates = tasks.map(t => startOfDay(t.end));
+        projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
+        projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
+    }
+    
+    if (viewMode !== 'week') {
+      // Add padding around the project dates for non-week views
+      projectStart = addDays(projectStart, -14);
+      projectEnd = addDays(projectEnd, 14);
+    } else if (tasks.length > 0) {
+        // Ensure week view also has some padding if task-based
+        const minProjectStart = startOfWeek(subWeeks(today, 6));
+        const maxProjectEnd = endOfWeek(addWeeks(today, 6));
+        projectStart = new Date(Math.min(projectStart.getTime(), minProjectStart.getTime()));
+        projectEnd = new Date(Math.max(projectEnd.getTime(), maxProjectEnd.getTime()));
     }
 
-    // Add padding around the project dates
-    projectStart = addDays(projectStart, -14);
-    projectEnd = addDays(projectEnd, 14);
 
     switch(viewMode) {
       case 'week':
@@ -271,14 +285,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     <CardTitle>{project.name}</CardTitle>
                   </button>
                 </DialogTrigger>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 pointer-events-none">
-                  <Pencil className="h-4 w-4" />
-                  <span className="sr-only">Edit Project</span>
-                </Button>
+                <DialogContent>
+                  <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
+                </DialogContent>
               </div>
-              <DialogContent>
-                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-              </DialogContent>
             </Dialog>
             {tasks.length === 0 ? (
                 <CardDescription>No Start, No End</CardDescription>
@@ -304,7 +314,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         <div className="grid grid-cols-12 w-full h-full">
           {/* Task List */}
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
               <span>Tasks &amp; Milestones</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
