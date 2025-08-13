@@ -142,7 +142,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex w-full min-w-0",
+              "group/sidebar-wrapper flex w-full min-w-0 overflow-x-clip",
               className
             )}
             ref={ref}
