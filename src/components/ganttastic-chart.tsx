@@ -205,7 +205,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2"
+                  className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
                   draggable
                   onDragStart={(e) => handleDragStart(e, task.id)}
                   onDragOver={handleDragOver}
@@ -352,5 +352,3 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </Card>
   );
 }
-
-    
