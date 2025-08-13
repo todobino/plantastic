@@ -15,7 +15,7 @@ import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { useToast } from '@/hooks/use-toast';
 import { addDays, differenceInBusinessDays, startOfDay } from 'date-fns';
 
-const initialTasks: Task[] = [
+const getInitialTasks = (): Task[] => [
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), progress: 100, dependencies: [] },
   { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), progress: 75, dependencies: ['task-1'] },
   { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), progress: 50, dependencies: ['task-2'] },
@@ -27,6 +27,7 @@ const initialTasks: Task[] = [
 
 export default function GanttasticApp() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const [projectName, setProjectName] = useState('Ganttastic Plan');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
@@ -34,6 +35,7 @@ export default function GanttasticApp() {
   const { toast } = useToast();
 
   useEffect(() => {
+    setIsMounted(true);
     try {
       const savedTasks = localStorage.getItem('ganttastic-tasks');
       if (savedTasks) {
@@ -44,21 +46,23 @@ export default function GanttasticApp() {
         }));
         setTasks(parsedTasks);
       } else {
-        setTasks(initialTasks);
+        setTasks(getInitialTasks());
       }
     } catch (error) {
       console.error("Failed to load tasks from localStorage", error);
-      setTasks(initialTasks);
+      setTasks(getInitialTasks());
     }
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ganttastic-tasks', JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Failed to save tasks to localStorage", error);
+    if (isMounted) {
+        try {
+            localStorage.setItem('ganttastic-tasks', JSON.stringify(tasks));
+        } catch (error) {
+            console.error("Failed to save tasks to localStorage", error);
+        }
     }
-  }, [tasks]);
+  }, [tasks, isMounted]);
 
   const updateDependentTasks = (updatedTaskId: string, tasks: Task[]): Task[] => {
     const newTasks = [...tasks];
@@ -183,6 +187,10 @@ export default function GanttasticApp() {
     if (!open) {
       setSelectedTask(null);
     }
+  }
+  
+  if (!isMounted) {
+    return null; // or a loading spinner
   }
 
   return (
