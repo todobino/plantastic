@@ -169,8 +169,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-end pb-3">Tasks &amp; Milestones</div>
             <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
               {tasks.map((task, index) => (
-                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center" onClick={() => onTaskClick(task)}>
-                  {task.name}
+                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center gap-2" onClick={() => onTaskClick(task)}>
+                  <div className="w-2 h-2 rounded-full bg-foreground" />
+                  <span className="truncate">{task.name}</span>
                 </div>
               ))}
             </div>
@@ -309,3 +310,5 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </Card>
   );
 }
+
+    
