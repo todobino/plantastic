@@ -35,7 +35,6 @@ const HEADER_HEIGHT = 48;
 export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
 
@@ -185,36 +184,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       maxStart: rightLimitStartDate,
     };
   }, [tasks, projectStart, projectEnd, successorsById, taskDurationDays]);
-
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
-    setDraggedTaskId(taskId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>, dropTaskId: string) => {
-    e.preventDefault();
-    if (!draggedTaskId || draggedTaskId === dropTaskId) {
-      setDraggedTaskId(null);
-      return;
-    }
-
-    const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
-    const dropIndex = tasks.findIndex(t => t.id === dropTaskId);
-    
-    if (draggedIndex === -1 || dropIndex === -1) return;
-
-    const reorderedTasks = [...tasks];
-    const [draggedItem] = reorderedTasks.splice(draggedIndex, 1);
-    reorderedTasks.splice(dropIndex, 0, draggedItem);
-    
-    onReorderTasks(reorderedTasks);
-    setDraggedTaskId(null);
-  };
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
     wasDraggedRef.current = false;
@@ -355,22 +324,18 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, task.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, task.id)}
+                  className="group absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
                   onClick={() => onTaskClick(task)}
                 >
-                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                   <span className="truncate flex-1">{task.name}</span>
+                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               ))}
             </div>
           </div>
 
           {/* Gantt Timeline */}
-          <div ref={timelineRef} className="col-span-9 overflow-auto" onDragOver={handleDragOver}>
+          <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
               <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-20">
                  {viewMode !== 'day' && (
