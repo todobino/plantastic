@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 
 
 type GanttasticChartProps = {
@@ -199,7 +200,23 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         <div className="grid grid-cols-12 w-full h-full">
           {/* Task List */}
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-end pb-3">Tasks &amp; Milestones</div>
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-center justify-between pb-3">
+              <span>Tasks &amp; Milestones</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <Plus className="h-4 w-4" />
+                      <span className="sr-only">Add</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={onAddTaskClick}>New Task</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
+                      New Milestone
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
             <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
               {tasks.map((task, index) => (
                 <div 
