@@ -84,7 +84,7 @@ export default function GanttasticChart({ tasks, onTaskClick, onAddTaskClick, pr
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Pencil />
-                  Edit Milestones
+                  Edit
                 </Button>
               </DialogTrigger>
               <DialogContent>
