@@ -276,7 +276,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <svg className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none">
                   <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--accent))" />
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--foreground))" />
                     </marker>
                   </defs>
                   {tasks.map(task => {
@@ -301,7 +301,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                            <path
                             key={`${depId}-${task.id}`}
                             d={`M ${fromX} ${fromY} C ${fromX + 20} ${fromY}, ${toX - 20} ${toY}, ${toX - 8} ${toY}`}
-                            stroke="hsl(var(--accent))"
+                            stroke="hsl(var(--foreground))"
                             strokeWidth="2"
                             fill="none"
                             markerEnd="url(#arrow)"
@@ -314,7 +314,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           <path
                             key={`${depId}-${task.id}`}
                             d={`M ${fromX} ${fromY} H ${fromX + 10} V ${(toY + fromY)/2} H ${toX - 10} V ${toY} H ${toX - 8}`}
-                            stroke="hsl(var(--accent))"
+                            stroke="hsl(var(--foreground))"
                             strokeWidth="2"
                             fill="none"
                             markerEnd="url(#arrow)"
