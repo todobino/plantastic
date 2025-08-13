@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, DragEvent, useRef, useCallback } from 'react';
@@ -36,6 +37,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const timelineRef = useRef<HTMLDivElement | null>(null);
+  const wasDraggedRef = useRef(false);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -215,6 +217,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   };
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
+    wasDraggedRef.current = false;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setDragState({ id: task.id, startX: e.clientX, startLeftPx: currentLeftPx, previewDeltaPx: 0 });
@@ -225,6 +228,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
     // delta in pixels
     const rawDeltaPx = e.clientX - dragState.startX;
+    
+    if (Math.abs(rawDeltaPx) > 2) { // Threshold to consider it a drag
+        wasDraggedRef.current = true;
+    }
   
     // compute pixel bounds from date bounds
     const { minStart, maxStart } = getTaskBounds(task);
@@ -269,7 +276,18 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     }
   
     setDragState({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
+    
+    // Use a timeout to reset the dragged flag, so the click event has time to fire (or not)
+    setTimeout(() => {
+        wasDraggedRef.current = false;
+    }, 0);
   };
+  
+  const handleBarClick = (task: Task) => {
+    if (!wasDraggedRef.current) {
+        onTaskClick(task);
+    }
+  }
 
 
   return (
@@ -456,7 +474,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                onPointerMove={(e) => onBarPointerMove(e, task)}
                                onPointerUp={(e) => onBarPointerUp(e, task)}
                                onPointerCancel={(e) => onBarPointerUp(e, task)}
-                               onClick={() => onTaskClick(task)}
+                               onClick={() => handleBarClick(task)}
                                className={cn(
                                 "absolute rounded-md bg-primary/80 hover:bg-primary transition-[background-color] cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
                                 isDragging && "opacity-90"
