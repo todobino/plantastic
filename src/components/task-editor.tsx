@@ -237,7 +237,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full pb-4">
         <div className="space-y-4 flex-grow overflow-y-auto pr-2">
           <FormField
             control={form.control}
@@ -373,5 +373,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
 
 
