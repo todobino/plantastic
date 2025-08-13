@@ -264,19 +264,19 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       <CardHeader className="flex flex-row items-center justify-between border-b">
         <div className="flex items-center gap-2">
           <div>
-            <div className="flex items-center gap-2">
-                <CardTitle>{project.name}</CardTitle>
-                <Dialog>
-                    <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit Project</span>
-                    </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                    <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-                    </DialogContent>
-                </Dialog>
+             <div className="flex items-center gap-2 group">
+              <CardTitle className="group-hover:underline">{project.name}</CardTitle>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Edit Project</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
+                </DialogContent>
+              </Dialog>
             </div>
             {tasks.length === 0 ? (
                 <CardDescription>No Start, No End</CardDescription>
