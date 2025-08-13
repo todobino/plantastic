@@ -104,14 +104,14 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
 
   const availableTasksForDependsOn = useMemo(() => {
-      if(!selectedTask) return tasks;
+      if(!selectedTask) return tasks.filter(t => !dependsOn.includes(t.id));;
       // Cannot depend on itself or tasks that depend on it (circular)
       const unselectableIds = new Set([selectedTask.id, ...blockedByThisTask, ...dependsOn]);
       return tasks.filter(t => !unselectableIds.has(t.id));
   }, [tasks, selectedTask, dependsOn, blockedByThisTask]);
 
   const availableTasksForBlocks = useMemo(() => {
-    if(!selectedTask) return tasks;
+    if(!selectedTask) return tasks.filter(t => !blocks.includes(t.id));;
     // Cannot block itself or tasks it depends on (circular)
     const unselectableIds = new Set([selectedTask.id, ...dependsOn, ...blocks]);
     return tasks.filter(t => !unselectableIds.has(t.id));
@@ -147,6 +147,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       onUpdateDependencies(selectedTask.id, dependsOn, blocks);
     } else {
       onAddTask(taskData);
+      // We don't have the new task ID here, so we can't update other tasks to block them.
+      // This will need to be handled in the parent component after the task is created.
+      // For now, we assume onAddTask will be followed by a full state update.
     }
   };
 
@@ -314,7 +317,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               />
           </div>
           
-           <FormField
+           {selectedTask && <FormField
             control={form.control}
             name="progress"
             render={({ field }) => (
@@ -332,30 +335,28 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 <FormMessage />
               </FormItem>
             )}
-          />
+          />}
           
-          {selectedTask && (
-            <div className="space-y-4 rounded-lg border p-4">
+          <div className="space-y-4 rounded-lg border p-4">
+              <div className="space-y-2">
+                  <Label>Follows</Label>
+                  <div className="flex flex-wrap gap-2">
+                      {dependsOn.map(id => <DependencyBadge key={`dep-${id}`} taskId={id} onRemove={handleRemoveDependency} />)}
+                        <DependencySelector availableTasks={availableTasksForDependsOn} onSelect={handleAddDependency}>
+                          <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
+                      </DependencySelector>
+                  </div>
+              </div>
                 <div className="space-y-2">
-                    <Label>Follows</Label>
-                    <div className="flex flex-wrap gap-2">
-                        {dependsOn.map(id => <DependencyBadge key={`dep-${id}`} taskId={id} onRemove={handleRemoveDependency} />)}
-                         <DependencySelector availableTasks={availableTasksForDependsOn} onSelect={handleAddDependency}>
-                           <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
-                        </DependencySelector>
-                    </div>
-                </div>
-                 <div className="space-y-2">
-                    <Label>Proceeds</Label>
-                    <div className="flex flex-wrap gap-2">
-                        {blocks.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
-                         <DependencySelector availableTasks={availableTasksForBlocks} onSelect={handleAddBlockedTask}>
-                           <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
-                        </DependencySelector>
-                    </div>
-                </div>
-            </div>
-          )}
+                  <Label>Proceeds</Label>
+                  <div className="flex flex-wrap gap-2">
+                      {blocks.map(id => <DependencyBadge key={`block-${id}`} taskId={id} onRemove={handleRemoveBlockedTask} />)}
+                        <DependencySelector availableTasks={availableTasksForBlocks} onSelect={handleAddBlockedTask}>
+                          <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-xs">+ Add</Button>
+                      </DependencySelector>
+                  </div>
+              </div>
+          </div>
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
