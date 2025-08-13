@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, DragEvent } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, differenceInBusinessDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -20,6 +20,7 @@ type GanttasticChartProps = {
   onTaskClick: (task: Task) => void;
   onAddTaskClick: () => void;
   onProjectUpdate: (project: Project) => void;
+  onReorderTasks: (reorderedTasks: Task[]) => void;
 };
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -29,9 +30,10 @@ const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const HEADER_HEIGHT = 48;
 
-export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -125,6 +127,37 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const headerGroups = getHeaderGroups();
 
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>, dropTaskId: string) => {
+    e.preventDefault();
+    if (!draggedTaskId || draggedTaskId === dropTaskId) {
+      setDraggedTaskId(null);
+      return;
+    }
+
+    const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
+    const dropIndex = tasks.findIndex(t => t.id === dropTaskId);
+    
+    if (draggedIndex === -1 || dropIndex === -1) return;
+
+    const reorderedTasks = [...tasks];
+    const [draggedItem] = reorderedTasks.splice(draggedIndex, 1);
+    reorderedTasks.splice(dropIndex, 0, draggedItem);
+    
+    onReorderTasks(reorderedTasks);
+    setDraggedTaskId(null);
+  };
+
+
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-center justify-between border-b">
@@ -169,9 +202,18 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-10 py-2 font-semibold text-sm flex items-end pb-3">Tasks &amp; Milestones</div>
             <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative'>
               {tasks.map((task, index) => (
-                <div key={task.id} style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors truncate cursor-pointer flex items-center gap-2" onClick={() => onTaskClick(task)}>
-                  <div className="w-2 h-2 rounded-full bg-foreground" />
-                  <span className="truncate">{task.name}</span>
+                <div 
+                  key={task.id} 
+                  style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
+                  className="absolute w-full text-sm p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-2"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, task.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, task.id)}
+                  onClick={() => onTaskClick(task)}
+                >
+                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                  <span className="truncate flex-1">{task.name}</span>
                 </div>
               ))}
             </div>

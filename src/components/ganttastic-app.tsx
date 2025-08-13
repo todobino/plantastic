@@ -195,6 +195,10 @@ export default function GanttasticApp() {
     toast({ title: "Project Updated", description: `"${updatedProject.name}" has been successfully updated.` });
   }
 
+  const handleReorderTasks = (reorderedTasks: Task[]) => {
+    setTasks(reorderedTasks);
+    toast({ title: "Tasks Reordered", description: "The task order has been updated." });
+  };
 
   const openSidebar = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
     setSidebarView(view);
@@ -229,6 +233,7 @@ export default function GanttasticApp() {
               onTaskClick={(task) => openSidebar('TASK_EDITOR', task)}
               onAddTaskClick={() => openSidebar('TASK_EDITOR')}
               onProjectUpdate={handleProjectUpdate}
+              onReorderTasks={handleReorderTasks}
             />
           </div>
         </SidebarInset>
