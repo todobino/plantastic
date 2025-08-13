@@ -3,17 +3,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Project } from '@/types';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarInset,
-} from '@/components/ui/sidebar';
+import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { useToast } from '@/hooks/use-toast';
 import { addDays, differenceInBusinessDays, startOfDay } from 'date-fns';
 import ProjectSidebar from './project-sidebar';
+import { Dialog, DialogContent } from './ui/dialog';
 
 const getInitialTasks = (): Task[] => [
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), progress: 100, dependencies: [] },
@@ -36,7 +33,7 @@ export default function GanttasticApp() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState<Project>(getInitialProject());
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isEditorDialogOpen, setEditorDialogOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { toast } = useToast();
@@ -126,7 +123,7 @@ export default function GanttasticApp() {
     const newTask: Task = { ...task, id: `task-${Date.now()}` };
     setTasks(prev => [...prev, newTask]);
     toast({ title: "Task Added", description: `"${newTask.name}" has been successfully added.` });
-    setSidebarOpen(false);
+    setEditorDialogOpen(false);
   };
 
   const handleUpdateTask = useCallback((updatedTask: Task) => {
@@ -145,7 +142,7 @@ export default function GanttasticApp() {
       dependencies: t.dependencies.filter(depId => depId !== taskId)
     })));
     toast({ title: "Task Deleted", description: `"${taskToDelete?.name}" has been deleted.`, variant: "destructive" });
-    setSidebarOpen(false);
+    setEditorDialogOpen(false);
     setSelectedTask(null);
   }
 
@@ -204,14 +201,14 @@ export default function GanttasticApp() {
     toast({ title: "Tasks Reordered", description: "The task order has been updated." });
   };
 
-  const openSidebar = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
+  const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
     setSidebarView(view);
     setSelectedTask(task || null);
-    setSidebarOpen(true);
+    setEditorDialogOpen(true);
   }, []);
   
-  const handleSidebarOpenChange = (open: boolean) => {
-    setSidebarOpen(open);
+  const handleEditorDialogOpenChange = (open: boolean) => {
+    setEditorDialogOpen(open);
     if (!open) {
       setSelectedTask(null);
     }
@@ -223,7 +220,7 @@ export default function GanttasticApp() {
 
   return (
     <div className="flex h-screen flex-col">
-      <GanttasticHeader openSidebar={openSidebar} projectName={project.name} />
+      <GanttasticHeader openSidebar={openEditorDialog} projectName={project.name} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar side="left" collapsible="icon">
           <ProjectSidebar currentProjectName={project.name} onProjectChange={(name) => setProject({...project, name})} />
@@ -234,29 +231,30 @@ export default function GanttasticApp() {
             <GanttasticChart
               tasks={tasks}
               project={project}
-              onTaskClick={(task) => openSidebar('TASK_EDITOR', task)}
-              onAddTaskClick={() => openSidebar('TASK_EDITOR')}
+              onTaskClick={(task) => openEditorDialog('TASK_EDITOR', task)}
+              onAddTaskClick={() => openEditorDialog('TASK_EDITOR')}
               onProjectUpdate={handleProjectUpdate}
               onReorderTasks={handleReorderTasks}
               onTaskUpdate={handleUpdateTask}
             />
           </div>
         </SidebarInset>
-
-        <Sidebar side="right" open={isSidebarOpen} onOpenChange={handleSidebarOpenChange}>
-          <SidebarContent>
+        
+        <Dialog open={isEditorDialogOpen} onOpenChange={handleEditorDialogOpenChange}>
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
             <GanttasticSidebarContent
-              view={sidebarView}
-              tasks={tasks}
-              selectedTask={selectedTask}
-              onAddTask={handleAddTask}
-              onUpdateTask={handleUpdateTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateDependencies={handleUpdateDependencies}
-              onClose={() => handleSidebarOpenChange(false)}
+                view={sidebarView}
+                tasks={tasks}
+                selectedTask={selectedTask}
+                onAddTask={handleAddTask}
+                onUpdateTask={handleUpdateTask}
+                onDeleteTask={handleDeleteTask}
+                onUpdateDependencies={handleUpdateDependencies}
+                onClose={() => handleEditorDialogOpenChange(false)}
             />
-          </SidebarContent>
-        </Sidebar>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );

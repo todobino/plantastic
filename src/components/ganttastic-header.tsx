@@ -1,7 +1,7 @@
 
 'use client';
 
-import { GanttChartSquare, Plus, ChevronsUpDown } from 'lucide-react';
+import { GanttChartSquare, Plus, ChevronsUpDown, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -28,6 +28,10 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
         </Button>
       </div>
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => openSidebar('SMART_SCHEDULER')}>
+            <Bot className="h-4 w-4" />
+            Smart Scheduler
+        </Button>
         <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
           <Plus className="h-4 w-4" />
           Add Project

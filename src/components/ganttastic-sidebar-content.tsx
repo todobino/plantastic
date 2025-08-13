@@ -1,10 +1,11 @@
 
 'use client';
 
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskEditor from './task-editor';
 import SmartScheduler from './smart-scheduler';
 import type { Task } from '@/types';
+import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 type GanttasticSidebarContentProps = {
   view: 'TASK_EDITOR' | 'SMART_SCHEDULER';
@@ -27,30 +28,39 @@ export default function GanttasticSidebarContent({
   onUpdateDependencies,
   onClose
 }: GanttasticSidebarContentProps) {
+    
+  const getTitle = () => {
+    if (view === 'SMART_SCHEDULER') return 'Smart Scheduler';
+    return selectedTask ? 'Edit Task' : 'New Task';
+  }
+  
+  const getDescription = () => {
+    if (view === 'SMART_SCHEDULER') return 'Let AI optimize your project schedule.';
+    return selectedTask ? 'Update the details for this task.' : 'Add a new task to your project.';
+  }
+
   return (
-    <div className="p-4 h-full flex flex-col">
-       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold font-headline">
-          {view === 'TASK_EDITOR' ? (selectedTask ? 'Edit Task' : 'New Task') : 'Smart Scheduler'}
-        </h2>
+    <>
+      <DialogHeader>
+        <DialogTitle>{getTitle()}</DialogTitle>
+        <DialogDescription>
+            {getDescription()}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex-grow flex flex-col py-4 min-h-0">
+          {view === 'TASK_EDITOR' ? (
+              <TaskEditor
+                tasks={tasks}
+                selectedTask={selectedTask}
+                onAddTask={onAddTask}
+                onUpdateTask={onUpdateTask}
+                onDeleteTask={onDeleteTask}
+                onUpdateDependencies={onUpdateDependencies}
+              />
+          ) : (
+              <SmartScheduler tasks={tasks} />
+          )}
       </div>
-      <Tabs defaultValue={view} value={view} className="flex-grow flex flex-col">
-        <TabsContent value="TASK_EDITOR" className="flex-grow">
-          <TaskEditor
-            tasks={tasks}
-            selectedTask={selectedTask}
-            onAddTask={onAddTask}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-            onUpdateDependencies={onUpdateDependencies}
-          />
-        </TabsContent>
-        <TabsContent value="SMART_SCHEDULER" className="flex-grow">
-          <SmartScheduler tasks={tasks} />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </>
   );
 }
-
-    
