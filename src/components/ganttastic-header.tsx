@@ -22,7 +22,7 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
         <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
           Ganttastic
         </h1>
-        <Button variant="ghost" className="flex items-center gap-2" onClick={toggleSidebar}>
+        <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
           <span className="text-lg font-medium">{projectName}</span>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
         </Button>
