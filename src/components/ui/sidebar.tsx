@@ -142,7 +142,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex w-full",
+              "group/sidebar-wrapper flex w-full min-w-0",
               className
             )}
             ref={ref}
@@ -200,17 +200,16 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         data-side={side}
         data-collapsible={collapsible}
         className={cn(
-          "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
-          "h-full",
-          isLeftSidebarOpen ? "w-[var(--sidebar-width)] border-r" : "w-0",
-           "overflow-hidden",
-          className
+          "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out h-full overflow-hidden",
+          isLeftSidebarOpen ? "w-[var(--sidebar-width)] border-r" : "w-0"
         )}
         {...props}
       >
-        <div className="flex h-full flex-col w-[var(--sidebar-width)]">
-          {children}
-        </div>
+        {isLeftSidebarOpen ? (
+          <div className="flex h-full flex-col w-[var(--sidebar-width)]">
+            {children}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -281,7 +280,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex flex-1 flex-col bg-background",
+        "relative flex flex-1 flex-col bg-background min-w-0",
         className
       )}
       {...props}
