@@ -525,7 +525,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                         return (
                           <div key={day.toString()} className={cn(
                             "text-center text-xs py-1 border-r border-b relative",
-                            weekend && "bg-muted/30",
+                            weekend && "bg-zinc-100 dark:bg-zinc-900/40",
                             today && "bg-primary text-primary-foreground font-bold"
                           )}>
                             <div>{format(day, 'dd')}</div>
@@ -537,9 +537,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
               </div>
 
               <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
-                <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
+                <div className="absolute top-0 left-0 w-full h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
-                     <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-muted/20")}></div>
+                     <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40")}></div>
                   ))}
                 </div>
                 <div className="absolute top-0 left-0 w-full h-full">
