@@ -36,7 +36,9 @@ type GanttasticChartProps = {
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
-const HEADER_HEIGHT = 80;
+const MONTH_ROW_HEIGHT = 32;
+const DAY_ROW_HEIGHT = 40;
+const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
 export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -495,7 +497,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             });
         }, 100);
     }
-  }, [tasks, project.id, dateToX, dayWidth]); // Rerun when project or tasks change
+  }, [project.id]); // Rerun when project or tasks change
 
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -564,8 +566,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
             <div className="col-span-3 border-r overflow-y-auto">
-              <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4 border-b">
-                <span>Tasks & Milestones</span>
+              <div 
+                style={{ height: `${HEADER_HEIGHT}px`}} 
+                className="sticky top-0 bg-background z-40 flex items-center justify-between p-4 border-b"
+              >
+                <span className="font-semibold text-sm">Tasks & Milestones</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -609,20 +614,20 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   onPointerCancel={handlePanEnd}
               >
                 <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
-                  <div className="flex">
+                  <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
                       {headerGroups.map((group, index) => (
-                          <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                          <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
                               <span className="truncate px-2">{group.label}</span>
                           </div>
                       ))}
                   </div>
-                  <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
+                  <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`, height: `${DAY_ROW_HEIGHT}px` }}>
                       {timeline.map(day => {
                           const weekend = isWeekend(day);
                           const today = isToday(day);
                           return (
                             <div key={day.toString()} className={cn(
-                              "text-center text-xs py-1 border-r border-b relative h-[40px] flex flex-col justify-center",
+                              "text-center text-xs border-r relative flex flex-col justify-center",
                               weekend && "bg-zinc-100 dark:bg-zinc-900/40",
                               today && "bg-primary text-primary-foreground font-bold"
                             )}>
@@ -811,5 +816,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </div>
   );
 }
+
+    
 
     
