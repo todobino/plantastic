@@ -470,12 +470,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 p-4">
         <div className="flex items-center gap-2">
-          <Dialog>
+            <Dialog>
               <DialogTrigger asChild>
-                <div className="flex items-center gap-2 group cursor-pointer">
-                  <h3 className="text-lg font-semibold group-hover:underline">{project.name}</h3>
-                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+                <Button variant="outline" size="sm">
+                  Project Details
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
