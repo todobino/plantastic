@@ -1,7 +1,7 @@
 
 'use client';
 
-import { GanttChartSquare, Plus, ChevronsUpDown, Upload, UserCircle } from 'lucide-react';
+import { GanttChartSquare, Plus, ChevronsUpDown, Upload, UserCircle, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -19,11 +19,19 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-3">
         <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
-          <GanttChartSquare className="h-8 w-8 text-primary" />
-          <span className="font-bold">{projectName}</span>
+          <FolderOpen className="h-5 w-5 text-primary" />
+          <span className="font-bold text-base">{projectName}</span>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
+
+      <div className="flex items-center gap-3">
+        <GanttChartSquare className="h-6 w-6 text-primary" />
+        <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
+          Ganttastic
+        </h1>
+      </div>
+
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => openSidebar('IMPORTER')}>
             <Upload className="h-4 w-4" />
