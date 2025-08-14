@@ -18,6 +18,7 @@ import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverla
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
+import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
 type Project = {
   id: string;
@@ -125,10 +126,16 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       <SidebarHeader>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
-           <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
-            <Plus className="h-4 w-4" />
-            New
-          </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="ghost" onClick={() => alert('New Project functionality coming soon!')}>
+                    <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>New Project</p>
+              </TooltipContent>
+            </Tooltip>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
