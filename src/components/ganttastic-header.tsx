@@ -20,7 +20,7 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
       <div className="flex items-center gap-3">
         <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
           <GanttChartSquare className="h-6 w-6 text-primary" />
-          <span className="text-lg font-medium">{projectName}</span>
+          <span className="font-semibold">{projectName}</span>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
