@@ -184,7 +184,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     return `M ${sx} ${sy} L ${tx} ${ty}`;
   };
 
-  const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
+  const dateToX = useCallback((d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay, [projectStart, pxPerDay]);
   const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
 
   const successorsById = useMemo(() => {
@@ -481,10 +481,21 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     if (timelineRef.current) {
         // We use a small timeout to allow the browser to paint the layout
         setTimeout(() => {
-            handleTodayClick();
+            const scroller = timelineRef.current;
+            if (!scroller) return;
+
+            const todayX = dateToX(new Date());
+            const scrollerWidth = scroller.clientWidth;
+            
+            const scrollTo = todayX - (scrollerWidth / 2) + (dayWidth / 2);
+            
+            scroller.scrollTo({
+              left: scrollTo,
+              behavior: 'auto' // 'auto' for instant scroll on load
+            });
         }, 100);
     }
-  }, [handleTodayClick]);
+  }, [tasks, project.id, dateToX, dayWidth]); // Rerun when project or tasks change
 
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
