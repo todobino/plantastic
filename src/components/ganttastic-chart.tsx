@@ -175,7 +175,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const pxPerDay = dayWidth;
 
-  // Gap-aware FS router: S (tight), 90° (≈1 cell), gentle diagonal (wide)
   const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
     const gap = tx - sx;                 // px between bar edges
     const cell = pxPerDay;               // px per day cell
@@ -215,7 +214,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
   const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
 
-  // Build reverse deps once
   const successorsById = useMemo(() => {
     const m = new Map<string, string[]>();
     tasks.forEach(t => {
@@ -226,6 +224,14 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     });
     return m;
   }, [tasks]);
+
+  const minStartAllowed = (task: Task) => {
+    if (!task.dependencies.length) return projectStart;
+    const latestPredEnd = new Date(Math.max(...task.dependencies
+      .map(id => tasks.find(t => t.id === id))
+      .filter(Boolean)!.map(t => startOfDay((t as Task).end).getTime())));
+    return addDays(startOfDay(latestPredEnd), 1);
+  };
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
     wasDraggedRef.current = false;
@@ -236,20 +242,23 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
   const onBarPointerMove = (e: React.PointerEvent<HTMLDivElement>, task: Task) => {
     if (dragState.id !== task.id) return;
-  
-    // delta in pixels
-    const rawDeltaPx = e.clientX - dragState.startX;
-    
-    if (Math.abs(rawDeltaPx) > 2) { // Threshold to consider it a drag
+
+    if (Math.abs(e.clientX - dragState.startX) > 2) {
         wasDraggedRef.current = true;
     }
+
+    const pos = taskPositions.get(task.id);
+    if (!pos) return;
+
+    const rawDeltaPx = e.clientX - dragState.startX;
     
-    let nextLeftPx = dragState.startLeftPx + rawDeltaPx;
-  
-    // snap to day grid in preview
-    const snapDeltaPx = xToDayDelta(nextLeftPx - dragState.startLeftPx) * pxPerDay;
-  
-    // auto-scroll when near edges
+    const minStart = minStartAllowed(task);
+    const minLeftPx = dateToX(minStart);
+    const desiredLeftPx = dragState.startLeftPx + rawDeltaPx;
+    const clampedLeftPx = Math.max(desiredLeftPx, minLeftPx);
+
+    const snapDeltaPx = xToDayDelta(clampedLeftPx - dragState.startLeftPx) * pxPerDay;
+    
     const scroller = timelineRef.current; 
     if (scroller) {
       const margin = 40;
@@ -268,11 +277,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const pos = taskPositions.get(task.id);
     if (!pos) return;
   
-    // how many calendar days did we slide?
     const calDelta = xToDayDelta(dragState.previewDeltaPx);
   
     if (calDelta !== 0) {
-      const newStart = addDays(pos.s, calDelta);
+      const minStart = minStartAllowed(task);
+      const proposedStart = addDays(pos.s, calDelta);
+      const newStart = proposedStart < minStart ? minStart : proposedStart;
       const duration = Math.max(0, differenceInDays(pos.e, pos.s));
       const newEnd = addDays(newStart, duration);
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
@@ -287,14 +297,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         onTaskClick(task);
     }
   }
-
-  const minStartAllowed = (task: Task) => {
-    if (!task.dependencies.length) return projectStart;
-    const latestPredEnd = new Date(Math.max(...task.dependencies
-      .map(id => tasks.find(t => t.id === id))
-      .filter(Boolean)!.map(t => startOfDay((t as Task).end).getTime())));
-    return addDays(startOfDay(latestPredEnd), 1);
-  };
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
@@ -312,7 +314,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const onResizeMove = (e: React.PointerEvent, task: Task) => {
     if (resizeState.id !== task.id || !resizeState.edge) return;
-    // live preview by reusing dragState.previewDeltaPx
     const deltaPx = e.clientX - resizeState.startX;
     setDragState(s => ({ ...s, previewDeltaPx: Math.round(deltaPx / pxPerDay) * pxPerDay }));
   };
@@ -331,14 +332,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
     if (resizeState.edge === 'left' && dayDelta !== 0) {
       newStart = addDays(pos.s, dayDelta);
-      // bound by predecessors and at least 1 day
       const minStart = minStartAllowed(task);
       if (newStart < minStart) newStart = minStart;
-      if (newStart > newEnd) newStart = newEnd; // keep ? 1 day inclusive
+      if (newStart > newEnd) newStart = newEnd;
     }
     if (resizeState.edge === 'right' && dayDelta !== 0) {
       newEnd = addDays(pos.e, dayDelta);
-      if (newEnd < newStart) newEnd = newStart; // ? 1 day
+      if (newEnd < newStart) newEnd = newStart;
     }
   
     if (newStart.getTime() !== task.start.getTime() || newEnd.getTime() !== task.end.getTime()) {
@@ -349,13 +349,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     setDragState(s => ({ ...s, previewDeltaPx: 0 }));
   };
 
-  // proximity hit-test for dropping on a start-dot
   const hitStartDot = (x:number, y:number) => {
-    const R = 10; // px radius to snap
+    const R = 10;
     for (const task of tasks) {
       const pos = taskPositions.get(task.id);
       if (!pos) continue;
-      const cx = pos.x; // left edge dot
+      const cx = pos.x;
       const cy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
       const dx = x - cx, dy = y - cy;
       if ((dx*dx + dy*dy) <= R*R) return { taskId: task.id, cx, cy };
@@ -396,6 +395,98 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     };
   }, [linkDraft.fromTaskId, linkDraft.toX, linkDraft.toY, tasks, onTaskUpdate]);
 
+  const previewOffsets = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!dragging && !resizeState.id) return m;
+  
+    const seedId = resizeState.id ?? dragState.id!;
+    const base = taskPositions.get(seedId);
+    if (!base) return m;
+  
+    const dayDelta = xToDayDelta(dragState.previewDeltaPx);
+  
+    let seedStart = base.s;
+    let seedEnd = base.e;
+  
+    if (resizeState.id === seedId) {
+      if (resizeState.edge === 'left') seedStart = addDays(base.s, dayDelta);
+      else if (resizeState.edge === 'right') seedEnd = addDays(base.e, dayDelta);
+    } else if (dragging) {
+      seedStart = addDays(base.s, dayDelta);
+      seedEnd = addDays(base.e, dayDelta);
+    }
+    
+    const seedTask = tasks.find(t => t.id === seedId);
+    if(seedTask){
+        const minStart = minStartAllowed(seedTask);
+        if (seedStart < minStart) {
+          const fixDays = differenceInDays(minStart, seedStart);
+          seedStart = addDays(seedStart, fixDays);
+          seedEnd = addDays(seedEnd, fixDays);
+        }
+    }
+  
+    m.set(seedId, differenceInDays(seedStart, base.s) * pxPerDay);
+  
+    const q: string[] = [seedId];
+    const visited = new Set<string>([seedId]);
+  
+    while (q.length > 0) {
+      const u = q.shift()!;
+      const successors = successorsById.get(u) || [];
+  
+      for (const vId of successors) {
+        if (visited.has(vId)) continue;
+        
+        const vPos = taskPositions.get(vId);
+        const vTask = tasks.find(t => t.id === vId);
+        if (!vPos || !vTask) continue;
+  
+        const latestPredEnd = new Date(Math.max(...vTask.dependencies.map(pId => {
+          const pPos = taskPositions.get(pId)!;
+          const pOffsetDays = (m.get(pId) ?? 0) / pxPerDay;
+          let pEnd = pPos.e;
+          if(pId === seedId && resizeState.id === seedId && resizeState.edge === 'right') {
+            pEnd = addDays(pPos.e, dayDelta);
+          } else {
+            pEnd = addDays(pPos.e, pOffsetDays);
+          }
+          return startOfDay(pEnd).getTime();
+        })));
+  
+        const newStart = addDays(startOfDay(latestPredEnd), 1);
+        const newOffsetPx = differenceInDays(newStart, vPos.s) * pxPerDay;
+        
+        if (newOffsetPx > (m.get(vId) ?? -1)) {
+          m.set(vId, newOffsetPx);
+          visited.add(vId);
+          q.push(vId);
+        }
+      }
+    }
+    return m;
+  }, [dragging, resizeState.id, resizeState.edge, dragState.previewDeltaPx, tasks, taskPositions, pxPerDay, successorsById, minStartAllowed]);
+  
+  const getVisualPos = (id: string) => {
+    const p = taskPositions.get(id);
+    if (!p) return null;
+  
+    let left = p.x;
+    let width = p.width;
+  
+    const offset = previewOffsets.get(id) ?? 0;
+    left += offset;
+  
+    if (resizeState.id === id) {
+      if (resizeState.edge === 'left') {
+        left += dragState.previewDeltaPx;
+        width -= dragState.previewDeltaPx;
+      } else if (resizeState.edge === 'right') {
+        width += dragState.previewDeltaPx;
+      }
+    }
+    return { left, right: left + width, cy: p.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2 };
+  };
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
@@ -428,7 +519,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       </CardHeader>
       <CardContent className="flex-grow flex overflow-hidden p-0">
         <div className="grid grid-cols-12 w-full h-full">
-          {/* Task List */}
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
               <span>Tasks &amp; Milestones</span>
@@ -462,7 +552,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </div>
           </div>
 
-          {/* Gantt Timeline */}
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
               <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40">
@@ -494,7 +583,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
               </div>
 
               <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
-                {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
                      <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-muted/20")}></div>
@@ -506,32 +594,26 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   ))}
                 </div>
                 
-                {/* Today Indicator */}
                 <div
                     className="absolute top-0 bottom-0 w-0.5 bg-black z-30"
                     style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
                 />
 
                 <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-                  {/* existing links */}
                   {tasks.map((task) => {
-                    const toPos = taskPositions.get(task.id);
-                    if (!toPos) return null;
-                    const toLeftEdge = toPos.x;
-                    const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+                    const toV = getVisualPos(task.id);
+                    if (!toV) return null;
 
-                    // guard: unique deps, no self
                     const deps = Array.from(new Set(task.dependencies.filter(d => d !== task.id)));
 
                     return deps.map(depId => {
-                      const fromPos = taskPositions.get(depId);
-                      if (!fromPos) return null;
+                      const fromV = getVisualPos(depId);
+                      if (!fromV) return null;
 
-                      const fromRightEdge = fromPos.x + fromPos.width;
-                      const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
-
-                      const sx = fromRightEdge;   // dot center on predecessor end
-                      const tx = toLeftEdge;      // dot center on successor start
+                      const sx = fromV.right;
+                      const sy = fromV.cy;
+                      const tx = toV.left;
+                      const ty = toV.cy;
 
                       const d = routeFS(sx, sy, tx, ty);
 
@@ -554,59 +636,56 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     });
                   })}
 
-                  {/* live preview while dragging from a dot */}
                   {linkDraft.fromTaskId && (() => {
-                    const fromPos = taskPositions.get(linkDraft.fromTaskId);
-                    if (!fromPos) return null;
-                    const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
-                    const sx = fromPos.x + fromPos.width; // right dot
-                    const d = routeFS(sx, sy, linkDraft.toX, linkDraft.toY);
+                    const fromV = getVisualPos(linkDraft.fromTaskId);
+                    if (!fromV) return null;
+                    const d = routeFS(fromV.right, fromV.cy, linkDraft.toX, linkDraft.toY);
                     return (
                       <g>
                         <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
                           strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity="0.6" />
-                        <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                        <circle cx={fromV.right} cy={fromV.cy} r={3.5} fill="hsl(var(--foreground))" />
                       </g>
                     );
                   })()}
                 </svg>
                 
-                {/* Task Bars */}
                 {tasks.map((task, index) => {
                   const pos = taskPositions.get(task.id);
                   if(!pos) return null;
-                  
-                  const isDragging = dragState.id === task.id && !resizeState.edge;
-                  const isResizing = resizeState.id === task.id;
+
+                  const isDraggingThis = dragState.id === task.id && !resizeState.edge;
+                  const isResizingThis = resizeState.id === task.id;
+                  const vPos = getVisualPos(task.id);
+                  if(!vPos) return null;
 
                   return (
                       <TooltipProvider key={task.id} delayDuration={100}>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                               onPointerDown={(e) => onBarPointerDown(e, task, pos.x + 2)}
+                               onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
                                onPointerMove={(e) => {
-                                isResizing ? onResizeMove(e, task) : onBarPointerMove(e, task)
+                                isResizingThis ? onResizeMove(e, task) : onBarPointerMove(e, task)
                                }}
                                onPointerUp={(e) => {
-                                isResizing ? onResizeUp(e, task) : onBarPointerUp(e, task)
+                                isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
                                }}
                                onPointerCancel={(e) => {
-                                isResizing ? onResizeUp(e, task) : onBarPointerUp(e, task)
+                                isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
                                }}
                                onMouseEnter={() => setHoverTaskId(task.id)}
                                onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
                                onClick={() => handleBarClick(task)}
                                className={cn(
                                 "absolute rounded-md bg-primary/80 hover:bg-primary transition-[background-color] cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
-                                isDragging && "opacity-90"
+                                isDraggingThis && "opacity-90"
                                )}
                                style={{
                                 top: `${pos.y + BAR_TOP_MARGIN}px`,
-                                left: `${pos.x + 2 + (isResizing && resizeState.edge==='left' ? dragState.previewDeltaPx : 0)}px`,
-                                width: `${pos.width - 4 + (isResizing && resizeState.edge==='right' ? dragState.previewDeltaPx : isResizing && resizeState.edge==='left' ? -dragState.previewDeltaPx : 0)}px`,
+                                left: `${vPos.left}px`,
+                                width: `${vPos.right - vPos.left}px`,
                                 height: `${BAR_HEIGHT}px`,
-                                transform: `translateX(${isDragging ? dragState.previewDeltaPx : 0}px)`,
                                 willChange: "transform,width,left",
                                }}
                             >
