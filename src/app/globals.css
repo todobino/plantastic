@@ -1,9 +1,16 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   font-family: 'Inter', sans-serif;
+}
+
+.dragging-clone {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  z-index: 9999;
 }
 
 @layer base {

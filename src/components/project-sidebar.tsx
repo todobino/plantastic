@@ -59,8 +59,17 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
     // Create a custom drag image that looks like the menu item
     const target = (e.target as HTMLElement).closest('[data-sidebar="menu-item"]');
     if (target) {
-        const rect = target.getBoundingClientRect();
-        e.dataTransfer.setDragImage(target, e.clientX - rect.left, e.clientY - rect.top);
+        const clone = target.cloneNode(true) as HTMLElement;
+        clone.style.position = 'absolute';
+        clone.style.left = '-9999px';
+        clone.style.width = `${target.clientWidth}px`;
+        clone.classList.add('dragging-clone');
+        document.body.appendChild(clone);
+        e.dataTransfer.setDragImage(clone, e.clientX - target.getBoundingClientRect().left, e.clientY - target.getBoundingClientRect().top);
+
+        setTimeout(() => {
+          document.body.removeChild(clone);
+        }, 0);
     }
   };
 
@@ -138,16 +147,30 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
           {filteredProjects.map((project, index) => {
             const isBeingDragged = draggedProjectId === project.id;
             const isDropTarget = dropTargetId === project.id;
-            const dropIndex = dropTargetId ? projects.findIndex(p => p.id === dropTargetId) : -1;
-            const draggedIndex = draggedProjectId ? projects.findIndex(p => p.id === draggedProjectId) : -1;
 
-            let transform = '';
-            if (isDropTarget && draggedProjectId && draggedIndex !== -1) {
-                if (draggedIndex < index) {
-                    transform = 'translateY(-100%)';
-                } else if (draggedIndex > index) {
-                    transform = 'translateY(100%)';
+            let transformStyle = {};
+            if (isDropTarget && draggedProjectId && draggedProjectId !== project.id) {
+                const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
+                if (draggedIndex !== -1 && index !== draggedIndex) {
+                    transformStyle = {
+                        transform: `translateY(${draggedIndex < index ? '-100%' : '100%'})`,
+                    };
                 }
+            }
+             if (isBeingDragged) {
+                const dropIndex = dropTargetId ? projects.findIndex(p => p.id === dropTargetId) : -1;
+                 if (dropIndex !== -1) {
+                     const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
+                     if (draggedIndex < dropIndex) {
+                        transformStyle = {
+                             transform: `translateY(${dropIndex - draggedIndex}00%)`,
+                        };
+                     } else {
+                         transformStyle = {
+                             transform: `translateY(-${draggedIndex - dropIndex}00%)`,
+                         };
+                     }
+                 }
             }
 
 
@@ -162,7 +185,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
                   "transition-transform duration-200 ease-in-out",
                   isBeingDragged && "opacity-30",
                 )}
-                style={{ transform }}
+                style={transformStyle}
               >
                 <SidebarMenuButton
                   isActive={project.name === currentProjectName}
