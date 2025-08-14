@@ -33,7 +33,7 @@ export default function GanttasticApp() {
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState<Project>(getInitialProject());
   const [isEditorDialogOpen, setEditorDialogOpen] = useState(false);
-  const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
+  const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'IMPORTER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
@@ -151,11 +151,17 @@ export default function GanttasticApp() {
     setProject(updatedProject);
   }
 
+  const handleImportProject = (newProject: Project, newTasks: Task[]) => {
+    setProject(newProject);
+    setTasks(newTasks);
+    setEditorDialogOpen(false);
+  };
+
   const handleReorderTasks = (reorderedTasks: Task[]) => {
     setTasks(reorderedTasks);
   };
 
-  const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
+  const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'IMPORTER', task?: Task) => {
     setSidebarView(view);
     setSelectedTask(task || null);
     setEditorDialogOpen(true);
@@ -203,6 +209,7 @@ export default function GanttasticApp() {
                 onAddTask={handleAddTask}
                 onUpdateTask={handleUpdateTask}
                 onDeleteTask={handleDeleteTask}
+                onImportProject={handleImportProject}
                 onClose={() => handleEditorDialogOpenChange(false)}
             />
           </DialogContent>

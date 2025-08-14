@@ -1,12 +1,13 @@
 'use server';
 
-import { optimizeSchedule as optimizeScheduleFlow, OptimizeScheduleInput, OptimizeScheduleOutput } from '@/ai/flows/smart-schedule';
+import { extractProjectFromFile as extractProjectFlow } from '@/ai/flows/extract-project-from-file';
+import type { ExtractProjectInput, ExtractedProjectOutput } from '@/types';
 
-export async function runOptimizeSchedule(input: OptimizeScheduleInput): Promise<OptimizeScheduleOutput> {
+export async function runExtractProjectFromFile(input: ExtractProjectInput): Promise<ExtractedProjectOutput> {
   try {
-    return await optimizeScheduleFlow(input);
+    return await extractProjectFlow(input);
   } catch (error) {
-    console.error("Error optimizing schedule:", error);
-    throw new Error("Failed to get an optimized schedule from the AI.");
+    console.error("Error extracting project from file:", error);
+    throw new Error("Failed to extract project data from the file using AI.");
   }
 }
