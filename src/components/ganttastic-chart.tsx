@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -628,7 +628,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onAddTaskClick('task')}>
-                        <GanttChartSquare className="mr-2 h-4 w-4" />
+                        <CirclePlus className="mr-2 h-4 w-4" />
                         New Task
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onAddTaskClick('category')}>
@@ -911,3 +911,5 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     </div>
   );
 }
+
+    
