@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Search, PanelLeftClose, GripVertical } from 'lucide-react';
+import { Search, Plus, GripVertical } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -125,8 +125,9 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       <SidebarHeader>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-            <PanelLeftClose />
+           <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
+            <Plus className="h-4 w-4" />
+            New Project
           </Button>
         </div>
         <div className="relative">
