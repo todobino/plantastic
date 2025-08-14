@@ -12,13 +12,13 @@ import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
 
 const getInitialTasks = (): Task[] => [
-  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), progress: 100, dependencies: [] },
-  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), progress: 75, dependencies: ['task-1'] },
-  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), progress: 50, dependencies: ['task-2'] },
-  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), progress: 20, dependencies: ['task-3'] },
-  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), progress: 30, dependencies: ['task-3'] },
-  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), progress: 0, dependencies: ['task-4', 'task-5'] },
-  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), progress: 0, dependencies: ['task-6'] },
+  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [] },
+  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'] },
+  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'] },
+  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'] },
+  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'] },
+  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'] },
+  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'] },
 ];
 
 const getInitialProject = (): Project => ({
@@ -120,7 +120,6 @@ export default function GanttasticApp() {
   const handleAddTask = (task: Omit<Task, 'id'>) => {
     const newTask: Task = { ...task, id: `task-${Date.now()}` };
     setTasks(prev => [...prev, newTask]);
-    console.log(`Task Added: "${newTask.name}" has been successfully added.`);
     setEditorDialogOpen(false);
   };
 
@@ -130,18 +129,15 @@ export default function GanttasticApp() {
       newTasks = updateDependentTasks(updatedTask.id, newTasks);
       return newTasks;
     });
-    console.log(`Task Updated: "${updatedTask.name}" has been successfully updated.`);
   }, [updateDependentTasks]);
 
 
   const handleDeleteTask = (taskId: string) => {
-    const taskToDelete = tasks.find(t => t.id === taskId);
     // Also remove this task from any other task's dependency list
     setTasks(prev => prev.filter(task => task.id !== taskId).map(t => ({
       ...t,
       dependencies: t.dependencies.filter(depId => depId !== taskId)
     })));
-    console.log(`Task Deleted: "${taskToDelete?.name}" has been deleted.`);
     setEditorDialogOpen(false);
     setSelectedTask(null);
   }
@@ -188,17 +184,14 @@ export default function GanttasticApp() {
 
           return finalTasks;
       });
-      console.log("Dependencies Updated: Task dates have been adjusted automatically.");
   }, [updateDependentTasks]);
   
   const handleProjectUpdate = (updatedProject: Project) => {
     setProject(updatedProject);
-    console.log(`Project Updated: "${updatedProject.name}" has been successfully updated.`);
   }
 
   const handleReorderTasks = (reorderedTasks: Task[]) => {
     setTasks(reorderedTasks);
-    console.log("Tasks Reordered: The task order has been updated.");
   };
 
   const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
@@ -249,7 +242,7 @@ export default function GanttasticApp() {
                 onAddTask={handleAddTask}
                 onUpdateTask={handleUpdateTask}
                 onDeleteTask={handleDeleteTask}
-                onUpdateDependencies={handleUpdateDependencies}
+                onUpdateDependencies={onUpdateDependencies}
                 onClose={() => handleEditorDialogOpenChange(false)}
             />
           </DialogContent>

@@ -5,7 +5,6 @@ export interface Task {
   description?: string;
   start: Date;
   end: Date;
-  progress: number;
   dependencies: string[];
 }
 

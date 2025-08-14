@@ -20,7 +20,6 @@ import { CalendarIcon, Trash2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, addDays } from 'date-fns';
 import type { Task } from '@/types';
-import { Slider } from '@/components/ui/slider';
 import { useEffect, useMemo, useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
@@ -33,7 +32,6 @@ const taskSchema = z.object({
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
   duration: z.number().min(0, "Duration must be positive."),
-  progress: z.number().min(0).max(100),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -57,7 +55,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       name: '',
       description: '',
       duration: 1,
-      progress: 0,
     },
   });
   
@@ -80,7 +77,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         description: selectedTask.description || '',
         start: selectedTask.start,
         end: selectedTask.end,
-        progress: selectedTask.progress,
         duration: currentDuration,
       });
       setDuration(currentDuration);
@@ -93,7 +89,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         description: '',
         start: new Date(),
         end: addDays(new Date(), defaultDuration - 1),
-        progress: 0,
         duration: defaultDuration
       });
       setDuration(defaultDuration);
@@ -140,7 +135,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       description: data.description,
       start: data.start,
       end: data.end,
-      progress: data.progress,
       dependencies: dependsOn,
     };
     if (selectedTask) {
@@ -317,26 +311,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 )}
               />
           </div>
-          
-           {selectedTask && <FormField
-            control={form.control}
-            name="progress"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Progress - {field.value}%</FormLabel>
-                <FormControl>
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[field.value]}
-                    onValueChange={(vals) => field.onChange(vals[0])}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />}
           
           <div className="space-y-4 rounded-lg border p-4">
               <div className="space-y-2">

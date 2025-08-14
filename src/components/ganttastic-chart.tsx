@@ -576,7 +576,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                 willChange: "transform,width,left",
                                }}
                             >
-                              <div className="absolute top-0 left-0 h-full bg-primary/60 rounded-md" style={{ width: `${task.progress}%` }}></div>
                               <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
                               
                               <div
@@ -624,7 +623,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                             <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
                             <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
                             <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
-                            <p>Progress: {task.progress}%</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
