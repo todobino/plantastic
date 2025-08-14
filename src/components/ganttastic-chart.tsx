@@ -62,6 +62,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     toX: number;
     toY: number;
   }>({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
+  
+  const [panState, setPanState] = useState<{
+    isPanning: boolean;
+    startX: number;
+    startScrollLeft: number;
+  }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
+
 
 
   const dragging = dragState.id !== null;
@@ -465,6 +472,37 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       behavior: 'smooth'
     });
   };
+  
+    const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!timelineRef.current) return;
+    // Only pan if not clicking a task bar or handle
+    if ((e.target as HTMLElement).closest('[data-task-bar="true"]')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.cursor = 'grabbing';
+    setPanState({
+      isPanning: true,
+      startX: e.clientX,
+      startScrollLeft: timelineRef.current.scrollLeft,
+    });
+  };
+
+  const handlePanMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!panState.isPanning || !timelineRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const x = e.clientX;
+    const walk = (x - panState.startX);
+    timelineRef.current.scrollLeft = panState.startScrollLeft - walk;
+  };
+
+  const handlePanEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!panState.isPanning) return;
+    document.body.style.cursor = 'default';
+    setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
+  };
+
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -527,7 +565,17 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           </div>
 
           <div ref={timelineRef} className="col-span-9 overflow-auto">
-             <div className="relative">
+             <div 
+                className={cn(
+                  "relative",
+                   panState.isPanning && "cursor-grabbing"
+                )}
+                onPointerDown={handlePanStart}
+                onPointerMove={handlePanMove}
+                onPointerUp={handlePanEnd}
+                onPointerLeave={handlePanEnd}
+                onPointerCancel={handlePanEnd}
+            >
               <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
                 <div className="flex">
                     {headerGroups.map((group, index) => (
@@ -638,6 +686,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
+                               data-task-bar="true"
                                onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
                                onPointerMove={(e) => {
                                 isResizingThis ? onResizeMove(e, task) : onBarPointerMove(e, task)
