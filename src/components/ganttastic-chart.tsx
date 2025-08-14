@@ -277,25 +277,17 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-center justify-between border-b">
         <div className="flex items-center gap-2">
-          <div>
-            <Dialog>
-              <div className="flex items-center gap-2 group">
-                <DialogTrigger asChild>
-                  <button className="group-hover:underline cursor-pointer">
-                    <CardTitle>{project.name}</CardTitle>
-                  </button>
-                </DialogTrigger>
-                <DialogContent>
-                  <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-                </DialogContent>
-              </div>
+          <Dialog>
+              <DialogTrigger asChild>
+                <div className="flex items-center gap-2 group cursor-pointer">
+                  <CardTitle className="group-hover:underline">{project.name}</CardTitle>
+                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
+              </DialogContent>
             </Dialog>
-            {tasks.length === 0 ? (
-                <CardDescription>No Start, No End</CardDescription>
-            ) : (
-                <CardDescription>{format(projectStart, "MMM d, yyyy")} - {format(projectEnd, "MMM d, yyyy")}</CardDescription>
-            )}
-          </div>
         </div>
         <div className="flex items-center gap-2">
             <Button variant={viewMode === 'day' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('day')}>Day</Button>
@@ -336,7 +328,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2"
+                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2 pr-2"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
@@ -354,7 +346,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     <div className="flex">
                         {headerGroups.map((group, index) => (
                             <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r truncate" style={{ width: `${group.days * dayWidth}px`}}>
-                                {group.label}
+                                <span className="truncate px-2">{group.label}</span>
                             </div>
                         ))}
                     </div>
@@ -385,56 +377,88 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 {/* Dependency Lines */}
                 <svg className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none">
                   <defs>
-                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--primary))" />
+                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--primary))" />
                     </marker>
                   </defs>
-                  {tasks.map(task => {
+
+                  {tasks.map((task) => {
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
 
-                    return task.dependencies.map(depId => {
+                    return task.dependencies.map((depId) => {
                       const fromPos = taskPositions.get(depId);
                       if (!fromPos) return null;
 
-                      const fromX = fromPos.x + fromPos.width;
-                      const fromY = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const toX = toPos.x;
-                      const toY = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-
-                      const isOffscreen = fromX < 0 || toX < 0;
-                      if(isOffscreen) return null;
-
-                      const curve = 20;
+                      // Anchor points (finish -> start), with a small gap off the bars
+                      const GAP = 8;
+                      const R = 10;                    // corner radius / curve control
+                      const MIN_H = 24;                // minimum horizontal travel before a turn
                       const endMarkerAdjust = 8;
-                      
-                      // Horizontal line with curve
-                      if (fromX < toX - (curve * 2)) {
-                         return (
-                           <path
-                            key={`${depId}-${task.id}`}
-                            d={`M ${fromX} ${fromY} C ${fromX + curve} ${fromY}, ${toX - curve} ${toY}, ${toX - endMarkerAdjust} ${toY}`}
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="2"
-                            fill="none"
-                            markerEnd="url(#arrow)"
-                          />
-                         )
+
+                      const sx = fromPos.x + fromPos.width + GAP;
+                      const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
+                      const tx = toPos.x - GAP;
+                      const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
+
+                      // Offscreen early exit
+                      if (sx < 0 && tx < 0) return null;
+
+                      // Helper: rounded elbow (horizontal -> vertical -> horizontal) using quadratic curves
+                      const elbowPath = (mx: number, dir: 1 | -1) => {
+                        // dir = 1 means going downward first, -1 upward first
+                        const k = R; // curvature
+                        return [
+                          `M ${sx} ${sy}`,
+                          `H ${mx - R}`,                          // go toward mid X
+                          `Q ${mx} ${sy} ${mx} ${sy + dir * k}`,  // rounded corner to vertical
+                          `V ${ty - dir * k}`,                    // vertical toward target row
+                          `Q ${mx} ${ty} ${mx + k} ${ty}`,        // second rounded corner to horizontal
+                          `H ${tx - endMarkerAdjust}`             // finish before arrow
+                        ].join(' ');
+                      };
+
+                      // Helper: smooth single-curve when straight-ish
+                      const smoothPath = () => {
+                        const dx = Math.max(MIN_H, (tx - sx) * 0.5);
+                        // cubic with soft ease-in/out toward target
+                        return [
+                          `M ${sx} ${sy}`,
+                          `C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx - endMarkerAdjust} ${ty}`
+                        ].join(' ');
+                      };
+
+                      // Routing logic
+                      let d: string;
+
+                      const horizontalClearance = tx - sx;
+
+                      if (horizontalClearance > MIN_H) {
+                        // Plenty of room to curve directly to the target
+                        d = smoothPath();
+                      } else {
+                        // Not enough horizontal space -> route via a vertical lane in the middle
+                        const dir: 1 | -1 = ty >= sy ? 1 : -1;
+                        // choose a mid X that gives us breathing room
+                        const mx = Math.min(sx + MIN_H, tx - MIN_H) - (R * 0.25);
+                        d = elbowPath(mx, dir);
                       }
-                      
-                      // Elbow connection with curves
-                      const halfY = (toY + fromY)/2;
+
                       return (
-                          <path
-                            key={`${depId}-${task.id}`}
-                             d={`M ${fromX} ${fromY} C ${fromX + curve} ${fromY}, ${fromX + curve} ${fromY}, ${fromX + curve} ${fromY + (fromY > toY ? -curve: curve)} L ${fromX + curve} ${halfY + (fromY > toY ? curve : -curve)} C ${fromX + curve} ${halfY}, ${fromX + curve} ${halfY}, ${fromX + curve + (fromX > toX - (curve*2) ? -curve : curve)} ${halfY} L ${toX-curve*2} ${halfY} C ${toX-curve} ${halfY}, ${toX-curve} ${toY}, ${toX-curve} ${toY + (fromY > toY ? curve : -curve)} L ${toX-curve} ${toY} C ${toX-curve} ${toY}, ${toX - curve} ${toY}, ${toX - endMarkerAdjust} ${toY}`}
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="2"
-                            fill="none"
-                            markerEnd="url(#arrow)"
-                          />
-                        );
-                    })
+                        <path
+                          key={`${depId}-${task.id}`}
+                          d={d}
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="2"
+                          fill="none"
+                          markerEnd="url(#arrow)"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          vectorEffect="non-scaling-stroke"
+                          opacity="0.9"
+                        />
+                      );
+                    });
                   })}
                 </svg>
 
