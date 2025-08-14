@@ -467,7 +467,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   };
 
   return (
-    <div className="w-full h-full overflow-hidden flex flex-col rounded-lg border bg-card text-card-foreground">
+    <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 p-4">
         <div className="flex items-center gap-2">
           <Dialog>
@@ -495,7 +495,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       <div className="flex-grow flex overflow-hidden">
         <div className="grid grid-cols-12 w-full h-full">
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
               <span>Tasks & Milestones</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -529,7 +529,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40 flex flex-col">
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
                 <div className="flex">
                     {headerGroups.map((group, index) => (
                         <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>

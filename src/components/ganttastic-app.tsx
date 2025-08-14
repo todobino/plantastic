@@ -187,7 +187,7 @@ export default function GanttasticApp() {
         </Sidebar>
 
         <SidebarInset>
-          <div className="flex-grow overflow-auto p-4 md:p-6">
+          <div className="flex-grow overflow-auto">
             <GanttasticChart
               tasks={tasks}
               project={project}
