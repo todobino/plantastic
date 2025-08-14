@@ -481,7 +481,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
   useEffect(() => {
     if (timelineRef.current) {
-        // We use a small timeout to allow the browser to paint the layout
         setTimeout(() => {
             const scroller = timelineRef.current;
             if (!scroller) return;
@@ -493,16 +492,14 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             
             scroller.scrollTo({
               left: scrollTo,
-              behavior: 'auto' // 'auto' for instant scroll on load
+              behavior: 'auto'
             });
         }, 100);
     }
-  }, [project.id]); // Rerun when project or tasks change
-
+  }, [project.id]);
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
-    // Only pan if not clicking a task bar or handle
     if ((e.target as HTMLElement).closest('[data-task-bar="true"]')) return;
 
     e.preventDefault();
@@ -615,7 +612,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
               >
                 <div style={{ width: `${totalDays * dayWidth}px`}} className="sticky top-0 bg-background z-40">
                   <div className="flex flex-col border-b">
-                    <div className="flex" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
+                    <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
                         {headerGroups.map((group, index) => (
                             <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
                                 <span className="truncate px-2">{group.label}</span>
@@ -818,7 +815,3 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </div>
   );
 }
-
-    
-
-    
