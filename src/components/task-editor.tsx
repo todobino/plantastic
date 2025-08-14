@@ -29,6 +29,7 @@ const taskSchema = z.object({
   start: z.date({ required_error: 'A start date is required.' }),
   end: z.date({ required_error: 'An end date is required.' }),
   dependencies: z.array(z.string()).optional(),
+  color: z.string().optional(),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -39,10 +40,15 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type TaskEditorProps = {
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[], color?: string }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
 };
+
+const defaultColor = '#3b82f6';
+const colorPalette = [
+  '#3b82f6', '#10b981', '#f97316', '#ef4444', '#a855f7', '#6366f1', '#ec4899', '#84cc16'
+];
 
 export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
@@ -51,6 +57,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       name: '',
       description: '',
       dependencies: [],
+      color: defaultColor,
     },
   });
   
@@ -65,6 +72,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: selectedTask.start,
         end: selectedTask.end,
         dependencies: selectedTask.dependencies || [],
+        color: selectedTask.color || defaultColor,
       });
       setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
@@ -76,6 +84,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         start: defaultStartDate,
         end: addDays(defaultStartDate, defaultDuration - 1),
         dependencies: [],
+        color: defaultColor,
       });
       setDuration(defaultDuration);
     }
@@ -105,6 +114,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       start: data.start,
       end: data.end,
       dependencies: data.dependencies || [],
+      color: data.color || defaultColor,
     };
     if (selectedTask) {
       onUpdateTask({ ...taskData, id: selectedTask.id });
@@ -188,6 +198,33 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </FormControl>
              </FormItem>
           </div>
+          
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Task Color</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
+                    {colorPalette.map(color => (
+                        <button
+                          type="button"
+                          key={color}
+                          onClick={() => field.onChange(color)}
+                          className={cn(
+                            "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
+                            field.value === color ? 'border-primary ring-2 ring-ring' : 'border-transparent'
+                          )}
+                          style={{backgroundColor: color}}
+                        />
+                    ))}
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t mt-auto">

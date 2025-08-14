@@ -6,6 +6,7 @@ export interface Task {
   start: Date;
   end: Date;
   dependencies: string[];
+  color?: string;
 }
 
 export interface Project {

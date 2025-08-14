@@ -29,7 +29,6 @@ type GanttasticChartProps = {
   onTaskUpdate: (task: Task) => void;
 };
 
-type ViewMode = 'day' | 'week' | 'month';
 
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 32; // height of a task bar
@@ -38,7 +37,6 @@ const HEADER_HEIGHT = 48;
 
 export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
 
@@ -72,16 +70,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const today = startOfDay(new Date());
     let projectStart: Date;
     let projectEnd: Date;
-    let dayWidth: number;
+    const viewMode = 'month';
 
     if (tasks.length === 0) {
-        if (viewMode === 'week') {
-            projectStart = startOfWeek(subWeeks(today, 6));
-            projectEnd = endOfWeek(addWeeks(today, 6));
-        } else {
-            projectStart = startOfWeek(startOfMonth(today));
-            projectEnd = endOfWeek(endOfMonth(today));
-        }
+        projectStart = startOfWeek(startOfMonth(today));
+        projectEnd = endOfWeek(endOfMonth(today));
     } else {
         const startDates = tasks.map(t => startOfDay(t.start));
         const endDates = tasks.map(t => startOfDay(t.end));
@@ -89,29 +82,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
     }
     
-    if (viewMode !== 'week') {
-      projectStart = addDays(projectStart, -14);
-      projectEnd = addDays(projectEnd, 14);
-    } else {
-        const minProjectStart = startOfWeek(subWeeks(today, 6));
-        const maxProjectEnd = endOfWeek(addWeeks(today, 6));
-        projectStart = new Date(Math.min(projectStart.getTime(), minProjectStart.getTime()));
-        projectEnd = new Date(Math.max(projectEnd.getTime(), maxProjectEnd.getTime()));
-    }
+    projectStart = addDays(projectStart, -14);
+    projectEnd = addDays(projectEnd, 14);
 
-
-    switch(viewMode) {
-      case 'week':
-        dayWidth = 20;
-        break;
-      case 'month':
-        dayWidth = 40;
-        break;
-      case 'day':
-      default:
-        dayWidth = 60;
-        break;
-    }
+    const dayWidth = 40;
 
     const timeline = eachDayOfInterval({ start: projectStart, end: projectEnd });
     const totalDays = timeline.length;
@@ -131,29 +105,16 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     });
 
     const getHeaderGroups = () => {
-        if (viewMode === 'day') {
-            return [{ label: '', days: totalDays }]; // No grouping for day view
-        }
         const groups: { label: string, days: number }[] = [];
         let currentMonth = -1;
-        let currentWeek = -1;
 
         timeline.forEach(day => {
-            if (viewMode === 'month') {
-                if (day.getMonth() !== currentMonth) {
-                    currentMonth = day.getMonth();
-                    const monthStart = startOfMonth(day);
-                    const monthEnd = endOfMonth(day);
-                    const daysInMonth = differenceInDays(monthEnd, day < monthStart ? monthStart : day) + 1;
-                    groups.push({ label: format(day, 'MMMM yyyy'), days: daysInMonth });
-                }
-            } else if (viewMode === 'week') {
-                 if (startOfWeek(day).getTime() !== currentWeek) {
-                    currentWeek = startOfWeek(day).getTime();
-                    const weekEnd = endOfWeek(day);
-                    const daysInWeek = differenceInDays(weekEnd, day) + 1;
-                    groups.push({ label: `Week of ${format(day, 'MMM d')}`, days: Math.min(daysInWeek, 7) });
-                 }
+            if (day.getMonth() !== currentMonth) {
+                currentMonth = day.getMonth();
+                const monthStart = startOfMonth(day);
+                const monthEnd = endOfMonth(day);
+                const daysInMonth = differenceInDays(monthEnd, day < monthStart ? monthStart : day) + 1;
+                groups.push({ label: format(day, 'MMMM yyyy'), days: daysInMonth });
             }
         });
 
@@ -169,12 +130,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
 
     return { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups };
-  }, [tasks, viewMode]);
+  }, [tasks]);
 
   const headerGroups = getHeaderGroups();
 
   const pxPerDay = dayWidth;
 
+  // Gap-aware FS router: S (tight), 90° (≈1 cell), gentle diagonal (wide)
   const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
     const gap = tx - sx;                 // px between bar edges
     const cell = pxPerDay;               // px per day cell
@@ -505,12 +467,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </Dialog>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant={viewMode === 'day' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('day')}>Day</Button>
-            <Button variant={viewMode === 'week' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('week')}>Week</Button>
-            <Button variant={viewMode === 'month' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('month')}>Month</Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
@@ -555,15 +511,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
               <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40">
-                 {viewMode !== 'day' && (
-                    <div className="flex">
-                        {headerGroups.map((group, index) => (
-                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
-                                <span className="truncate px-2">{group.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                 )}
+                <div className="flex">
+                    {headerGroups.map((group, index) => (
+                        <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                            <span className="truncate px-2">{group.label}</span>
+                        </div>
+                    ))}
+                </div>
                 <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                     {timeline.map(day => {
                         const weekend = isWeekend(day);
@@ -574,7 +528,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                             weekend && "bg-muted/30",
                             today && "bg-primary text-primary-foreground font-bold"
                           )}>
-                            <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
+                            <div>{format(day, 'dd')}</div>
                             <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
                           </div>
                         );
@@ -637,6 +591,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   })}
 
                   {linkDraft.fromTaskId && (() => {
+                    const fromPos = taskPositions.get(linkDraft.fromTaskId);
+                    if (!fromPos) return null;
                     const fromV = getVisualPos(linkDraft.fromTaskId);
                     if (!fromV) return null;
                     const d = routeFS(fromV.right, fromV.cy, linkDraft.toX, linkDraft.toY);
@@ -678,7 +634,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
                                onClick={() => handleBarClick(task)}
                                className={cn(
-                                "absolute rounded-md bg-primary/80 hover:bg-primary transition-[background-color] cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
+                                "absolute rounded-md hover:brightness-110 transition-all cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
                                 isDraggingThis && "opacity-90"
                                )}
                                style={{
@@ -687,6 +643,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                 width: `${vPos.right - vPos.left}px`,
                                 height: `${BAR_HEIGHT}px`,
                                 willChange: "transform,width,left",
+                                backgroundColor: task.color || 'hsl(var(--primary))'
                                }}
                             >
                               <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
@@ -711,8 +668,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                   className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
                                   onMouseDown={(e) => {
                                     e.stopPropagation();
-                                    const sx = pos.x + pos.width;
-                                    const sy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+                                    const fromV = getVisualPos(task.id);
+                                    if (!fromV) return;
+                                    const sx = fromV.right;
+                                    const sy = fromV.cy;
                                     const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
                                     const rect = svg.getBoundingClientRect();
                                     setLinkDraft({
