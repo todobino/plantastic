@@ -10,24 +10,21 @@ import { ThemeToggle } from './theme-toggle';
 
 type GanttasticHeaderProps = {
   openSidebar: (view: 'TASK_EDITOR' | 'IMPORTER', task?: any) => void;
-  projectName: string;
 };
 
-export default function GanttasticHeader({ openSidebar, projectName }: GanttasticHeaderProps) {
+export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps) {
   const { toggleSidebar } = useSidebar();
   
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
-        <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
-          <FolderOpen className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm">{projectName}</span>
-          <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+         <Button asChild variant="secondary" size="sm">
+          <Link href="/login">
+            <UserCircle />
+            Login
+          </Link>
         </Button>
-        <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
-          <Plus className="h-4 w-4" />
-          New
-        </Button>
+        <ThemeToggle />
       </div>
 
       <div className="flex items-center gap-3">
@@ -42,16 +39,10 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
             <Upload className="h-4 w-4" />
             Import
         </Button>
-        
-        <div className="hidden md:flex items-center gap-2">
-           <Button asChild variant="secondary" size="sm">
-            <Link href="/login">
-              <UserCircle />
-              Login
-            </Link>
-          </Button>
-        </div>
-        <ThemeToggle />
+        <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
+          <Plus className="h-4 w-4" />
+          New Project
+        </Button>
       </div>
     </header>
   );

@@ -191,7 +191,7 @@ export default function GanttasticApp() {
 
   return (
     <div className="flex h-screen flex-col">
-      <GanttasticHeader openSidebar={openEditorDialog} projectName={project.name} />
+      <GanttasticHeader openSidebar={openEditorDialog} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar side="left" collapsible="icon">
           <ProjectSidebar currentProjectName={project.name} onProjectChange={(name) => setProject({...project, name})} />
