@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -553,6 +553,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </Button>
         </div>
         <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => alert('Export functionality coming soon!')}>
+                <Download className="h-4 w-4" />
+                Export
+            </Button>
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
