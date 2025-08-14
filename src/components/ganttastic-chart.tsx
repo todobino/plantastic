@@ -312,16 +312,14 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     setDragState(s => ({ ...s, previewDeltaPx: 0 }));
   };
 
-  const orthPath = (sx:number, sy:number, tx:number, ty:number) => {
-    const R = 10;
-    let mx = (sx + tx) / 2;
-    const minMx = sx + R + 6;
-    const maxMx = tx - R - 6;
-    if (mx < minMx) mx = minMx;
-    if (mx > maxMx) mx = maxMx;
-    const dir:1|-1 = ty >= sy ? 1 : -1;
-    return `M ${sx} ${sy} H ${mx - R} Q ${mx} ${sy} ${mx} ${sy + dir*R} V ${ty - dir*R} Q ${mx} ${ty} ${mx + R} ${ty} H ${tx}`;
+  const HALF_CELL = pxPerDay / 2;
+  const zPath = (sx: number, sy: number, tx: number, ty: number) => {
+    const lead = Math.max(8, HALF_CELL);
+    const outX = sx + lead;
+    const inX = tx - lead;
+    return `M ${sx} ${sy} H ${outX} V ${ty} H ${tx}`;
   };
+
   
   // proximity hit-test for dropping on a start-dot
   const hitStartDot = (x:number, y:number) => {
@@ -507,7 +505,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                       const sx = fromRightEdge;   // dot center on predecessor end
                       const tx = toLeftEdge;      // dot center on successor start
 
-                      const d = orthPath(sx, sy, tx, ty);
+                      const d = zPath(sx, sy, tx, ty);
 
                       return (
                         <g key={`${depId}-${task.id}`}>
@@ -534,7 +532,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     if (!fromPos) return null;
                     const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
                     const sx = fromPos.x + fromPos.width - 2; // right dot
-                    const d = orthPath(sx, sy, linkDraft.toX, linkDraft.toY);
+                    const d = zPath(sx, sy, linkDraft.toX, linkDraft.toY);
                     return (
                       <g>
                         <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
