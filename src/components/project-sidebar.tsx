@@ -50,10 +50,18 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
     setOpen(false); // Close sidebar on selection
   };
 
-  const handleDragStart = (e: DragEvent<HTMLLIElement>, projectId: string) => {
+  const handleDragStart = (e: DragEvent<HTMLSpanElement>, projectId: string) => {
+    e.stopPropagation();
     setDraggedProjectId(projectId);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', projectId); // Necessary for Firefox
+    e.dataTransfer.setData('text/plain', projectId);
+    
+    // Create a custom drag image that looks like the menu item
+    const target = (e.target as HTMLElement).closest('[data-sidebar="menu-item"]');
+    if (target) {
+        const rect = target.getBoundingClientRect();
+        e.dataTransfer.setDragImage(target, e.clientX - rect.left, e.clientY - rect.top);
+    }
   };
 
   const handleDragEnter = (e: DragEvent<HTMLLIElement>, targetId: string) => {
@@ -68,26 +76,37 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   }
 
   const handleDragOver = (e: DragEvent<HTMLLIElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is necessary to allow dropping
     e.dataTransfer.dropEffect = 'move';
   };
+  
 
   const handleDrop = (e: DragEvent<HTMLLIElement>) => {
     e.preventDefault();
-    if (!draggedProjectId || !dropTargetId || draggedProjectId === dropTargetId) {
-      return;
+    e.stopPropagation();
+
+    if (!draggedProjectId) return;
+
+    // If we drop on the original item, do nothing
+    if (draggedProjectId === dropTargetId) {
+        setDraggedProjectId(null);
+        setDropTargetId(null);
+        return;
     }
 
     const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
-    const dropIndex = projects.findIndex(p => p.id === dropTargetId);
+    // Find drop index, if dropping outside a target, append to end
+    const dropIndex = dropTargetId ? projects.findIndex(p => p.id === dropTargetId) : projects.length -1;
 
-    if (draggedIndex === -1 || dropIndex === -1) return;
+    if (draggedIndex === -1) return;
     
     const reorderedProjects = [...projects];
     const [draggedItem] = reorderedProjects.splice(draggedIndex, 1);
     reorderedProjects.splice(dropIndex, 0, draggedItem);
     
     setProjects(reorderedProjects);
+    setDraggedProjectId(null);
+    setDropTargetId(null);
   };
   
   const handleDragEnd = () => {
@@ -114,32 +133,56 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
           />
         </div>
       </SidebarHeader>
-      <SidebarContent className="px-2">
-        <SidebarMenu onDragOver={handleDragOver}>
-          {filteredProjects.map((project) => (
-            <SidebarMenuItem 
-              key={project.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, project.id)}
-              onDragEnd={handleDragEnd}
-              onDragEnter={(e) => handleDragEnter(e, project.id)}
-              onDrop={handleDrop}
-              className={cn(
-                "transition-all duration-200 ease-in-out",
-                draggedProjectId === project.id && "opacity-50 scale-105",
-                dropTargetId === project.id && draggedProjectId !== project.id && "transform -translate-y-8"
-              )}
-            >
-              <SidebarMenuButton
-                isActive={project.name === currentProjectName}
-                onClick={() => handleProjectClick(project.name)}
-                className="justify-start"
+      <SidebarContent className="px-2" onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
+        <SidebarMenu>
+          {filteredProjects.map((project, index) => {
+            const isBeingDragged = draggedProjectId === project.id;
+            const isDropTarget = dropTargetId === project.id;
+            const dropIndex = dropTargetId ? projects.findIndex(p => p.id === dropTargetId) : -1;
+            const draggedIndex = draggedProjectId ? projects.findIndex(p => p.id === draggedProjectId) : -1;
+
+            let transform = '';
+            if (isDropTarget && draggedProjectId && draggedIndex !== -1) {
+                if (draggedIndex < index) {
+                    transform = 'translateY(-100%)';
+                } else if (draggedIndex > index) {
+                    transform = 'translateY(100%)';
+                }
+            }
+
+
+            return (
+              <SidebarMenuItem 
+                key={project.id}
+                onDragEnter={(e) => handleDragEnter(e, project.id)}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDragLeave={handleDragLeave}
+                className={cn(
+                  "transition-transform duration-200 ease-in-out",
+                  isBeingDragged && "opacity-30",
+                )}
+                style={{ transform }}
               >
-                <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab mr-2" />
-                <span>{project.name}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                <SidebarMenuButton
+                  isActive={project.name === currentProjectName}
+                  onClick={() => handleProjectClick(project.name)}
+                  className="justify-start items-center"
+                >
+                  <span
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, project.id)}
+                      onDragEnd={handleDragEnd}
+                      className="cursor-grab p-1"
+                      onClick={(e) => e.stopPropagation()} // prevent button click when grabbing
+                  >
+                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                  </span>
+                  <span className="flex-grow ml-1">{project.name}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
     </>
