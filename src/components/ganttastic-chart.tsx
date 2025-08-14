@@ -40,10 +40,10 @@ const businessDaysInclusive = (start: Date, end: Date) => {
 const addBusinessDaysIncl = (start: Date, n: number) => {
   let d = startOfDay(start);
   // Adjust for starting on a non-business day if needed, though normalize should handle this.
-  let current = nextBusinessDay(d);
-  if (n <= 1) return current;
+  let current = d;
+  if(n <= 0) return current;
 
-  let remaining = n - 1;
+  let remaining = n;
   while(remaining > 0) {
       current = addDays(current, 1);
       if (!isWeekend(current)) {
@@ -53,11 +53,12 @@ const addBusinessDaysIncl = (start: Date, n: number) => {
   return current;
 };
 
+
 // Normalize task: move start off weekend and recompute end preserving business duration
 const normalizeTaskSpan = (start: Date, end: Date) => {
   const s = nextBusinessDay(start);
   const bd = Math.max(1, businessDaysInclusive(start, end));
-  const e = addBusinessDaysIncl(s, bd);
+  const e = addBusinessDaysIncl(s, bd - 1);
   return { s, e, bd };
 };
 
@@ -91,6 +92,17 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     startLeftPx: number;
     previewDeltaPx: number;
   }>({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
+
+  const [hoverTaskId, setHoverTaskId] = useState<string | null>(null);
+
+  const [linkDraft, setLinkDraft] = useState<{
+    fromTaskId: string | null;
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+  }>({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
+
 
   const dragging = dragState.id !== null;
 
@@ -313,7 +325,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       const candStart = addDays(pos.s, calDelta);
       const newStart = nextBusinessDay(candStart);
       // preserve business duration
-      const newEnd = addBusinessDaysIncl(newStart, pos.bd);
+      const newEnd = addBusinessDaysIncl(newStart, pos.bd - 1);
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
     }
   
@@ -326,6 +338,37 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         onTaskClick(task);
     }
   }
+
+  const orthPath = (sx:number, sy:number, tx:number, ty:number) => {
+    const R = 10;                  // corner radius
+    const minRun = 16;             // min horizontal before first turn
+    let mx = (sx + tx) / 2;
+    if (mx < sx + R + 4) mx = sx + R + 4;
+    if (mx > tx - R - 4) mx = tx - R - 4;
+    const dir:1|-1 = ty >= sy ? 1 : -1;
+    return [
+      `M ${sx} ${sy}`,
+      `H ${mx - R}`,
+      `Q ${mx} ${sy} ${mx} ${sy + dir*R}`,
+      `V ${ty - dir*R}`,
+      `Q ${mx} ${ty} ${mx + R} ${ty}`,
+      `H ${tx}`
+    ].join(' ');
+  };
+  
+  // proximity hit-test for dropping on a start-dot
+  const hitStartDot = (x:number, y:number) => {
+    const R = 10; // px radius to snap
+    for (const task of tasks) {
+      const pos = taskPositions.get(task.id);
+      if (!pos) continue;
+      const cx = pos.x + 2; // left edge dot
+      const cy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+      const dx = x - cx, dy = y - cy;
+      if ((dx*dx + dy*dy) <= R*R) return { taskId: task.id, cx, cy };
+    }
+    return null;
+  };
 
 
   return (
@@ -435,71 +478,86 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   ))}
                 </div>
                 
-                {/* Dependency Lines */}
-                <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
+                {/* Dependency Lines (existing + preview) */}
+                <svg
+                  className="absolute top-0 left-0 w-full h-full z-30"
+                  onMouseMove={e => {
+                    if (!linkDraft.fromTaskId || !timelineRef.current) return;
+                    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+                    setLinkDraft(ld => ({ ...ld, toX: e.clientX - rect.left + timelineRef.current!.scrollLeft, toY: e.clientY - rect.top }));
+                  }}
+                  onMouseUp={() => {
+                    if (!linkDraft.fromTaskId) return;
+                    const hit = hitStartDot(linkDraft.toX, linkDraft.toY);
+                    if (hit && hit.taskId !== linkDraft.fromTaskId) {
+                      // create Finish->Start: fromTask finishes -> hit.taskId starts
+                      const target = tasks.find(t => t.id === hit.taskId)!;
+                      if (!target.dependencies.includes(linkDraft.fromTaskId)) {
+                        onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId] });
+                      }
+                    }
+                    setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
+                  }}
+                  onMouseLeave={() => {
+                    if (linkDraft.fromTaskId) setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
+                  }}
+                >
+                  {/* existing links */}
                   {tasks.map((task) => {
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
-
-                    // visible target bar edge
                     const toLeftEdge = toPos.x + 2;
-                    const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
+                    const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
 
-                    return task.dependencies.map((depId) => {
+                    // guard: unique deps, no self
+                    const deps = Array.from(new Set(task.dependencies.filter(d => d !== task.id)));
+
+                    return deps.map(depId => {
                       const fromPos = taskPositions.get(depId);
                       if (!fromPos) return null;
 
                       const fromRightEdge = fromPos.x + fromPos.width - 2;
-                      const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
+                      const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
 
-                      // Styling + geometry
-                      const GAP = 10;  // distance away from bar before turning
-                      const R = 10;    // corner radius
-                      const DOT = 3.5; // end-cap dots
+                      const sx = fromRightEdge;   // dot center on predecessor end
+                      const tx = toLeftEdge;      // dot center on successor start
 
-                      // Path anchors (don’t start inside bars)
-                      const sx = fromRightEdge + GAP;
-                      const tx = toLeftEdge - GAP;
-
-                      // Mid x (routing lane). Ensure room for elbows.
-                      const minMx = sx + R + 6;
-                      const maxMx = tx - R - 6;
-                      let mx = (sx + tx) / 2;
-                      mx = Math.max(minMx, Math.min(maxMx, mx));
-
-                      const dir: 1 | -1 = ty >= sy ? 1 : -1;
-
-                      const d = [
-                        `M ${sx} ${sy}`,
-                        `H ${mx - R}`,
-                        `Q ${mx} ${sy} ${mx} ${sy + dir * R}`,   // round turn down/up
-                        `V ${ty - dir * R}`,
-                        `Q ${mx} ${ty} ${mx + R} ${ty}`,
-                        `H ${tx}`
-                      ].join(' ');
-
-                      // Dot centers exactly at bar edges (not at GAP)
-                      const startDotX = fromRightEdge;
-                      const endDotX = toLeftEdge;
+                      const d = orthPath(sx, sy, tx, ty);
 
                       return (
                         <g key={`${depId}-${task.id}`}>
                           <path
                             d={d}
-                            stroke="hsl(var(--primary))"
+                            stroke="hsl(var(--muted-foreground))"
                             strokeWidth="2"
                             fill="none"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             vectorEffect="non-scaling-stroke"
-                            opacity="0.95"
+                            opacity="0.9"
                           />
-                          <circle cx={startDotX} cy={sy} r={DOT} fill="hsl(var(--primary))" />
-                          <circle cx={endDotX}   cy={ty} r={DOT} fill="hsl(var(--primary))" />
+                          <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                          <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
                         </g>
                       );
                     });
                   })}
+
+                  {/* live preview while dragging from a dot */}
+                  {linkDraft.fromTaskId && (() => {
+                    const fromPos = taskPositions.get(linkDraft.fromTaskId);
+                    if (!fromPos) return null;
+                    const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+                    const sx = fromPos.x + fromPos.width - 2; // right dot
+                    const d = orthPath(sx, sy, linkDraft.toX, linkDraft.toY);
+                    return (
+                      <g>
+                        <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
+                          strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity="0.6" />
+                        <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                      </g>
+                    );
+                  })()}
                 </svg>
 
                 {/* Task Bars */}
@@ -519,6 +577,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                onPointerMove={(e) => onBarPointerMove(e, task)}
                                onPointerUp={(e) => onBarPointerUp(e, task)}
                                onPointerCancel={(e) => onBarPointerUp(e, task)}
+                               onMouseEnter={() => setHoverTaskId(task.id)}
+                               onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
                                onClick={() => handleBarClick(task)}
                                className={cn(
                                 "absolute rounded-md bg-primary/80 hover:bg-primary transition-[background-color] cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
@@ -535,6 +595,37 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                             >
                               <div className="absolute top-0 left-0 h-full bg-primary/60 rounded-md" style={{ width: `${task.progress}%` }}></div>
                               <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
+                              
+                                {/* terminal dots (hidden until hover) */}
+                                <div
+                                  className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                >
+                                  <div className="relative w-3 h-3">
+                                    <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
+                                  </div>
+                                </div>
+                                <div
+                                  className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                  // this one is interactive: start link drag from END dot
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    const sx = pos.x + pos.width - 2;
+                                    const sy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+                                    const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
+                                    const rect = svg.getBoundingClientRect();
+                                    setLinkDraft({
+                                      fromTaskId: task.id,
+                                      fromX: sx,
+                                      fromY: sy,
+                                      toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
+                                      toY: e.clientY - rect.top
+                                    });
+                                  }}
+                                >
+                                  <div className="relative w-3 h-3 cursor-crosshair">
+                                    <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
+                                  </div>
+                                </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="bg-card border-primary">

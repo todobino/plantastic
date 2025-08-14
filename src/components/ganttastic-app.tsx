@@ -128,8 +128,15 @@ export default function GanttasticApp() {
 
   const handleUpdateTask = useCallback((updatedTask: Task) => {
     setTasks(prev => {
-      const newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
-      return updateDependentTasks(updatedTask.id, newTasks);
+      let newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
+      
+      // If dependencies were updated, we need to recalculate downstream tasks
+      const originalTask = prev.find(t => t.id === updatedTask.id);
+      if (JSON.stringify(originalTask?.dependencies) !== JSON.stringify(updatedTask.dependencies)) {
+         newTasks = updateDependentTasks(updatedTask.id, newTasks);
+      }
+
+      return newTasks;
     });
     toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
   }, [updateDependentTasks, toast]);
@@ -259,3 +266,4 @@ export default function GanttasticApp() {
     </div>
   );
 }
+
