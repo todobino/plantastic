@@ -468,7 +468,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex flex-row items-center justify-between border-b bg-background z-10 p-4">
+      <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-2">
             <Dialog>
               <DialogTrigger asChild>
