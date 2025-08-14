@@ -613,29 +613,31 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   onPointerLeave={handlePanEnd}
                   onPointerCancel={handlePanEnd}
               >
-                <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
-                  <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
-                      {headerGroups.map((group, index) => (
-                          <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
-                              <span className="truncate px-2">{group.label}</span>
-                          </div>
-                      ))}
-                  </div>
-                  <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`, height: `${DAY_ROW_HEIGHT}px` }}>
-                      {timeline.map(day => {
-                          const weekend = isWeekend(day);
-                          const today = isToday(day);
-                          return (
-                            <div key={day.toString()} className={cn(
-                              "text-center text-xs border-r relative flex flex-col justify-center",
-                              weekend && "bg-zinc-100 dark:bg-zinc-900/40",
-                              today && "bg-primary text-primary-foreground font-bold"
-                            )}>
-                              <div>{format(day, 'dd')}</div>
-                              <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
+                <div style={{ width: `${totalDays * dayWidth}px`}} className="sticky top-0 bg-background z-40">
+                  <div className="flex flex-col border-b">
+                    <div className="flex" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
+                        {headerGroups.map((group, index) => (
+                            <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                                <span className="truncate px-2">{group.label}</span>
                             </div>
-                          );
-                      })}
+                        ))}
+                    </div>
+                    <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`, height: `${DAY_ROW_HEIGHT}px` }}>
+                        {timeline.map(day => {
+                            const weekend = isWeekend(day);
+                            const today = isToday(day);
+                            return (
+                              <div key={day.toString()} className={cn(
+                                "text-center text-xs border-r relative flex flex-col justify-center",
+                                weekend && "bg-zinc-100 dark:bg-zinc-900/40",
+                                today && "bg-primary text-primary-foreground font-bold"
+                              )}>
+                                <div>{format(day, 'dd')}</div>
+                                <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
+                              </div>
+                            );
+                        })}
+                    </div>
                   </div>
                 </div>
 
