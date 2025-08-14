@@ -127,7 +127,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
           <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
            <Button size="sm" onClick={() => alert('New Project functionality coming soon!')}>
             <Plus className="h-4 w-4" />
-            New Project
+            New
           </Button>
         </div>
         <div className="relative">
