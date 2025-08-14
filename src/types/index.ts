@@ -9,6 +9,9 @@ export interface Task {
   dependencies: string[];
   color?: string;
   milestone?: string;
+  type: 'task' | 'category';
+  parentId?: string | null;
+  isExpanded?: boolean;
 }
 
 export interface Project {

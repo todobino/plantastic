@@ -12,14 +12,18 @@ import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
 
 const getInitialTasks = (): Task[] => [
-  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], color: '#3b82f6' },
-  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], color: '#3b82f6' },
-  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'], color: '#a855f7' },
-  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'], color: '#10b981' },
-  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'], color: '#10b981' },
-  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'], color: '#f97316' },
-  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'], color: '#ef4444' },
+  { id: 'cat-1', name: 'Planning Phase', start: new Date(), end: addDays(new Date(), 7), dependencies: [], type: 'category', isExpanded: true },
+  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], color: '#3b82f6', type: 'task', parentId: 'cat-1' },
+  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], color: '#3b82f6', type: 'task', parentId: 'cat-1' },
+  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'], color: '#a855f7', type: 'task', parentId: 'cat-1' },
+  { id: 'cat-2', name: 'Development Phase', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['cat-1'], type: 'category', isExpanded: true },
+  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'], color: '#10b981', type: 'task', parentId: 'cat-2' },
+  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'], color: '#10b981', type: 'task', parentId: 'cat-2' },
+  { id: 'cat-3', name: 'Release Phase', start: addDays(new Date(), 21), end: addDays(new Date(), 27), dependencies: ['cat-2'], type: 'category', isExpanded: false },
+  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'], color: '#f97316', type: 'task', parentId: 'cat-3' },
+  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'], color: '#ef4444', type: 'task', parentId: 'cat-3' },
 ];
+
 
 const getInitialProject = (): Project => ({
   id: 'proj-1',
@@ -118,7 +122,8 @@ export default function GanttasticApp() {
   
 
   const handleAddTask = (task: Omit<Task, 'id'>) => {
-    const newTask: Task = { ...task, id: `task-${Date.now()}` };
+    const newId = task.type === 'category' ? `cat-${Date.now()}` : `task-${Date.now()}`;
+    const newTask: Task = { ...task, id: newId };
     setTasks(prev => [...prev, newTask]);
     setEditorDialogOpen(false);
   };
@@ -190,6 +195,7 @@ export default function GanttasticApp() {
           <div className="flex-grow overflow-auto">
             <GanttasticChart
               tasks={tasks}
+              setTasks={setTasks}
               project={project}
               onTaskClick={(task) => openEditorDialog('TASK_EDITOR', task)}
               onAddTaskClick={() => openEditorDialog('TASK_EDITOR')}

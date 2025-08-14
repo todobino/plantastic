@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -24,6 +24,7 @@ const isWeekend = (d: Date) => {
 
 type GanttasticChartProps = {
   tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
   project: Project;
   onTaskClick: (task: Task) => void;
   onAddTaskClick: () => void;
@@ -34,13 +35,14 @@ type GanttasticChartProps = {
 
 
 const ROW_HEIGHT = 40; // height of a task row in pixels
-const BAR_HEIGHT = 32; // height of a task bar
+const BAR_HEIGHT = 28; // height of a task bar
+const CATEGORY_BAR_HEIGHT = 20;
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const MONTH_ROW_HEIGHT = 32;
 const DAY_ROW_HEIGHT = 40;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
-export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -75,22 +77,39 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     startScrollLeft: number;
   }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
-
-
   const dragging = dragState.id !== null;
+
+  const displayTasks = useMemo(() => {
+    const flatList: Task[] = [];
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+
+    // Get top-level tasks first (categories or tasks without parents)
+    const topLevelTasks = tasks.filter(t => !t.parentId || !taskMap.has(t.parentId));
+
+    const addTaskRecursive = (task: Task, level: number) => {
+        flatList.push({ ...task, milestone: `${level}` }); // Using milestone to store level for indentation
+        if (task.type === 'category' && task.isExpanded) {
+            const children = tasks.filter(child => child.parentId === task.id);
+            children.forEach(child => addTaskRecursive(child, level + 1));
+        }
+    }
+    topLevelTasks.forEach(task => addTaskRecursive(task, 0));
+    return flatList;
+  }, [tasks]);
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
     let projectStart: Date;
     let projectEnd: Date;
-    const viewMode = 'month';
+    
+    const allTasks = displayTasks;
 
-    if (tasks.length === 0) {
+    if (allTasks.length === 0) {
         projectStart = startOfWeek(startOfMonth(today));
         projectEnd = endOfWeek(endOfMonth(today));
     } else {
-        const startDates = tasks.map(t => startOfDay(t.start));
-        const endDates = tasks.map(t => startOfDay(t.end));
+        const startDates = allTasks.map(t => startOfDay(t.start));
+        const endDates = allTasks.map(t => startOfDay(t.end));
         projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
         projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
     }
@@ -104,7 +123,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const totalDays = timeline.length;
 
     const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date }>();
-    tasks.forEach((task, index) => {
+    allTasks.forEach((task, index) => {
         const s = startOfDay(task.start);
         const e = startOfDay(task.end);
         const offset = differenceInDays(s, projectStart);
@@ -137,13 +156,11 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 groups[groups.length - 1].days -= (totalGroupedDays - totalDays);
             }
         }
-
         return groups;
     }
 
-
     return { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups };
-  }, [tasks]);
+  }, [displayTasks]);
 
   const headerGroups = getHeaderGroups();
 
@@ -165,24 +182,20 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       return `M ${sx} ${sy} C ${c1x} ${sy}, ${c2x} ${ty}, ${tx} ${ty}`;
     };
 
-    // 1) Butt-to-butt (adjacent): swoopy S (no vertical)
     if (gap <= EPS) {
-      return cubic(0.6); // more pronounced curve
+      return cubic(0.6);
     }
 
-    // 2) ~1 cell gap: clean right angle
     if (gap >= cell * 0.7 && gap <= cell * 1.3) {
       const lead = Math.min(cell / 2, Math.max(10, gap / 2 - 3));
       const outX = sx + lead;
       return `M ${sx} ${sy} H ${outX} V ${ty} H ${tx}`;
     }
 
-    // 3) Wider gaps: single gentle diagonal/curve (no extra elbows)
     if (gap < cell * 2.2) {
-      return cubic(0.35); // mild curvature for 1–2 cells
+      return cubic(0.35);
     }
 
-    // 3b) Very wide: straight diagonal looks best
     return `M ${sx} ${sy} L ${tx} ${ty}`;
   };
 
@@ -209,6 +222,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   };
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
+    if(task.type === 'category') return;
     wasDraggedRef.current = false;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
@@ -275,6 +289,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
+    if(task.type === 'category') return;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'left', startX: e.clientX });
@@ -282,6 +297,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const onRightHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
+    if(task.type === 'category') return;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'right', startX: e.clientX });
@@ -461,7 +477,15 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         width += dragState.previewDeltaPx;
       }
     }
-    return { left, right: left + width, cy: p.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2 };
+    
+    const task = tasks.find(t => t.id === id);
+    const isCategory = task?.type === 'category';
+
+    const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
+    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) : BAR_TOP_MARGIN;
+    const cy = p.y + topMargin + barHeight / 2;
+
+    return { left, right: left + width, cy };
   };
 
   const handleTodayClick = useCallback(() => {
@@ -496,7 +520,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             });
         }, 100);
     }
-  }, [project.id]);
+  }, [project.id]); // Re-center on project change
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -526,6 +550,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     document.body.style.cursor = 'default';
     setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
   };
+  
+  const toggleCategory = (categoryId: string) => {
+    setTasks(tasks.map(t => 
+        t.id === categoryId ? { ...t, isExpanded: !t.isExpanded } : t
+    ));
+  }
 
 
   return (
@@ -588,17 +618,30 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   </DropdownMenu>
               </div>
               <div className='relative'>
-                {tasks.map((task, index) => (
-                  <div 
-                    key={task.id} 
-                    style={{height: `${ROW_HEIGHT}px`}} 
-                    className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer px-4 border-b"
-                    onClick={() => onTaskClick(task)}
-                  >
-                    <span className="truncate flex-1">{task.name}</span>
-                    <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                  </div>
-                ))}
+                {displayTasks.map((task) => {
+                  const level = parseInt(task.milestone || '0', 10);
+                  return (
+                    <div 
+                      key={task.id} 
+                      style={{height: `${ROW_HEIGHT}px`, paddingLeft: `${level * 1.5 + 1}rem`}} 
+                      className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer border-b"
+                      onClick={() => onTaskClick(task)}
+                    >
+                      {task.type === 'category' ? (
+                        <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1 -ml-1">
+                          {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                      ) : <div className="w-5" />}
+
+                      {task.type === 'category' ? (
+                        task.isExpanded ? <FolderOpen className="h-4 w-4 text-primary" /> : <Folder className="h-4 w-4 text-primary" />
+                      ) : null}
+
+                      <span className="truncate flex-1">{task.name}</span>
+                      <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -614,8 +657,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   onPointerLeave={handlePanEnd}
                   onPointerCancel={handlePanEnd}
               >
-                <div style={{ width: `${totalDays * dayWidth}px`}} className="sticky top-0 bg-background z-40">
-                  <div className="flex flex-col border-b">
+                <div style={{ width: `${totalDays * dayWidth}px`}} className="sticky top-0 bg-background z-40 border-b">
+                  <div className="flex flex-col">
                     <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
                         {headerGroups.map((group, index) => (
                             <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
@@ -642,14 +685,14 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   </div>
                 </div>
 
-                <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
+                <div style={{ width: `${totalDays * dayWidth}px`, height: `${displayTasks.length * ROW_HEIGHT}px` }} className="relative">
                   <div className="absolute top-0 left-0 w-full h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                     {timeline.map((day, i) => (
                       <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40")}></div>
                     ))}
                   </div>
                   <div className="absolute top-0 left-0 w-full h-full">
-                    {tasks.map((_task, i) => (
+                    {displayTasks.map((_task, i) => (
                       <div key={`row-bg-${i}`} className="border-b" style={{ height: `${ROW_HEIGHT}px` }}></div>
                     ))}
                   </div>
@@ -712,7 +755,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     })()}
                   </svg>
                   
-                  {tasks.map((task, index) => {
+                  {displayTasks.map((task, index) => {
                     const pos = taskPositions.get(task.id);
                     if(!pos) return null;
 
@@ -720,6 +763,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     const isResizingThis = resizeState.id === task.id;
                     const vPos = getVisualPos(task.id);
                     if(!vPos) return null;
+                    
+                    const isCategory = task.type === 'category';
+                    const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
+                    const topMargin = isCategory ? ROW_HEIGHT - barHeight - 2 : BAR_TOP_MARGIN;
 
                     return (
                         <TooltipProvider key={task.id} delayDuration={100}>
@@ -741,19 +788,35 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                 onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
                                 onClick={() => handleBarClick(task)}
                                 className={cn(
-                                "absolute rounded-md hover:brightness-110 transition-all cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
+                                "absolute rounded-md hover:brightness-110 transition-all flex items-center px-2 overflow-hidden shadow z-20",
+                                isCategory ? "cursor-default" : "cursor-grab active:cursor-grabbing",
                                 isDraggingThis && "opacity-90"
                                 )}
                                 style={{
-                                top: `${pos.y + BAR_TOP_MARGIN}px`,
+                                top: `${pos.y + topMargin}px`,
                                 left: `${vPos.left}px`,
                                 width: `${vPos.right - vPos.left}px`,
-                                height: `${BAR_HEIGHT}px`,
+                                height: `${barHeight}px`,
                                 willChange: "transform,width,left",
-                                backgroundColor: task.color || 'hsl(var(--primary))'
+                                backgroundColor: isCategory ? 'hsl(var(--secondary))' : (task.color || 'hsl(var(--primary))')
                                 }}
                               >
-                                <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
+                               <div
+                                  className={cn(
+                                      "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
+                                      isCategory ? "bg-secondary-foreground" : "bg-primary-foreground"
+                                  )}
+                                />
+                                <span className={cn(
+                                  "relative text-xs font-medium truncate z-10",
+                                  isCategory ? "text-secondary-foreground" : "text-primary-foreground"
+                                )}>{task.name}</span>
+                                <div
+                                  className={cn(
+                                      "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
+                                      isCategory ? "bg-secondary-foreground" : "bg-primary-foreground"
+                                  )}
+                                />
                                 
                                 <div
                                   className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
@@ -764,37 +827,41 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                   onPointerDown={(e)=>onRightHandleDown(e, task)}
                                 />
 
-                                  <div
-                                    className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                  >
-                                    <div className="relative w-3 h-3">
-                                      <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
-                                    </div>
-                                  </div>
-                                  <div
-                                    className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      const fromV = getVisualPos(task.id);
-                                      if (!fromV) return;
-                                      const sx = fromV.right;
-                                      const sy = fromV.cy;
-                                      const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
-                                      const rect = svg.getBoundingClientRect();
-                                      setLinkDraft({
-                                        fromTaskId: task.id,
-                                        fromX: sx,
-                                        fromY: sy,
-                                        toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
-                                        toY: e.clientY - rect.top
-                                      });
+                                  {!isCategory && (
+                                    <>
+                                      <div
+                                        className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                      >
+                                        <div className="relative w-3 h-3">
+                                          <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
+                                        </div>
+                                      </div>
+                                      <div
+                                        className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                        onMouseDown={(e) => {
+                                          e.stopPropagation();
+                                          const fromV = getVisualPos(task.id);
+                                          if (!fromV) return;
+                                          const sx = fromV.right;
+                                          const sy = fromV.cy;
+                                          const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
+                                          const rect = svg.getBoundingClientRect();
+                                          setLinkDraft({
+                                            fromTaskId: task.id,
+                                            fromX: sx,
+                                            fromY: sy,
+                                            toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
+                                            toY: e.clientY - rect.top
+                                          });
 
-                                    }}
-                                  >
-                                    <div className="relative w-3 h-3 cursor-crosshair">
-                                      <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
-                                    </div>
-                                  </div>
+                                        }}
+                                      >
+                                        <div className="relative w-3 h-3 cursor-crosshair">
+                                          <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent className="bg-card border-primary">

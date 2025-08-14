@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,6 +23,8 @@ import { format, differenceInDays, addDays } from 'date-fns';
 import type { Task } from '@/types';
 import { useEffect, useState } from 'react';
 import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Switch } from './ui/switch';
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
@@ -30,6 +33,8 @@ const taskSchema = z.object({
   end: z.date({ required_error: 'An end date is required.' }),
   dependencies: z.array(z.string()).optional(),
   color: z.string().optional(),
+  type: z.enum(['task', 'category']),
+  parentId: z.string().nullable().optional(),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -58,10 +63,13 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       description: '',
       dependencies: [],
       color: defaultColor,
+      type: 'task',
+      parentId: null,
     },
   });
   
   const [duration, setDuration] = useState(1);
+  const taskType = form.watch('type');
 
   useEffect(() => {
     if (selectedTask) {
@@ -73,6 +81,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         end: selectedTask.end,
         dependencies: selectedTask.dependencies || [],
         color: selectedTask.color || defaultColor,
+        type: selectedTask.type || 'task',
+        parentId: selectedTask.parentId || null,
       });
       setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
@@ -85,6 +95,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         end: addDays(defaultStartDate, defaultDuration - 1),
         dependencies: [],
         color: defaultColor,
+        type: 'task',
+        parentId: null,
       });
       setDuration(defaultDuration);
     }
@@ -114,7 +126,10 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       start: data.start,
       end: data.end,
       dependencies: data.dependencies || [],
-      color: data.color || defaultColor,
+      color: data.type === 'task' ? (data.color || defaultColor) : undefined,
+      type: data.type,
+      parentId: data.parentId,
+      isExpanded: selectedTask?.isExpanded ?? true,
     };
     if (selectedTask) {
       onUpdateTask({ ...taskData, id: selectedTask.id });
@@ -122,20 +137,42 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       onAddTask(taskData);
     }
   };
-
+  
+  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full">
         <div className="space-y-4 flex-grow overflow-y-auto pr-2 pb-4">
+           <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Is this a Category?</FormLabel>
+                  <FormDescription>
+                    Categories act as containers for other tasks.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value === 'category'}
+                    onCheckedChange={(checked) => field.onChange(checked ? 'category' : 'task')}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Task Name</FormLabel>
+                <FormLabel>{taskType === 'category' ? 'Category' : 'Task'} Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Design homepage" {...field} />
+                  <Input placeholder={taskType === 'category' ? "e.g., Planning Phase" : "e.g., Design homepage"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -149,12 +186,38 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Add a short description of the task..." {...field} />
+                  <Textarea placeholder="Add a short description..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+         {taskType === 'task' && (
+            <FormField
+              control={form.control}
+              name="parentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent Category</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Assign to a category..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="null">None</SelectItem>
+                        {availableCategories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <div className="grid grid-cols-2 gap-4">
              <FormField
@@ -199,37 +262,39 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
              </FormItem>
           </div>
           
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Task Color</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2">
-                    {colorPalette.map(color => (
-                        <button
-                          type="button"
-                          key={color}
-                          onClick={() => field.onChange(color)}
-                          className={cn(
-                            "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
-                            field.value === color ? 'border-primary ring-2 ring-ring' : 'border-transparent'
-                          )}
-                          style={{backgroundColor: color}}
-                        />
-                    ))}
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {taskType === 'task' && (
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Task Color</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      {colorPalette.map(color => (
+                          <button
+                            type="button"
+                            key={color}
+                            onClick={() => field.onChange(color)}
+                            className={cn(
+                              "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
+                              field.value === color ? 'border-primary ring-2 ring-ring' : 'border-transparent'
+                            )}
+                            style={{backgroundColor: color}}
+                          />
+                      ))}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          )}
 
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t mt-auto">
           <Button type="submit">
-            {selectedTask ? 'Save Changes' : 'Add Task'}
+            {selectedTask ? 'Save Changes' : `Add ${taskType === 'category' ? 'Category' : 'Task'}`}
           </Button>
           {selectedTask && (
              <Button type="button" variant="destructive" size="icon" onClick={() => onDeleteTask(selectedTask.id)}>
