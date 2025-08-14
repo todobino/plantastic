@@ -450,6 +450,21 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     return { left, right: left + width, cy: p.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2 };
   };
 
+  const handleTodayClick = () => {
+    const scroller = timelineRef.current;
+    if (!scroller) return;
+
+    const todayX = dateToX(new Date());
+    const scrollerWidth = scroller.clientWidth;
+    
+    const scrollTo = todayX - (scrollerWidth / 2) + (dayWidth / 2);
+    
+    scroller.scrollTo({
+      left: scrollTo,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
       <CardHeader className="flex flex-row items-center justify-between border-b bg-background z-50">
@@ -467,6 +482,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </Dialog>
         </div>
         <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleTodayClick}>
+                Today
+            </Button>
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
