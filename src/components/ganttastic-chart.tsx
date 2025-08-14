@@ -457,10 +457,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           <div key={day.toString()} className={cn(
                             "text-center text-xs py-1 border-r border-b relative",
                             weekend && "bg-muted/30",
-                            today && "text-primary font-bold"
+                            today && "bg-primary text-primary-foreground font-bold"
                           )}>
                             <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
-                            <div className="text-muted-foreground">{format(day, 'E')}</div>
+                            <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
                           </div>
                         );
                     })}
