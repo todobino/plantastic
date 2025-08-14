@@ -129,7 +129,12 @@ export default function GanttasticApp() {
       newTasks = updateDependentTasks(updatedTask.id, newTasks);
       return newTasks;
     });
-  }, [updateDependentTasks]);
+    // After any update, it's good practice to close the dialog if the task is the selected one
+    if (selectedTask && selectedTask.id === updatedTask.id) {
+       setEditorDialogOpen(false);
+       setSelectedTask(null);
+    }
+  }, [updateDependentTasks, selectedTask]);
 
 
   const handleDeleteTask = (taskId: string) => {
@@ -141,50 +146,6 @@ export default function GanttasticApp() {
     setEditorDialogOpen(false);
     setSelectedTask(null);
   }
-
-  const handleUpdateDependencies = useCallback((taskId: string, newDependencies: string[], newBlockedTasks: string[]) => {
-      setTasks(prevTasks => {
-          let tasksWithUpdatedDeps = [...prevTasks];
-
-          // 1. Update the current task's dependencies
-          const currentTaskIndex = tasksWithUpdatedDeps.findIndex(t => t.id === taskId);
-          if (currentTaskIndex > -1) {
-              const currentTask = { ...tasksWithUpdatedDeps[currentTaskIndex] };
-              currentTask.dependencies = newDependencies;
-              tasksWithUpdatedDeps[currentTaskIndex] = currentTask;
-          }
-
-          // 2. Remove the current task's ID from any task that is NO LONGER blocked by it
-          prevTasks.forEach((task, index) => {
-              if (task.dependencies.includes(taskId) && !newBlockedTasks.includes(task.id)) {
-                  const updatedTask = { ...tasksWithUpdatedDeps[index] };
-                  updatedTask.dependencies = updatedTask.dependencies.filter(dep => dep !== taskId);
-                  tasksWithUpdatedDeps[index] = updatedTask;
-              }
-          });
-          
-          // 3. Add the current task's ID to any task that IS NOW blocked by it
-          newBlockedTasks.forEach(blockedTaskId => {
-              const blockedTaskIndex = tasksWithUpdatedDeps.findIndex(t => t.id === blockedTaskId);
-              if (blockedTaskIndex > -1) {
-                  const blockedTask = { ...tasksWithUpdatedDeps[blockedTaskIndex] };
-                  if (!blockedTask.dependencies.includes(taskId)) {
-                      blockedTask.dependencies.push(taskId);
-                      tasksWithUpdatedDeps[blockedTaskIndex] = blockedTask;
-                  }
-              }
-          });
-
-          // 4. Recalculate dates for all affected tasks
-          let finalTasks = updateDependentTasks(taskId, tasksWithUpdatedDeps);
-          newBlockedTasks.forEach(blockedTaskId => {
-            finalTasks = updateDependentTasks(blockedTaskId, finalTasks);
-          });
-
-
-          return finalTasks;
-      });
-  }, [updateDependentTasks]);
   
   const handleProjectUpdate = (updatedProject: Project) => {
     setProject(updatedProject);
@@ -242,7 +203,6 @@ export default function GanttasticApp() {
                 onAddTask={handleAddTask}
                 onUpdateTask={handleUpdateTask}
                 onDeleteTask={handleDeleteTask}
-                onUpdateDependencies={onUpdateDependencies}
                 onClose={() => handleEditorDialogOpenChange(false)}
             />
           </DialogContent>

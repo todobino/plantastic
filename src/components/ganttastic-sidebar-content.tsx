@@ -14,7 +14,6 @@ type GanttasticSidebarContentProps = {
   onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
-  onUpdateDependencies: (taskId: string, newDependencies: string[], newBlockedTasks: string[]) => void;
   onClose: () => void;
 };
 
@@ -25,7 +24,6 @@ export default function GanttasticSidebarContent({
   onAddTask,
   onUpdateTask,
   onDeleteTask,
-  onUpdateDependencies,
   onClose
 }: GanttasticSidebarContentProps) {
     
@@ -55,7 +53,6 @@ export default function GanttasticSidebarContent({
                 onAddTask={onAddTask}
                 onUpdateTask={onUpdateTask}
                 onDeleteTask={onDeleteTask}
-                onUpdateDependencies={onUpdateDependencies}
               />
           ) : (
               <SmartScheduler tasks={tasks} />
