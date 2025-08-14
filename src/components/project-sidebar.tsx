@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, DragEvent } from 'react';
+import { useState, DragEvent, useRef } from 'react';
 import {
   SidebarHeader,
   SidebarInput,
@@ -40,6 +40,8 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const { setOpen, toggleSidebar } = useSidebar();
   
+  const draggedItemRef = useRef<HTMLLIElement | null>(null);
+
 
   const filteredProjects = projects.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -59,13 +61,15 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
     // Create a custom drag image that looks like the menu item
     const target = (e.target as HTMLElement).closest('[data-sidebar="menu-item"]');
     if (target) {
+        draggedItemRef.current = target as HTMLLIElement;
         const clone = target.cloneNode(true) as HTMLElement;
         clone.style.position = 'absolute';
         clone.style.left = '-9999px';
         clone.style.width = `${target.clientWidth}px`;
-        clone.classList.add('dragging-clone');
+        clone.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        clone.style.background = 'hsl(var(--card))';
         document.body.appendChild(clone);
-        e.dataTransfer.setDragImage(clone, e.clientX - target.getBoundingClientRect().left, e.clientY - target.getBoundingClientRect().top);
+        e.dataTransfer.setDragImage(clone, 20, 20);
 
         setTimeout(() => {
           document.body.removeChild(clone);
@@ -121,6 +125,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const handleDragEnd = () => {
     setDraggedProjectId(null);
     setDropTargetId(null);
+    draggedItemRef.current = null;
   }
 
   return (
@@ -144,35 +149,8 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       </SidebarHeader>
       <SidebarContent className="px-2" onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
         <SidebarMenu>
-          {filteredProjects.map((project, index) => {
+          {filteredProjects.map((project) => {
             const isBeingDragged = draggedProjectId === project.id;
-            const isDropTarget = dropTargetId === project.id;
-
-            let transformStyle = {};
-            if (isDropTarget && draggedProjectId && draggedProjectId !== project.id) {
-                const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
-                if (draggedIndex !== -1 && index !== draggedIndex) {
-                    transformStyle = {
-                        transform: `translateY(${draggedIndex < index ? '-100%' : '100%'})`,
-                    };
-                }
-            }
-             if (isBeingDragged) {
-                const dropIndex = dropTargetId ? projects.findIndex(p => p.id === dropTargetId) : -1;
-                 if (dropIndex !== -1) {
-                     const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
-                     if (draggedIndex < dropIndex) {
-                        transformStyle = {
-                             transform: `translateY(${dropIndex - draggedIndex}00%)`,
-                        };
-                     } else {
-                         transformStyle = {
-                             transform: `translateY(-${draggedIndex - dropIndex}00%)`,
-                         };
-                     }
-                 }
-            }
-
 
             return (
               <SidebarMenuItem 
@@ -182,10 +160,13 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
                 onDragEnd={handleDragEnd}
                 onDragLeave={handleDragLeave}
                 className={cn(
-                  "transition-transform duration-200 ease-in-out",
-                  isBeingDragged && "opacity-30",
+                  "transition-all duration-200 ease-in-out",
+                   isBeingDragged && "opacity-30",
+                   dropTargetId === project.id && draggedProjectId && draggedProjectId !== project.id && 
+                   projects.findIndex(p => p.id === draggedProjectId) < projects.findIndex(p => p.id === dropTargetId) ? 'transform -translate-y-full' : '',
+                   dropTargetId === project.id && draggedProjectId && draggedProjectId !== project.id && 
+                   projects.findIndex(p => p.id === draggedProjectId) > projects.findIndex(p => p.id === dropTargetId) ? 'transform translate-y-full' : '',
                 )}
-                style={transformStyle}
               >
                 <SidebarMenuButton
                   isActive={project.name === currentProjectName}
@@ -211,3 +192,4 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
     </>
   );
 }
+
