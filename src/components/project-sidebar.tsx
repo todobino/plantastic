@@ -37,6 +37,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const { setOpen, toggleSidebar } = useSidebar();
   
 
@@ -52,32 +53,47 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const handleDragStart = (e: DragEvent<HTMLLIElement>, projectId: string) => {
     setDraggedProjectId(projectId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', projectId); // Necessary for Firefox
   };
+
+  const handleDragEnter = (e: DragEvent<HTMLLIElement>, targetId: string) => {
+    e.preventDefault();
+    if (draggedProjectId && targetId !== draggedProjectId) {
+      setDropTargetId(targetId);
+    }
+  };
+  
+  const handleDragLeave = (e: DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+  }
 
   const handleDragOver = (e: DragEvent<HTMLLIElement>) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: DragEvent<HTMLLIElement>, dropProjectId: string) => {
+  const handleDrop = (e: DragEvent<HTMLLIElement>) => {
     e.preventDefault();
-    if (!draggedProjectId || draggedProjectId === dropProjectId) {
-      setDraggedProjectId(null);
+    if (!draggedProjectId || !dropTargetId || draggedProjectId === dropTargetId) {
       return;
     }
 
     const draggedIndex = projects.findIndex(p => p.id === draggedProjectId);
-    const dropIndex = projects.findIndex(p => p.id === dropProjectId);
+    const dropIndex = projects.findIndex(p => p.id === dropTargetId);
 
     if (draggedIndex === -1 || dropIndex === -1) return;
-
+    
     const reorderedProjects = [...projects];
     const [draggedItem] = reorderedProjects.splice(draggedIndex, 1);
     reorderedProjects.splice(dropIndex, 0, draggedItem);
     
     setProjects(reorderedProjects);
-    setDraggedProjectId(null);
   };
+  
+  const handleDragEnd = () => {
+    setDraggedProjectId(null);
+    setDropTargetId(null);
+  }
 
   return (
     <>
@@ -99,17 +115,19 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        <SidebarMenu>
+        <SidebarMenu onDragOver={handleDragOver}>
           {filteredProjects.map((project) => (
             <SidebarMenuItem 
               key={project.id}
               draggable
               onDragStart={(e) => handleDragStart(e, project.id)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, project.id)}
+              onDragEnd={handleDragEnd}
+              onDragEnter={(e) => handleDragEnter(e, project.id)}
+              onDrop={handleDrop}
               className={cn(
-                "transition-colors",
-                draggedProjectId === project.id && "opacity-50"
+                "transition-all duration-200 ease-in-out",
+                draggedProjectId === project.id && "opacity-50 scale-105",
+                dropTargetId === project.id && draggedProjectId !== project.id && "transform -translate-y-8"
               )}
             >
               <SidebarMenuButton
