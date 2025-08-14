@@ -1,7 +1,7 @@
 
 'use client';
 
-import { GanttChartSquare, Plus, ChevronsUpDown, Upload } from 'lucide-react';
+import { GanttChartSquare, Plus, ChevronsUpDown, Upload, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -20,7 +20,7 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
       <div className="flex items-center gap-3">
         <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
           <GanttChartSquare className="h-8 w-8 text-primary" />
-          <span className="font-extrabold">{projectName}</span>
+          <span className="font-bold">{projectName}</span>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
@@ -37,6 +37,7 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
         <div className="hidden md:flex items-center gap-2">
            <Button asChild variant="secondary" size="sm">
             <Link href="/login">
+              <UserCircle />
               Login
             </Link>
           </Button>
