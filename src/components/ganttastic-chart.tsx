@@ -375,7 +375,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 </div>
                 
                 {/* Dependency Lines */}
-                <svg className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none">
+                <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
                   <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
                       <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--primary))" />
@@ -386,8 +386,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
 
-                    // visible bar edges (account for your +2 / -4 sizing)
-                    const toLeftEdge  = toPos.x + 2;
+                    // visible target bar edge (your bars are left: pos.x+2, width: pos.width-4)
+                    const toLeftEdge = toPos.x + 2;
 
                     return task.dependencies.map((depId) => {
                       const fromPos = taskPositions.get(depId);
@@ -396,54 +396,32 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                       const fromRightEdge = fromPos.x + fromPos.width - 2;
 
                       // Tunables
-                      const GAP = 8;           // gap off the bar edges
-                      const R = 10;            // corner radius
-                      const MIN_H = 24;        // min horizontal before turning
-                      const ARROW = 8;         // how far to stop before target for arrowhead
+                      const GAP = 10;     // space off bar edges
+                      const ARROW = 9;    // arrowhead clearance
+                      const MIN_KX = 24;  // min horizontal “pull” for bezier
+                      const MAX_KX = 80;  // max horizontal “pull”
 
                       // Anchors (finish -> start)
                       const sx = fromRightEdge + GAP;
                       const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const txEdge = toLeftEdge;                 // real start edge of target bar
-                      const tx = txEdge - GAP;                   // line end (before the gap)
+                      const txEdge = toLeftEdge;
+                      const tx = txEdge - GAP; // curve ends before the target bar
                       const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const endX = txEdge - ARROW;               // final x to place arrow head nicely
+                      const endX = txEdge - ARROW;
 
                       // Offscreen quick reject
                       if (sx < 0 && tx < 0) return null;
 
-                      // Direct smooth curve when there’s space
-                      const horizontalClearance = tx - sx;
-                      const smoothPath = () => {
-                        const dx = Math.max(MIN_H, (tx - sx) * 0.5);
-                        return `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${endX} ${ty}`;
-                      };
+                      // Single S-curve (no elbows/stubs)
+                      const dx = Math.max(1, tx - sx);
+                      const kx = Math.min(MAX_KX, Math.max(MIN_KX, dx * 0.45));
+                      const dy = ty - sy;
+                      const ky = dy * 0.25; // small vertical easing
 
-                      // Elbow with rounded corners; clamp mx so we don’t get a tiny stub
-                      const elbowPath = (dir: 1 | -1) => {
-                        // pick a mid-lane x then clamp
-                        let mx = (sx + tx) / 2;
-                        const minMx = sx + R + 1;
-                        const maxMx = txEdge - (R + ARROW + 1);
-                        mx = Math.max(minMx, Math.min(maxMx, mx));
-                        // ensure some horizontal run
-                        if (mx - sx < MIN_H) mx = sx + MIN_H;
-                        if (tx - mx < MIN_H) mx = tx - MIN_H;
-
-                        return [
-                          `M ${sx} ${sy}`,
-                          `H ${mx - R}`,
-                          `Q ${mx} ${sy} ${mx} ${sy + dir * R}`,
-                          `V ${ty - dir * R}`,
-                          `Q ${mx} ${ty} ${mx + R} ${ty}`,
-                          `H ${endX}`
-                        ].join(' ');
-                      };
-
-                      const d =
-                        horizontalClearance >= (2 * R + ARROW + 6)
-                          ? smoothPath()
-                          : elbowPath(ty >= sy ? 1 : -1);
+                      const d = [
+                        `M ${sx} ${sy}`,
+                        `C ${sx + kx} ${sy + ky}, ${tx - kx} ${ty - ky}, ${endX} ${ty}`
+                      ].join(' ');
 
                       return (
                         <path
