@@ -512,15 +512,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
-            <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
-                <TabsList>
-                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                    <TabsTrigger value="list">List</TabsTrigger>
-                </TabsList>
-            </Tabs>
-             <Button variant="secondary" size="sm" onClick={handleTodayClick}>
-                Today
-            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -531,6 +522,15 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
               </DialogContent>
             </Dialog>
+            <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
+                <TabsList>
+                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                    <TabsTrigger value="list">List</TabsTrigger>
+                </TabsList>
+            </Tabs>
+             <Button variant="secondary" size="sm" onClick={handleTodayClick}>
+                Today
+            </Button>
         </div>
         <div className="flex items-center gap-2">
             <Button size="sm" onClick={onAddTaskClick}>
