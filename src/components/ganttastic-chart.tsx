@@ -175,6 +175,43 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   const pxPerDay = dayWidth;
 
+  // Gap-aware FS router: S (tight), 90° (≈1 cell), gentle diagonal (wide)
+  const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
+    const gap = tx - sx;                 // px between bar edges
+    const cell = pxPerDay;               // px per day cell
+    const EPS = 2;                       // rounding tolerance
+    const dir = ty >= sy ? 1 : -1;
+
+    // helper: smooth cubic connector
+    const cubic = (strength = 0.45) => {
+      const dx = Math.max(gap, 0);
+      const lead = Math.max(8, Math.min(cell / 2, dx * strength));
+      const c1x = sx + lead;
+      const c2x = tx - lead;
+      return `M ${sx} ${sy} C ${c1x} ${sy}, ${c2x} ${ty}, ${tx} ${ty}`;
+    };
+
+    // 1) Butt-to-butt (adjacent): swoopy S (no vertical)
+    if (gap <= EPS) {
+      return cubic(0.6); // more pronounced curve
+    }
+
+    // 2) ~1 cell gap: clean right angle
+    if (gap >= cell * 0.7 && gap <= cell * 1.3) {
+      const lead = Math.min(cell / 2, Math.max(10, gap / 2 - 3));
+      const outX = sx + lead;
+      return `M ${sx} ${sy} H ${outX} V ${ty} H ${tx}`;
+    }
+
+    // 3) Wider gaps: single gentle diagonal/curve (no extra elbows)
+    if (gap < cell * 2.2) {
+      return cubic(0.35); // mild curvature for 1–2 cells
+    }
+
+    // 3b) Very wide: straight diagonal looks best
+    return `M ${sx} ${sy} L ${tx} ${ty}`;
+  };
+
   const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
   const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
 
@@ -312,31 +349,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     setDragState(s => ({ ...s, previewDeltaPx: 0 }));
   };
 
-  const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
-    const gap = tx - sx;                 // space between bar edges (px)
-    const halfCell = pxPerDay / 2;
-    const margin = 4;                    // keep off bar corners
-    const minLead = 8;                   // minimum visual lead when space allows
-    const r = 8;                         // corner radius for rounded elbows
-    const dir = ty >= sy ? 1 : -1;
-  
-    // Wide gap: true "Z" (half a cell out/in), rounded elbows, diagonal middle
-    if (gap >= 2 * minLead + 2 * margin) {
-      const lead = Math.min(halfCell, Math.floor(gap / 2 - margin));
-      const outX = sx + lead;
-      const inX  = tx - lead;
-      return `M ${sx} ${sy}
-              H ${outX - r} Q ${outX} ${sy} ${outX} ${sy + dir * r}
-              L ${inX} ${ty - dir * r} Q ${inX} ${ty} ${inX + r} ${ty}
-              H ${tx}`;
-    }
-  
-    // Tight gap (butt-to-butt): pivot at the exact middle so we never intrude
-    const mid = sx + gap / 2;
-    return `M ${sx} ${sy} H ${mid} V ${ty} H ${tx}`;
-  };
-
-  
   // proximity hit-test for dropping on a start-dot
   const hitStartDot = (x:number, y:number) => {
     const R = 10; // px radius to snap
