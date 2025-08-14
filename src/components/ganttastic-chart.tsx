@@ -518,6 +518,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     <TabsTrigger value="list">List</TabsTrigger>
                 </TabsList>
             </Tabs>
+             <Button variant="secondary" size="sm" onClick={handleTodayClick}>
+                Today
+            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -530,9 +533,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </Dialog>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={handleTodayClick}>
-                Today
-            </Button>
             <Button size="sm" onClick={onAddTaskClick}>
                 <Plus />
                 Add Task
