@@ -462,7 +462,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     return { left, right: left + width, cy: p.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2 };
   };
 
-  const handleTodayClick = () => {
+  const handleTodayClick = useCallback(() => {
     const scroller = timelineRef.current;
     if (!scroller) return;
 
@@ -475,7 +475,17 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       left: scrollTo,
       behavior: 'smooth'
     });
-  };
+  }, [dateToX, dayWidth]);
+  
+  useEffect(() => {
+    if (timelineRef.current) {
+        // We use a small timeout to allow the browser to paint the layout
+        setTimeout(() => {
+            handleTodayClick();
+        }, 100);
+    }
+  }, [handleTodayClick]);
+
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -790,3 +800,5 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </div>
   );
 }
+
+    
