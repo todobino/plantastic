@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { Task, Milestone, Project } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus, GripVertical } from 'lucide-react';
@@ -452,10 +452,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                     {timeline.map(day => {
                         const weekend = isWeekend(day);
+                        const today = isToday(day);
                         return (
                           <div key={day.toString()} className={cn(
-                            "text-center text-xs py-1 border-r border-b",
-                            weekend && "bg-muted/30"
+                            "text-center text-xs py-1 border-r border-b relative",
+                            weekend && "bg-muted/30",
+                            today && "text-primary font-bold"
                           )}>
                             <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
                             <div className="text-muted-foreground">{format(day, 'E')}</div>
@@ -478,6 +480,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   ))}
                 </div>
                 
+                {/* Today Indicator */}
+                <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-black z-30"
+                    style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
+                />
+
                 <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
                   {/* existing links */}
                   {tasks.map((task) => {
