@@ -33,7 +33,7 @@ type GanttasticChartProps = {
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 32; // height of a task bar
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
-const HEADER_HEIGHT = 48;
+const HEADER_HEIGHT = 80;
 
 export default function GanttasticChart({ tasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -191,7 +191,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     if (!task.dependencies.length) return projectStart;
     const latestPredEnd = new Date(Math.max(...task.dependencies
       .map(id => tasks.find(t => t.id === id))
-      .filter(Boolean)!.map(t => startOfDay((t as Task).end).getTime())));
+      .filter((t): t is Task => !!t)!.map(t => startOfDay((t as Task).end).getTime())));
     return addDays(startOfDay(latestPredEnd), 1);
   };
     
@@ -406,12 +406,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
         const latestPredEnd = new Date(Math.max(...vTask.dependencies.map(pId => {
           const pPos = taskPositions.get(pId)!;
-          const pOffsetDays = (m.get(pId) ?? 0) / pxPerDay;
           let pEnd = pPos.e;
-          if(pId === seedId && resizeState.id === seedId && resizeState.edge === 'right') {
+          if (m.has(pId)) {
+             const pOffsetDays = (m.get(pId) ?? 0) / pxPerDay;
+             pEnd = addDays(pPos.e, pOffsetDays);
+          } else if(pId === seedId && resizeState.id === seedId && resizeState.edge === 'right') {
             pEnd = addDays(pPos.e, dayDelta);
-          } else {
-            pEnd = addDays(pPos.e, pOffsetDays);
           }
           return startOfDay(pEnd).getTime();
         })));
@@ -441,8 +441,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   
     if (resizeState.id === id) {
       if (resizeState.edge === 'left') {
-        left += dragState.previewDeltaPx;
-        width -= dragState.previewDeltaPx;
+        const resizeDelta = dragState.previewDeltaPx + offset - (previewOffsets.get(id) ?? 0);
+        left += resizeDelta
+        width -= resizeDelta;
       } else if (resizeState.edge === 'right') {
         width += dragState.previewDeltaPx;
       }
@@ -511,12 +512,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div style={{ height: `${tasks.length * ROW_HEIGHT}px`}} className='relative px-4'>
+            <div className='relative'>
               {tasks.map((task, index) => (
                 <div 
                   key={task.id} 
-                  style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2 pr-4"
+                  style={{height: `${ROW_HEIGHT}px`}} 
+                  className="group w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer px-2"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
@@ -528,7 +529,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
-              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40">
+              <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40 flex flex-col">
                 <div className="flex">
                     {headerGroups.map((group, index) => (
                         <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
@@ -542,7 +543,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                         const today = isToday(day);
                         return (
                           <div key={day.toString()} className={cn(
-                            "text-center text-xs py-1 border-r border-b relative",
+                            "text-center text-xs py-1 border-r border-b relative h-[40px] flex flex-col justify-center",
                             weekend && "bg-zinc-100 dark:bg-zinc-900/40",
                             today && "bg-primary text-primary-foreground font-bold"
                           )}>
