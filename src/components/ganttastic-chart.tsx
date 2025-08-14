@@ -531,8 +531,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       </div>
       <div className="flex-grow flex overflow-hidden">
         <div className="grid grid-cols-12 w-full h-full">
-          <div className="col-span-3 border-r pr-2 overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
+          <div className="col-span-3 border-r overflow-y-auto">
+            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4 border-b">
               <span>Tasks & Milestones</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -554,7 +554,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{height: `${ROW_HEIGHT}px`}} 
-                  className="group w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer px-2 border-b"
+                  className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer px-4 border-b"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
