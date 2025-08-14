@@ -342,8 +342,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       const hit = hitStartDot(linkDraft.toX, linkDraft.toY);
       if (hit && hit.taskId !== linkDraft.fromTaskId) {
         const target = tasks.find(t => t.id === hit.taskId)!;
-        if (!target.dependencies.includes(linkDraft.fromTaskId)) {
-          onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId] });
+        if (!target.dependencies.includes(linkDraft.fromTaskId!)) {
+          onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId!] });
         }
       }
       setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
@@ -467,13 +467,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   };
 
   return (
-    <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
-      <CardHeader className="flex flex-row items-center justify-between border-b bg-background z-50">
+    <div className="w-full h-full overflow-hidden flex flex-col rounded-lg border bg-card text-card-foreground">
+      <div className="flex flex-row items-center justify-between border-b bg-background z-10 p-4">
         <div className="flex items-center gap-2">
           <Dialog>
               <DialogTrigger asChild>
                 <div className="flex items-center gap-2 group cursor-pointer">
-                  <CardTitle className="group-hover:underline">{project.name}</CardTitle>
+                  <h3 className="text-lg font-semibold group-hover:underline">{project.name}</h3>
                   <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </DialogTrigger>
@@ -491,8 +491,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 Add Task
             </Button>
         </div>
-      </CardHeader>
-      <CardContent className="flex-grow flex overflow-hidden p-0">
+      </div>
+      <div className="flex-grow flex overflow-hidden">
         <div className="grid grid-cols-12 w-full h-full">
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
@@ -724,7 +724,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
