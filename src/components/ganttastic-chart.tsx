@@ -405,25 +405,29 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                       const isOffscreen = fromX < 0 || toX < 0;
                       if(isOffscreen) return null;
 
-                      // Simple straight line for now
-                      if (fromX < toX - 10) {
-                        return (
+                      const curve = 20;
+                      const endMarkerAdjust = 8;
+                      
+                      // Horizontal line with curve
+                      if (fromX < toX - (curve * 2)) {
+                         return (
                            <path
                             key={`${depId}-${task.id}`}
-                            d={`M ${fromX} ${fromY} C ${fromX + 20} ${fromY}, ${toX - 20} ${toY}, ${toX - 8} ${toY}`}
+                            d={`M ${fromX} ${fromY} C ${fromX + curve} ${fromY}, ${toX - curve} ${toY}, ${toX - endMarkerAdjust} ${toY}`}
                             stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             fill="none"
                             markerEnd="url(#arrow)"
                           />
-                        )
+                         )
                       }
                       
-                      // Elbow connection
-                       return (
+                      // Elbow connection with curves
+                      const halfY = (toY + fromY)/2;
+                      return (
                           <path
                             key={`${depId}-${task.id}`}
-                            d={`M ${fromX} ${fromY} H ${fromX + 10} V ${(toY + fromY)/2} H ${toX - 10} V ${toY} H ${toX - 8}`}
+                             d={`M ${fromX} ${fromY} C ${fromX + curve} ${fromY}, ${fromX + curve} ${fromY}, ${fromX + curve} ${fromY + (fromY > toY ? -curve: curve)} L ${fromX + curve} ${halfY + (fromY > toY ? curve : -curve)} C ${fromX + curve} ${halfY}, ${fromX + curve} ${halfY}, ${fromX + curve + (fromX > toX - (curve*2) ? -curve : curve)} ${halfY} L ${toX-curve*2} ${halfY} C ${toX-curve} ${halfY}, ${toX-curve} ${toY}, ${toX-curve} ${toY + (fromY > toY ? curve : -curve)} L ${toX-curve} ${toY} C ${toX-curve} ${toY}, ${toX - curve} ${toY}, ${toX - endMarkerAdjust} ${toY}`}
                             stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             fill="none"
