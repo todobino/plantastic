@@ -477,7 +477,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         <div className="grid grid-cols-12 w-full h-full">
           <div className="col-span-3 border-r pr-2 overflow-y-auto">
             <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-card z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4">
-              <span>Tasks &amp; Milestones</span>
+              <span>Tasks & Milestones</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -681,6 +681,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                       toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
                                       toY: e.clientY - rect.top
                                     });
+
                                   }}
                                 >
                                   <div className="relative w-3 h-3 cursor-crosshair">
