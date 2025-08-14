@@ -554,7 +554,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{height: `${ROW_HEIGHT}px`}} 
-                  className="group w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer px-2"
+                  className="group w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer px-2 border-b"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
