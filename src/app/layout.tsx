@@ -1,6 +1,5 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -23,7 +22,6 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", "min-h-screen bg-background font-sans overflow-x-hidden")}>
         {children}
-        <Toaster />
       </body>
     </html>
   );

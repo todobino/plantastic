@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { runOptimizeSchedule } from '@/lib/actions';
 import type { Task } from '@/types';
@@ -37,7 +36,7 @@ type SmartSchedulerProps = {
 export default function SmartScheduler({ tasks }: SmartSchedulerProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<OptimizeScheduleOutput | null>(null);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -49,20 +48,16 @@ export default function SmartScheduler({ tasks }: SmartSchedulerProps) {
 
   const onSubmit = (data: ScheduleFormValues) => {
     setResult(null);
+    setError(null);
     startTransition(async () => {
       try {
         const res = await runOptimizeSchedule(data);
         setResult(res);
-        toast({
-          title: 'Schedule Optimized!',
-          description: 'The AI has generated an optimized schedule for your project.',
-        });
+        console.log('Schedule Optimized!', 'The AI has generated an optimized schedule for your project.');
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'An error occurred',
-          description: error instanceof Error ? error.message : 'Something went wrong.',
-        });
+        const errorMessage = error instanceof Error ? error.message : 'Something went wrong.';
+        setError(errorMessage);
+        console.error('An error occurred', errorMessage);
       }
     });
   };
@@ -103,6 +98,17 @@ export default function SmartScheduler({ tasks }: SmartSchedulerProps) {
           </Button>
         </form>
       </Form>
+
+       {error && (
+        <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle className="text-destructive">Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p>{error}</p>
+            </CardContent>
+        </Card>
+      )}
 
       {isPending && (
          <Card className="flex-grow">

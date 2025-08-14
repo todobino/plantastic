@@ -9,7 +9,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { GanttChartSquare } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -31,7 +30,6 @@ type SignupSchema = z.infer<typeof signupSchema>;
 
 export function AuthForm() {
   const [isPending, setIsPending] = useState(false);
-  const { toast } = useToast();
 
   const loginForm = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -47,7 +45,7 @@ export function AuthForm() {
     setIsPending(true);
     console.log('Login data:', data);
     setTimeout(() => {
-        toast({ title: 'Login Successful', description: 'Welcome back!' });
+        console.log('Login Successful');
         setIsPending(false);
     }, 1000)
   };
@@ -56,7 +54,7 @@ export function AuthForm() {
     setIsPending(true);
     console.log('Signup data:', data);
      setTimeout(() => {
-        toast({ title: 'Signup Successful', description: 'Your account has been created.' });
+        console.log('Signup Successful');
         setIsPending(false);
     }, 1000)
   };

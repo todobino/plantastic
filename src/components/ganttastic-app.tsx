@@ -7,7 +7,6 @@ import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
-import { useToast } from '@/hooks/use-toast';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
@@ -36,7 +35,6 @@ export default function GanttasticApp() {
   const [isEditorDialogOpen, setEditorDialogOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'SMART_SCHEDULER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     setIsMounted(true);
@@ -122,7 +120,7 @@ export default function GanttasticApp() {
   const handleAddTask = (task: Omit<Task, 'id'>) => {
     const newTask: Task = { ...task, id: `task-${Date.now()}` };
     setTasks(prev => [...prev, newTask]);
-    toast({ title: "Task Added", description: `"${newTask.name}" has been successfully added.` });
+    console.log(`Task Added: "${newTask.name}" has been successfully added.`);
     setEditorDialogOpen(false);
   };
 
@@ -132,8 +130,8 @@ export default function GanttasticApp() {
       newTasks = updateDependentTasks(updatedTask.id, newTasks);
       return newTasks;
     });
-    toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
-  }, [updateDependentTasks, toast]);
+    console.log(`Task Updated: "${updatedTask.name}" has been successfully updated.`);
+  }, [updateDependentTasks]);
 
 
   const handleDeleteTask = (taskId: string) => {
@@ -143,7 +141,7 @@ export default function GanttasticApp() {
       ...t,
       dependencies: t.dependencies.filter(depId => depId !== taskId)
     })));
-    toast({ title: "Task Deleted", description: `"${taskToDelete?.name}" has been deleted.`, variant: "destructive" });
+    console.log(`Task Deleted: "${taskToDelete?.name}" has been deleted.`);
     setEditorDialogOpen(false);
     setSelectedTask(null);
   }
@@ -190,17 +188,17 @@ export default function GanttasticApp() {
 
           return finalTasks;
       });
-      toast({ title: "Dependencies Updated", description: "Task dates have been adjusted automatically." });
-  }, [updateDependentTasks, toast]);
+      console.log("Dependencies Updated: Task dates have been adjusted automatically.");
+  }, [updateDependentTasks]);
   
   const handleProjectUpdate = (updatedProject: Project) => {
     setProject(updatedProject);
-    toast({ title: "Project Updated", description: `"${updatedProject.name}" has been successfully updated.` });
+    console.log(`Project Updated: "${updatedProject.name}" has been successfully updated.`);
   }
 
   const handleReorderTasks = (reorderedTasks: Task[]) => {
     setTasks(reorderedTasks);
-    toast({ title: "Tasks Reordered", description: "The task order has been updated." });
+    console.log("Tasks Reordered: The task order has been updated.");
   };
 
   const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'SMART_SCHEDULER', task?: Task) => {
