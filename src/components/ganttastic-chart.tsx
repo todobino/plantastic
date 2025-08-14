@@ -14,6 +14,53 @@ import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 
+// ---- Business-day helpers ----
+const isWeekend = (d: Date) => {
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  return day === 0 || day === 6;
+};
+
+const nextBusinessDay = (d: Date) => {
+  let x = startOfDay(d);
+  while (isWeekend(x)) x = addDays(x, 1);
+  return x;
+};
+
+// Inclusive business days between two dates (assumes start<=end)
+const businessDaysInclusive = (start: Date, end: Date) => {
+  let s = startOfDay(start);
+  let e = startOfDay(end);
+  if (e < s) return 0;
+  let count = 0;
+  for (let d = s; d <= e; d = addDays(d, 1)) if (!isWeekend(d)) count++;
+  return count;
+};
+
+// Add N business days (n>=0). If n=0 returns the same day.
+const addBusinessDaysIncl = (start: Date, n: number) => {
+  let d = startOfDay(start);
+  // Adjust for starting on a non-business day if needed, though normalize should handle this.
+  let current = nextBusinessDay(d);
+  if (n <= 1) return current;
+
+  let remaining = n - 1;
+  while(remaining > 0) {
+      current = addDays(current, 1);
+      if (!isWeekend(current)) {
+          remaining--;
+      }
+  }
+  return current;
+};
+
+// Normalize task: move start off weekend and recompute end preserving business duration
+const normalizeTaskSpan = (start: Date, end: Date) => {
+  const s = nextBusinessDay(start);
+  const bd = Math.max(1, businessDaysInclusive(start, end));
+  const e = addBusinessDaysIncl(s, bd);
+  return { s, e, bd };
+};
+
 
 type GanttasticChartProps = {
   tasks: Task[];
@@ -72,8 +119,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
       // Add padding around the project dates for non-week views
       projectStart = addDays(projectStart, -14);
       projectEnd = addDays(projectEnd, 14);
-    } else if (tasks.length > 0) {
-        // Ensure week view also has some padding if task-based
+    } else {
         const minProjectStart = startOfWeek(subWeeks(today, 6));
         const maxProjectEnd = endOfWeek(addWeeks(today, 6));
         projectStart = new Date(Math.min(projectStart.getTime(), minProjectStart.getTime()));
@@ -97,15 +143,16 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const timeline = eachDayOfInterval({ start: projectStart, end: projectEnd });
     const totalDays = timeline.length;
 
-    const taskPositions = new Map<string, { x: number; y: number; width: number }>();
+    const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date; bd: number }>();
     tasks.forEach((task, index) => {
-        const offset = differenceInDays(startOfDay(task.start), projectStart);
-        const duration = differenceInDays(startOfDay(task.end), startOfDay(task.start)) + 1;
-        
+        const { s, e, bd } = normalizeTaskSpan(task.start, task.end);
+        const offset = differenceInDays(startOfDay(s), projectStart);
+        const durationCalendar = differenceInDays(startOfDay(e), startOfDay(s)); // includes weekends visually
         taskPositions.set(task.id, {
             x: offset * dayWidth,
             y: index * ROW_HEIGHT,
-            width: duration * dayWidth,
+            width: (durationCalendar + 1) * dayWidth,
+            s, e, bd
         });
     });
 
@@ -158,8 +205,10 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
   const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
 
-  const taskDurationDays = (t: Task) =>
-    Math.max(1, differenceInDays(startOfDay(t.end), startOfDay(t.start)) + 1);
+  const taskDurationDays = (t: Task) => {
+    const pos = taskPositions.get(t.id);
+    return pos ? pos.bd : 1;
+  }
 
   // Build reverse deps once
   const successorsById = useMemo(() => {
@@ -175,29 +224,33 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   // Compute draggable bounds for a task (in dates)
   const getTaskBounds = useCallback((task: Task) => {
+    const taskPos = taskPositions.get(task.id);
+    if (!taskPos) return { minStart: projectStart, maxStart: projectEnd };
+
     const preds = task.dependencies
-      .map(id => tasks.find(t => t.id === id))
-      .filter(Boolean) as Task[];
+      .map(id => taskPositions.get(id))
+      .filter(Boolean) as {e: Date}[];
+
     const succs = (successorsById.get(task.id) || [])
-      .map(id => tasks.find(t => t.id === id))
-      .filter(Boolean) as Task[];
+      .map(id => taskPositions.get(id))
+      .filter(Boolean) as {s: Date}[];
 
     const leftBoundStartDate = preds.length
-      ? addDays(startOfDay(new Date(Math.max(...preds.map(p => startOfDay(p.end).getTime())))), 1)
+      ? addDays(startOfDay(new Date(Math.max(...preds.map(p => p.e.getTime())))), 1)
       : startOfDay(projectStart);
 
     const rightLimitStartDate = succs.length
       ? addDays(
-          startOfDay(new Date(Math.min(...succs.map(s => startOfDay(s.start).getTime())))),
-          -taskDurationDays(task)
+          startOfDay(new Date(Math.min(...succs.map(s => s.s.getTime())))),
+          -(taskPos.bd)
         )
-      : startOfDay(projectEnd); // can slide to the padding
+      : startOfDay(projectEnd);
 
     return {
-      minStart: leftBoundStartDate,
-      maxStart: rightLimitStartDate,
+      minStart: nextBusinessDay(leftBoundStartDate),
+      maxStart: rightLimitStartDate, // This can be a weekend, nextBusinessDay will fix it
     };
-  }, [tasks, projectStart, projectEnd, successorsById, taskDurationDays]);
+  }, [taskPositions, projectStart, projectEnd, successorsById]);
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
     wasDraggedRef.current = false;
@@ -249,21 +302,23 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     (e.target as Element).releasePointerCapture(e.pointerId);
     document.body.style.userSelect = '';
   
-    const dayDelta = xToDayDelta(dragState.previewDeltaPx);
+    const pos = taskPositions.get(task.id);
+    if (!pos) return;
   
-    if (dayDelta !== 0) {
-      const dur = taskDurationDays(task);
-      const newStart = startOfDay(addDays(task.start, dayDelta));
-      const newEnd = startOfDay(addDays(newStart, dur - 1));
+    // how many calendar days did we slide?
+    const calDelta = xToDayDelta(dragState.previewDeltaPx);
+  
+    if (calDelta !== 0) {
+      // candidate start in calendar days, then snap to next business day
+      const candStart = addDays(pos.s, calDelta);
+      const newStart = nextBusinessDay(candStart);
+      // preserve business duration
+      const newEnd = addBusinessDaysIncl(newStart, pos.bd);
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
     }
   
     setDragState({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
-    
-    // Use a timeout to reset the dragged flag, so the click event has time to fire (or not)
-    setTimeout(() => {
-        wasDraggedRef.current = false;
-    }, 0);
+    setTimeout(() => { wasDraggedRef.current = false; }, 0);
   };
   
   const handleBarClick = (task: Task) => {
@@ -341,7 +396,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
           {/* Gantt Timeline */}
           <div ref={timelineRef} className="col-span-9 overflow-auto">
              <div className="relative">
-              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-30">
+              <div style={{ width: `${totalDays * dayWidth}px`, minHeight: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-card z-40">
                  {viewMode !== 'day' && (
                     <div className="flex">
                         {headerGroups.map((group, index) => (
@@ -352,12 +407,18 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     </div>
                  )}
                 <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
-                    {timeline.map(day => (
-                      <div key={day.toString()} className="text-center text-xs py-1 border-r border-b">
-                        <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
-                        <div className="text-muted-foreground">{format(day, 'E')}</div>
-                      </div>
-                    ))}
+                    {timeline.map(day => {
+                        const weekend = isWeekend(day);
+                        return (
+                          <div key={day.toString()} className={cn(
+                            "text-center text-xs py-1 border-r border-b",
+                            weekend && "bg-muted/30"
+                          )}>
+                            <div>{format(day, viewMode === 'month' ? 'dd' : 'd')}</div>
+                            <div className="text-muted-foreground">{format(day, 'E')}</div>
+                          </div>
+                        );
+                    })}
                 </div>
               </div>
 
@@ -365,7 +426,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 {/* Grid Background */}
                 <div className="absolute top-0 left-0 w-full h-full grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
                   {timeline.map((day, i) => (
-                     <div key={`bg-${i}`} className="border-r h-full"></div>
+                     <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-muted/20")}></div>
                   ))}
                 </div>
                 <div className="absolute top-0 left-0 w-full h-full">
@@ -376,66 +437,66 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 
                 {/* Dependency Lines */}
                 <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-                  <defs>
-                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                      <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--primary))" />
-                    </marker>
-                  </defs>
-
                   {tasks.map((task) => {
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
 
-                    // visible target bar edge (your bars are left: pos.x+2, width: pos.width-4)
+                    // visible target bar edge
                     const toLeftEdge = toPos.x + 2;
+                    const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
 
                     return task.dependencies.map((depId) => {
                       const fromPos = taskPositions.get(depId);
                       if (!fromPos) return null;
 
                       const fromRightEdge = fromPos.x + fromPos.width - 2;
-
-                      // Tunables
-                      const GAP = 10;     // space off bar edges
-                      const ARROW = 9;    // arrowhead clearance
-                      const MIN_KX = 24;  // min horizontal “pull” for bezier
-                      const MAX_KX = 80;  // max horizontal “pull”
-
-                      // Anchors (finish -> start)
-                      const sx = fromRightEdge + GAP;
                       const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const txEdge = toLeftEdge;
-                      const tx = txEdge - GAP; // curve ends before the target bar
-                      const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const endX = txEdge - ARROW;
 
-                      // Offscreen quick reject
-                      if (sx < 0 && tx < 0) return null;
+                      // Styling + geometry
+                      const GAP = 10;  // distance away from bar before turning
+                      const R = 10;    // corner radius
+                      const DOT = 3.5; // end-cap dots
 
-                      // Single S-curve (no elbows/stubs)
-                      const dx = Math.max(1, tx - sx);
-                      const kx = Math.min(MAX_KX, Math.max(MIN_KX, dx * 0.45));
-                      const dy = ty - sy;
-                      const ky = dy * 0.25; // small vertical easing
+                      // Path anchors (don’t start inside bars)
+                      const sx = fromRightEdge + GAP;
+                      const tx = toLeftEdge - GAP;
+
+                      // Mid x (routing lane). Ensure room for elbows.
+                      const minMx = sx + R + 6;
+                      const maxMx = tx - R - 6;
+                      let mx = (sx + tx) / 2;
+                      mx = Math.max(minMx, Math.min(maxMx, mx));
+
+                      const dir: 1 | -1 = ty >= sy ? 1 : -1;
 
                       const d = [
                         `M ${sx} ${sy}`,
-                        `C ${sx + kx} ${sy + ky}, ${tx - kx} ${ty - ky}, ${endX} ${ty}`
+                        `H ${mx - R}`,
+                        `Q ${mx} ${sy} ${mx} ${sy + dir * R}`,   // round turn down/up
+                        `V ${ty - dir * R}`,
+                        `Q ${mx} ${ty} ${mx + R} ${ty}`,
+                        `H ${tx}`
                       ].join(' ');
 
+                      // Dot centers exactly at bar edges (not at GAP)
+                      const startDotX = fromRightEdge;
+                      const endDotX = toLeftEdge;
+
                       return (
-                        <path
-                          key={`${depId}-${task.id}`}
-                          d={d}
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="2"
-                          fill="none"
-                          markerEnd="url(#arrow)"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          vectorEffect="non-scaling-stroke"
-                          opacity="0.95"
-                        />
+                        <g key={`${depId}-${task.id}`}>
+                          <path
+                            d={d}
+                            stroke="hsl(var(--primary))"
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            vectorEffect="non-scaling-stroke"
+                            opacity="0.95"
+                          />
+                          <circle cx={startDotX} cy={sy} r={DOT} fill="hsl(var(--primary))" />
+                          <circle cx={endDotX}   cy={ty} r={DOT} fill="hsl(var(--primary))" />
+                        </g>
                       );
                     });
                   })}
@@ -445,7 +506,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 {tasks.map((task, index) => {
                   const pos = taskPositions.get(task.id);
                   if(!pos) return null;
-                  const duration = differenceInDays(task.end, task.start) + 1;
+                  const duration = pos.bd;
                   
                   const isDragging = dragState.id === task.id;
 
@@ -479,9 +540,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           <TooltipContent className="bg-card border-primary">
                             <p className="font-bold">{task.name}</p>
                             {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
-                            <p>Start: {format(task.start, 'MMM d, yyyy')}</p>
-                            <p>End: {format(task.end, 'MMM d, yyyy')}</p>
-                            <p>Duration: {duration} day{duration === 1 ? '' : 's'}</p>
+                            <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
+                            <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
+                            <p>Duration: {duration} business day{duration === 1 ? '' : 's'}</p>
                             <p>Progress: {task.progress}%</p>
                           </TooltipContent>
                         </Tooltip>
@@ -496,3 +557,4 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </Card>
   );
 }
+
