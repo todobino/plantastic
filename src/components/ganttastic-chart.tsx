@@ -275,7 +275,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
 
   return (
     <Card className="w-full h-full overflow-hidden flex flex-col shadow-lg border-2">
-      <CardHeader className="flex flex-row items-center justify-between border-b">
+      <CardHeader className="flex flex-row items-center justify-between border-b bg-background z-50">
         <div className="flex items-center gap-2">
           <Dialog>
               <DialogTrigger asChild>
@@ -328,7 +328,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                 <div 
                   key={task.id} 
                   style={{top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}} 
-                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2 pr-2"
+                  className="group absolute w-full text-sm rounded-md hover:bg-secondary flex items-center gap-2 cursor-pointer -ml-2 pl-2 pr-4"
                   onClick={() => onTaskClick(task)}
                 >
                   <span className="truncate flex-1">{task.name}</span>
@@ -345,7 +345,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                  {viewMode !== 'day' && (
                     <div className="flex">
                         {headerGroups.map((group, index) => (
-                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r truncate" style={{ width: `${group.days * dayWidth}px`}}>
+                            <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
                                 <span className="truncate px-2">{group.label}</span>
                             </div>
                         ))}
@@ -386,63 +386,64 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
 
+                    // visible bar edges (account for your +2 / -4 sizing)
+                    const toLeftEdge  = toPos.x + 2;
+
                     return task.dependencies.map((depId) => {
                       const fromPos = taskPositions.get(depId);
                       if (!fromPos) return null;
 
-                      // Anchor points (finish -> start), with a small gap off the bars
-                      const GAP = 8;
-                      const R = 10;                    // corner radius / curve control
-                      const MIN_H = 24;                // minimum horizontal travel before a turn
-                      const endMarkerAdjust = 8;
+                      const fromRightEdge = fromPos.x + fromPos.width - 2;
 
-                      const sx = fromPos.x + fromPos.width + GAP;
+                      // Tunables
+                      const GAP = 8;           // gap off the bar edges
+                      const R = 10;            // corner radius
+                      const MIN_H = 24;        // min horizontal before turning
+                      const ARROW = 8;         // how far to stop before target for arrowhead
+
+                      // Anchors (finish -> start)
+                      const sx = fromRightEdge + GAP;
                       const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
-                      const tx = toPos.x - GAP;
+                      const txEdge = toLeftEdge;                 // real start edge of target bar
+                      const tx = txEdge - GAP;                   // line end (before the gap)
                       const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT / 2;
+                      const endX = txEdge - ARROW;               // final x to place arrow head nicely
 
-                      // Offscreen early exit
+                      // Offscreen quick reject
                       if (sx < 0 && tx < 0) return null;
 
-                      // Helper: rounded elbow (horizontal -> vertical -> horizontal) using quadratic curves
-                      const elbowPath = (mx: number, dir: 1 | -1) => {
-                        // dir = 1 means going downward first, -1 upward first
-                        const k = R; // curvature
-                        return [
-                          `M ${sx} ${sy}`,
-                          `H ${mx - R}`,                          // go toward mid X
-                          `Q ${mx} ${sy} ${mx} ${sy + dir * k}`,  // rounded corner to vertical
-                          `V ${ty - dir * k}`,                    // vertical toward target row
-                          `Q ${mx} ${ty} ${mx + k} ${ty}`,        // second rounded corner to horizontal
-                          `H ${tx - endMarkerAdjust}`             // finish before arrow
-                        ].join(' ');
-                      };
-
-                      // Helper: smooth single-curve when straight-ish
+                      // Direct smooth curve when there’s space
+                      const horizontalClearance = tx - sx;
                       const smoothPath = () => {
                         const dx = Math.max(MIN_H, (tx - sx) * 0.5);
-                        // cubic with soft ease-in/out toward target
+                        return `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${endX} ${ty}`;
+                      };
+
+                      // Elbow with rounded corners; clamp mx so we don’t get a tiny stub
+                      const elbowPath = (dir: 1 | -1) => {
+                        // pick a mid-lane x then clamp
+                        let mx = (sx + tx) / 2;
+                        const minMx = sx + R + 1;
+                        const maxMx = txEdge - (R + ARROW + 1);
+                        mx = Math.max(minMx, Math.min(maxMx, mx));
+                        // ensure some horizontal run
+                        if (mx - sx < MIN_H) mx = sx + MIN_H;
+                        if (tx - mx < MIN_H) mx = tx - MIN_H;
+
                         return [
                           `M ${sx} ${sy}`,
-                          `C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx - endMarkerAdjust} ${ty}`
+                          `H ${mx - R}`,
+                          `Q ${mx} ${sy} ${mx} ${sy + dir * R}`,
+                          `V ${ty - dir * R}`,
+                          `Q ${mx} ${ty} ${mx + R} ${ty}`,
+                          `H ${endX}`
                         ].join(' ');
                       };
 
-                      // Routing logic
-                      let d: string;
-
-                      const horizontalClearance = tx - sx;
-
-                      if (horizontalClearance > MIN_H) {
-                        // Plenty of room to curve directly to the target
-                        d = smoothPath();
-                      } else {
-                        // Not enough horizontal space -> route via a vertical lane in the middle
-                        const dir: 1 | -1 = ty >= sy ? 1 : -1;
-                        // choose a mid X that gives us breathing room
-                        const mx = Math.min(sx + MIN_H, tx - MIN_H) - (R * 0.25);
-                        d = elbowPath(mx, dir);
-                      }
+                      const d =
+                        horizontalClearance >= (2 * R + ARROW + 6)
+                          ? smoothPath()
+                          : elbowPath(ty >= sy ? 1 : -1);
 
                       return (
                         <path
@@ -455,7 +456,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           vectorEffect="non-scaling-stroke"
-                          opacity="0.9"
+                          opacity="0.95"
                         />
                       );
                     });
