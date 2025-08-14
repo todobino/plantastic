@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { GanttasticListView } from './ganttastic-list-view';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+
 
 const isWeekend = (d: Date) => {
   const day = d.getDay(); // 0 Sun .. 6 Sat
@@ -39,6 +42,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
+  const [view, setView] = useState<'timeline' | 'list'>('timeline');
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -507,7 +511,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+            <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
+                <TabsList>
+                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                    <TabsTrigger value="list">List</TabsTrigger>
+                </TabsList>
+            </Tabs>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -530,248 +540,252 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
         </div>
       </div>
       <div className="flex-grow flex overflow-hidden">
-        <div className="grid grid-cols-12 w-full h-full">
-          <div className="col-span-3 border-r overflow-y-auto">
-            <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4 border-b">
-              <span>Tasks & Milestones</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <Plus className="h-4 w-4" />
-                      <span className="sr-only">Add</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onAddTaskClick}>New Task</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
-                      New Milestone
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <div className='relative'>
-              {tasks.map((task, index) => (
-                <div 
-                  key={task.id} 
-                  style={{height: `${ROW_HEIGHT}px`}} 
-                  className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer px-4 border-b"
-                  onClick={() => onTaskClick(task)}
-                >
-                  <span className="truncate flex-1">{task.name}</span>
-                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div ref={timelineRef} className="col-span-9 overflow-auto">
-             <div 
-                className={cn(
-                  "relative",
-                   panState.isPanning && "cursor-grabbing"
-                )}
-                onPointerDown={handlePanStart}
-                onPointerMove={handlePanMove}
-                onPointerUp={handlePanEnd}
-                onPointerLeave={handlePanEnd}
-                onPointerCancel={handlePanEnd}
-            >
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
-                <div className="flex">
-                    {headerGroups.map((group, index) => (
-                        <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
-                            <span className="truncate px-2">{group.label}</span>
-                        </div>
-                    ))}
-                </div>
-                <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
-                    {timeline.map(day => {
-                        const weekend = isWeekend(day);
-                        const today = isToday(day);
-                        return (
-                          <div key={day.toString()} className={cn(
-                            "text-center text-xs py-1 border-r border-b relative h-[40px] flex flex-col justify-center",
-                            weekend && "bg-zinc-100 dark:bg-zinc-900/40",
-                            today && "bg-primary text-primary-foreground font-bold"
-                          )}>
-                            <div>{format(day, 'dd')}</div>
-                            <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
-                          </div>
-                        );
-                    })}
-                </div>
+        {view === 'timeline' ? (
+          <div className="grid grid-cols-12 w-full h-full">
+            <div className="col-span-3 border-r overflow-y-auto">
+              <div style={{ height: `${HEADER_HEIGHT}px`}} className="sticky top-0 bg-background z-40 py-2 font-semibold text-sm flex items-center justify-between pb-3 p-4 border-b">
+                <span>Tasks & Milestones</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">Add</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={onAddTaskClick}>New Task</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
+                        New Milestone
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
               </div>
+              <div className='relative'>
+                {tasks.map((task, index) => (
+                  <div 
+                    key={task.id} 
+                    style={{height: `${ROW_HEIGHT}px`}} 
+                    className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer px-4 border-b"
+                    onClick={() => onTaskClick(task)}
+                  >
+                    <span className="truncate flex-1">{task.name}</span>
+                    <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                  </div>
+                ))}
+              </div>
+            </div>
 
-              <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
-                <div className="absolute top-0 left-0 w-full h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
-                  {timeline.map((day, i) => (
-                     <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40")}></div>
-                  ))}
+            <div ref={timelineRef} className="col-span-9 overflow-auto">
+              <div 
+                  className={cn(
+                    "relative",
+                    panState.isPanning && "cursor-grabbing"
+                  )}
+                  onPointerDown={handlePanStart}
+                  onPointerMove={handlePanMove}
+                  onPointerUp={handlePanEnd}
+                  onPointerLeave={handlePanEnd}
+                  onPointerCancel={handlePanEnd}
+              >
+                <div style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }} className="sticky top-0 bg-background z-40 flex flex-col">
+                  <div className="flex">
+                      {headerGroups.map((group, index) => (
+                          <div key={index} className="text-center font-semibold text-sm py-1 border-b border-r" style={{ width: `${group.days * dayWidth}px`}}>
+                              <span className="truncate px-2">{group.label}</span>
+                          </div>
+                      ))}
+                  </div>
+                  <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
+                      {timeline.map(day => {
+                          const weekend = isWeekend(day);
+                          const today = isToday(day);
+                          return (
+                            <div key={day.toString()} className={cn(
+                              "text-center text-xs py-1 border-r border-b relative h-[40px] flex flex-col justify-center",
+                              weekend && "bg-zinc-100 dark:bg-zinc-900/40",
+                              today && "bg-primary text-primary-foreground font-bold"
+                            )}>
+                              <div>{format(day, 'dd')}</div>
+                              <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
+                            </div>
+                          );
+                      })}
+                  </div>
                 </div>
-                <div className="absolute top-0 left-0 w-full h-full">
-                   {tasks.map((_task, i) => (
-                    <div key={`row-bg-${i}`} className="border-b" style={{ height: `${ROW_HEIGHT}px` }}></div>
-                  ))}
-                </div>
-                
-                <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-black z-30"
-                    style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
-                />
 
-                <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-                  {tasks.map((task) => {
-                    const toV = getVisualPos(task.id);
-                    if (!toV) return null;
+                <div style={{ width: `${totalDays * dayWidth}px`, height: `${tasks.length * ROW_HEIGHT}px` }} className="relative">
+                  <div className="absolute top-0 left-0 w-full h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
+                    {timeline.map((day, i) => (
+                      <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40")}></div>
+                    ))}
+                  </div>
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    {tasks.map((_task, i) => (
+                      <div key={`row-bg-${i}`} className="border-b" style={{ height: `${ROW_HEIGHT}px` }}></div>
+                    ))}
+                  </div>
+                  
+                  <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-black dark:bg-slate-500 z-30"
+                      style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
+                  />
 
-                    const deps = Array.from(new Set(task.dependencies.filter(d => d !== task.id)));
+                  <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
+                    {tasks.map((task) => {
+                      const toV = getVisualPos(task.id);
+                      if (!toV) return null;
 
-                    return deps.map(depId => {
-                      const fromV = getVisualPos(depId);
+                      const deps = Array.from(new Set(task.dependencies.filter(d => d !== task.id)));
+
+                      return deps.map(depId => {
+                        const fromV = getVisualPos(depId);
+                        if (!fromV) return null;
+
+                        const sx = fromV.right;
+                        const sy = fromV.cy;
+                        const tx = toV.left;
+                        const ty = toV.cy;
+
+                        const d = routeFS(sx, sy, tx, ty);
+
+                        return (
+                          <g key={`${depId}-${task.id}`}>
+                            <path
+                              d={d}
+                              stroke="hsl(var(--muted-foreground))"
+                              strokeWidth="2"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              vectorEffect="non-scaling-stroke"
+                              opacity="0.9"
+                            />
+                            <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                            <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
+                          </g>
+                        );
+                      });
+                    })}
+
+                    {linkDraft.fromTaskId && (() => {
+                      const fromPos = taskPositions.get(linkDraft.fromTaskId);
+                      if (!fromPos) return null;
+                      const fromV = getVisualPos(linkDraft.fromTaskId);
                       if (!fromV) return null;
-
-                      const sx = fromV.right;
-                      const sy = fromV.cy;
-                      const tx = toV.left;
-                      const ty = toV.cy;
-
-                      const d = routeFS(sx, sy, tx, ty);
-
+                      const d = routeFS(fromV.right, fromV.cy, linkDraft.toX, linkDraft.toY);
                       return (
-                        <g key={`${depId}-${task.id}`}>
-                          <path
-                            d={d}
-                            stroke="hsl(var(--muted-foreground))"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            vectorEffect="non-scaling-stroke"
-                            opacity="0.9"
-                          />
-                          <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
-                          <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
+                        <g>
+                          <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
+                            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity="0.6" />
+                          <circle cx={fromV.right} cy={fromV.cy} r={3.5} fill="hsl(var(--foreground))" />
                         </g>
                       );
-                    });
-                  })}
+                    })()}
+                  </svg>
+                  
+                  {tasks.map((task, index) => {
+                    const pos = taskPositions.get(task.id);
+                    if(!pos) return null;
 
-                  {linkDraft.fromTaskId && (() => {
-                    const fromPos = taskPositions.get(linkDraft.fromTaskId);
-                    if (!fromPos) return null;
-                    const fromV = getVisualPos(linkDraft.fromTaskId);
-                    if (!fromV) return null;
-                    const d = routeFS(fromV.right, fromV.cy, linkDraft.toX, linkDraft.toY);
+                    const isDraggingThis = dragState.id === task.id && !resizeState.edge;
+                    const isResizingThis = resizeState.id === task.id;
+                    const vPos = getVisualPos(task.id);
+                    if(!vPos) return null;
+
                     return (
-                      <g>
-                        <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
-                          strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity="0.6" />
-                        <circle cx={fromV.right} cy={fromV.cy} r={3.5} fill="hsl(var(--foreground))" />
-                      </g>
-                    );
-                  })()}
-                </svg>
-                
-                {tasks.map((task, index) => {
-                  const pos = taskPositions.get(task.id);
-                  if(!pos) return null;
-
-                  const isDraggingThis = dragState.id === task.id && !resizeState.edge;
-                  const isResizingThis = resizeState.id === task.id;
-                  const vPos = getVisualPos(task.id);
-                  if(!vPos) return null;
-
-                  return (
-                      <TooltipProvider key={task.id} delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                               data-task-bar="true"
-                               onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
-                               onPointerMove={(e) => {
+                        <TooltipProvider key={task.id} delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                data-task-bar="true"
+                                onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
+                                onPointerMove={(e) => {
                                 isResizingThis ? onResizeMove(e, task) : onBarPointerMove(e, task)
-                               }}
-                               onPointerUp={(e) => {
+                                }}
+                                onPointerUp={(e) => {
                                 isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
-                               }}
-                               onPointerCancel={(e) => {
+                                }}
+                                onPointerCancel={(e) => {
                                 isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
-                               }}
-                               onMouseEnter={() => setHoverTaskId(task.id)}
-                               onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
-                               onClick={() => handleBarClick(task)}
-                               className={cn(
+                                }}
+                                onMouseEnter={() => setHoverTaskId(task.id)}
+                                onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
+                                onClick={() => handleBarClick(task)}
+                                className={cn(
                                 "absolute rounded-md hover:brightness-110 transition-all cursor-grab active:cursor-grabbing flex items-center px-2 overflow-hidden shadow z-20",
                                 isDraggingThis && "opacity-90"
-                               )}
-                               style={{
+                                )}
+                                style={{
                                 top: `${pos.y + BAR_TOP_MARGIN}px`,
                                 left: `${vPos.left}px`,
                                 width: `${vPos.right - vPos.left}px`,
                                 height: `${BAR_HEIGHT}px`,
                                 willChange: "transform,width,left",
                                 backgroundColor: task.color || 'hsl(var(--primary))'
-                               }}
-                            >
-                              <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
-                              
-                              <div
-                                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
-                                onPointerDown={(e)=>onLeftHandleDown(e, task)}
-                              />
-                              <div
-                                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
-                                onPointerDown={(e)=>onRightHandleDown(e, task)}
-                              />
-
+                                }}
+                              >
+                                <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
+                                
                                 <div
-                                  className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                >
-                                  <div className="relative w-3 h-3">
-                                    <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
-                                  </div>
-                                </div>
+                                  className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
+                                  onPointerDown={(e)=>onLeftHandleDown(e, task)}
+                                />
                                 <div
-                                  className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                  onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    const fromV = getVisualPos(task.id);
-                                    if (!fromV) return;
-                                    const sx = fromV.right;
-                                    const sy = fromV.cy;
-                                    const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
-                                    const rect = svg.getBoundingClientRect();
-                                    setLinkDraft({
-                                      fromTaskId: task.id,
-                                      fromX: sx,
-                                      fromY: sy,
-                                      toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
-                                      toY: e.clientY - rect.top
-                                    });
+                                  className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
+                                  onPointerDown={(e)=>onRightHandleDown(e, task)}
+                                />
 
-                                  }}
-                                >
-                                  <div className="relative w-3 h-3 cursor-crosshair">
-                                    <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
+                                  <div
+                                    className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                  >
+                                    <div className="relative w-3 h-3">
+                                      <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
+                                    </div>
                                   </div>
-                                </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-card border-primary">
-                            <p className="font-bold">{task.name}</p>
-                            {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
-                            <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
-                            <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
-                            <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                  );
-                })}
+                                  <div
+                                    className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      const fromV = getVisualPos(task.id);
+                                      if (!fromV) return;
+                                      const sx = fromV.right;
+                                      const sy = fromV.cy;
+                                      const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
+                                      const rect = svg.getBoundingClientRect();
+                                      setLinkDraft({
+                                        fromTaskId: task.id,
+                                        fromX: sx,
+                                        fromY: sy,
+                                        toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
+                                        toY: e.clientY - rect.top
+                                      });
+
+                                    }}
+                                  >
+                                    <div className="relative w-3 h-3 cursor-crosshair">
+                                      <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
+                                    </div>
+                                  </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card border-primary">
+                              <p className="font-bold">{task.name}</p>
+                              {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
+                              <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
+                              <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
+                              <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <GanttasticListView tasks={tasks} onTaskClick={onTaskClick} />
+        )}
       </div>
     </div>
   );
