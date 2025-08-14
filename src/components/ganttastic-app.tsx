@@ -39,6 +39,7 @@ export default function GanttasticApp() {
   const [isEditorDialogOpen, setEditorDialogOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'TASK_EDITOR' | 'IMPORTER'>('TASK_EDITOR');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [initialTaskType, setInitialTaskType] = useState<'task' | 'category'>('task');
 
   useEffect(() => {
     setIsMounted(true);
@@ -166,11 +167,16 @@ export default function GanttasticApp() {
     setTasks(reorderedTasks);
   };
 
-  const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'IMPORTER', task?: Task) => {
+  const openEditorDialog = useCallback((view: 'TASK_EDITOR' | 'IMPORTER', task?: Task, type?: 'task' | 'category') => {
     setSidebarView(view);
     setSelectedTask(task || null);
+    setInitialTaskType(type || (task ? task.type : 'task'));
     setEditorDialogOpen(true);
   }, []);
+  
+  const handleAddTaskClick = useCallback((type?: 'task' | 'category') => {
+    openEditorDialog('TASK_EDITOR', undefined, type);
+  }, [openEditorDialog]);
   
   const handleEditorDialogOpenChange = (open: boolean) => {
     setEditorDialogOpen(open);
@@ -198,7 +204,7 @@ export default function GanttasticApp() {
               setTasks={setTasks}
               project={project}
               onTaskClick={(task) => openEditorDialog('TASK_EDITOR', task)}
-              onAddTaskClick={() => openEditorDialog('TASK_EDITOR')}
+              onAddTaskClick={handleAddTaskClick}
               onProjectUpdate={handleProjectUpdate}
               onReorderTasks={handleReorderTasks}
               onTaskUpdate={handleUpdateTask}
@@ -212,6 +218,7 @@ export default function GanttasticApp() {
                 view={sidebarView}
                 tasks={tasks}
                 selectedTask={selectedTask}
+                initialTaskType={initialTaskType}
                 onAddTask={handleAddTask}
                 onUpdateTask={handleUpdateTask}
                 onDeleteTask={handleDeleteTask}

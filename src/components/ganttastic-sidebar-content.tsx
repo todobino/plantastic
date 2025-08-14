@@ -11,6 +11,7 @@ type GanttasticSidebarContentProps = {
   view: 'TASK_EDITOR' | 'IMPORTER';
   tasks: Task[];
   selectedTask: Task | null;
+  initialTaskType: 'task' | 'category';
   onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
@@ -22,6 +23,7 @@ export default function GanttasticSidebarContent({
   view,
   tasks,
   selectedTask,
+  initialTaskType,
   onAddTask,
   onUpdateTask,
   onDeleteTask,
@@ -31,12 +33,14 @@ export default function GanttasticSidebarContent({
     
   const getTitle = () => {
     if (view === 'IMPORTER') return 'Import Project';
-    return selectedTask ? 'Edit Task' : 'New Task';
+    if (selectedTask) return selectedTask.type === 'category' ? 'Edit Category' : 'Edit Task';
+    return initialTaskType === 'category' ? 'New Category' : 'New Task';
   }
   
   const getDescription = () => {
     if (view === 'IMPORTER') return 'Import project data from a CSV or text file.';
-    return selectedTask ? 'Update the details for this task.' : 'Add a new task to your project.';
+    if (selectedTask) return `Update the details for this ${selectedTask.type}.`;
+    return `Add a new ${initialTaskType} to your project.`;
   }
 
   return (
@@ -52,6 +56,7 @@ export default function GanttasticSidebarContent({
               <TaskEditor
                 tasks={tasks}
                 selectedTask={selectedTask}
+                initialTaskType={initialTaskType}
                 onAddTask={onAddTask}
                 onUpdateTask={onUpdateTask}
                 onDeleteTask={onDeleteTask}

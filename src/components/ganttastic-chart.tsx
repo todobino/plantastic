@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -27,7 +27,7 @@ type GanttasticChartProps = {
   setTasks: (tasks: Task[]) => void;
   project: Project;
   onTaskClick: (task: Task) => void;
-  onAddTaskClick: () => void;
+  onAddTaskClick: (type?: 'task' | 'category') => void;
   onProjectUpdate: (project: Project) => void;
   onReorderTasks: (reorderedTasks: Task[]) => void;
   onTaskUpdate: (task: Task) => void;
@@ -36,7 +36,7 @@ type GanttasticChartProps = {
 
 const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 28; // height of a task bar
-const CATEGORY_BAR_HEIGHT = 20;
+const CATEGORY_BAR_HEIGHT = 14;
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 const MONTH_ROW_HEIGHT = 32;
 const DAY_ROW_HEIGHT = 40;
@@ -83,16 +83,33 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const flatList: Task[] = [];
     const taskMap = new Map(tasks.map(t => [t.id, t]));
 
-    // Get top-level tasks first (categories or tasks without parents)
-    const topLevelTasks = tasks.filter(t => !t.parentId || !taskMap.has(t.parentId));
+    const sortedTasks = [...tasks].sort((a, b) => {
+        // Simple sort: categories first, then by name
+        if (a.type === 'category' && b.type !== 'category') return -1;
+        if (a.type !== 'category' && b.type === 'category') return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    const taskToChildren = new Map<string, Task[]>();
+    sortedTasks.forEach(task => {
+        if (task.parentId) {
+            if (!taskToChildren.has(task.parentId)) {
+                taskToChildren.set(task.parentId, []);
+            }
+            taskToChildren.get(task.parentId)!.push(task);
+        }
+    });
+
+    const topLevelTasks = sortedTasks.filter(t => !t.parentId || !taskMap.has(t.parentId));
 
     const addTaskRecursive = (task: Task, level: number) => {
         flatList.push({ ...task, milestone: `${level}` }); // Using milestone to store level for indentation
         if (task.type === 'category' && task.isExpanded) {
-            const children = tasks.filter(child => child.parentId === task.id);
+            const children = taskToChildren.get(task.id) || [];
             children.forEach(child => addTaskRecursive(child, level + 1));
         }
     }
+
     topLevelTasks.forEach(task => addTaskRecursive(task, 0));
     return flatList;
   }, [tasks]);
@@ -584,11 +601,11 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         </div>
         <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => alert('Export functionality coming soon!')}>
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 mr-2" />
                 Export
             </Button>
-            <Button size="sm" onClick={onAddTaskClick}>
-                <Plus />
+            <Button size="sm" onClick={() => onAddTaskClick('task')}>
+                <Plus className="h-4 w-4 mr-2" />
                 Add Task
             </Button>
         </div>
@@ -604,13 +621,20 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 <span className="font-semibold text-sm">Tasks & Milestones</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <Button variant="ghost" size="icon">
                         <Plus className="h-4 w-4" />
                         <span className="sr-only">Add</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={onAddTaskClick}>New Task</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onAddTaskClick('task')}>
+                        <GanttChartSquare className="mr-2 h-4 w-4" />
+                        New Task
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onAddTaskClick('category')}>
+                        <FolderPlus className="mr-2 h-4 w-4" />
+                        New Category
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
                         New Milestone
                       </DropdownMenuItem>
