@@ -312,12 +312,28 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     setDragState(s => ({ ...s, previewDeltaPx: 0 }));
   };
 
-  const HALF_CELL = pxPerDay / 2;
-  const zPath = (sx: number, sy: number, tx: number, ty: number) => {
-    const lead = Math.max(8, HALF_CELL);
-    const outX = sx + lead;
-    const inX = tx - lead;
-    return `M ${sx} ${sy} H ${outX} V ${ty} H ${tx}`;
+  const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
+    const gap = tx - sx;                 // space between bar edges (px)
+    const halfCell = pxPerDay / 2;
+    const margin = 4;                    // keep off bar corners
+    const minLead = 8;                   // minimum visual lead when space allows
+    const r = 8;                         // corner radius for rounded elbows
+    const dir = ty >= sy ? 1 : -1;
+  
+    // Wide gap: true "Z" (half a cell out/in), rounded elbows, diagonal middle
+    if (gap >= 2 * minLead + 2 * margin) {
+      const lead = Math.min(halfCell, Math.floor(gap / 2 - margin));
+      const outX = sx + lead;
+      const inX  = tx - lead;
+      return `M ${sx} ${sy}
+              H ${outX - r} Q ${outX} ${sy} ${outX} ${sy + dir * r}
+              L ${inX} ${ty - dir * r} Q ${inX} ${ty} ${inX + r} ${ty}
+              H ${tx}`;
+    }
+  
+    // Tight gap (butt-to-butt): pivot at the exact middle so we never intrude
+    const mid = sx + gap / 2;
+    return `M ${sx} ${sy} H ${mid} V ${ty} H ${tx}`;
   };
 
   
@@ -327,7 +343,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     for (const task of tasks) {
       const pos = taskPositions.get(task.id);
       if (!pos) continue;
-      const cx = pos.x + 2; // left edge dot
+      const cx = pos.x; // left edge dot
       const cy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
       const dx = x - cx, dy = y - cy;
       if ((dx*dx + dy*dy) <= R*R) return { taskId: task.id, cx, cy };
@@ -489,7 +505,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   {tasks.map((task) => {
                     const toPos = taskPositions.get(task.id);
                     if (!toPos) return null;
-                    const toLeftEdge = toPos.x + 2;
+                    const toLeftEdge = toPos.x;
                     const ty = toPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
 
                     // guard: unique deps, no self
@@ -499,13 +515,13 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                       const fromPos = taskPositions.get(depId);
                       if (!fromPos) return null;
 
-                      const fromRightEdge = fromPos.x + fromPos.width - 2;
+                      const fromRightEdge = fromPos.x + fromPos.width;
                       const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
 
                       const sx = fromRightEdge;   // dot center on predecessor end
                       const tx = toLeftEdge;      // dot center on successor start
 
-                      const d = zPath(sx, sy, tx, ty);
+                      const d = routeFS(sx, sy, tx, ty);
 
                       return (
                         <g key={`${depId}-${task.id}`}>
@@ -531,8 +547,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     const fromPos = taskPositions.get(linkDraft.fromTaskId);
                     if (!fromPos) return null;
                     const sy = fromPos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
-                    const sx = fromPos.x + fromPos.width - 2; // right dot
-                    const d = zPath(sx, sy, linkDraft.toX, linkDraft.toY);
+                    const sx = fromPos.x + fromPos.width; // right dot
+                    const d = routeFS(sx, sy, linkDraft.toX, linkDraft.toY);
                     return (
                       <g>
                         <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
@@ -604,7 +620,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                   className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
                                   onMouseDown={(e) => {
                                     e.stopPropagation();
-                                    const sx = pos.x + pos.width - 2;
+                                    const sx = pos.x + pos.width;
                                     const sy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
                                     const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
                                     const rect = svg.getBoundingClientRect();
