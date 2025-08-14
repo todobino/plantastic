@@ -8,7 +8,7 @@ import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, differenceInBusinessDays, startOfDay } from 'date-fns';
+import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
 
@@ -100,8 +100,8 @@ export default function GanttasticApp() {
           const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
           const newStartDate = startOfDay(addDays(latestParentEndDate, 1));
           
-          const duration = differenceInBusinessDays(dependentTask.end, dependentTask.start);
-          const newEndDate = addDays(newStartDate, duration >= 0 ? duration : 0);
+          const duration = Math.max(0, differenceInDays(dependentTask.end, dependentTask.start));
+          const newEndDate = addDays(newStartDate, duration);
           
           const taskIndex = newTasks.findIndex(t => t.id === dependentTask.id);
           if (taskIndex !== -1) {
@@ -129,17 +129,12 @@ export default function GanttasticApp() {
   const handleUpdateTask = useCallback((updatedTask: Task) => {
     setTasks(prev => {
       let newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
-      
-      // If dependencies were updated, we need to recalculate downstream tasks
-      const originalTask = prev.find(t => t.id === updatedTask.id);
-      if (JSON.stringify(originalTask?.dependencies) !== JSON.stringify(updatedTask.dependencies)) {
-         newTasks = updateDependentTasks(updatedTask.id, newTasks);
-      }
-
+      newTasks = updateDependentTasks(updatedTask.id, newTasks);
       return newTasks;
     });
     toast({ title: "Task Updated", description: `"${updatedTask.name}" has been successfully updated.` });
   }, [updateDependentTasks, toast]);
+
 
   const handleDeleteTask = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
@@ -266,4 +261,3 @@ export default function GanttasticApp() {
     </div>
   );
 }
-

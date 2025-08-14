@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,54 +14,10 @@ import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 
-// ---- Business-day helpers ----
 const isWeekend = (d: Date) => {
   const day = d.getDay(); // 0 Sun .. 6 Sat
   return day === 0 || day === 6;
 };
-
-const nextBusinessDay = (d: Date) => {
-  let x = startOfDay(d);
-  while (isWeekend(x)) x = addDays(x, 1);
-  return x;
-};
-
-// Inclusive business days between two dates (assumes start<=end)
-const businessDaysInclusive = (start: Date, end: Date) => {
-  let s = startOfDay(start);
-  let e = startOfDay(end);
-  if (e < s) return 0;
-  let count = 0;
-  for (let d = s; d <= e; d = addDays(d, 1)) if (!isWeekend(d)) count++;
-  return count;
-};
-
-// Add N business days (n>=0). If n=0 returns the same day.
-const addBusinessDaysIncl = (start: Date, n: number) => {
-  let d = startOfDay(start);
-  // Adjust for starting on a non-business day if needed, though normalize should handle this.
-  let current = d;
-  if(n <= 0) return current;
-
-  let remaining = n;
-  while(remaining > 0) {
-      current = addDays(current, 1);
-      if (!isWeekend(current)) {
-          remaining--;
-      }
-  }
-  return current;
-};
-
-
-// Normalize task: move start off weekend and recompute end preserving business duration
-const normalizeTaskSpan = (start: Date, end: Date) => {
-  const s = nextBusinessDay(start);
-  const bd = Math.max(1, businessDaysInclusive(start, end));
-  const e = addBusinessDaysIncl(s, bd - 1);
-  return { s, e, bd };
-};
-
 
 type GanttasticChartProps = {
   tasks: Task[];
@@ -93,6 +49,12 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     previewDeltaPx: number;
   }>({ id: null, startX: 0, startLeftPx: 0, previewDeltaPx: 0 });
 
+  const [resizeState, setResizeState] = useState<{
+    id: string | null;
+    edge: 'left' | 'right' | null;
+    startX: number;
+  }>({ id: null, edge: null, startX: 0 });
+  
   const [hoverTaskId, setHoverTaskId] = useState<string | null>(null);
 
   const [linkDraft, setLinkDraft] = useState<{
@@ -128,7 +90,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     }
     
     if (viewMode !== 'week') {
-      // Add padding around the project dates for non-week views
       projectStart = addDays(projectStart, -14);
       projectEnd = addDays(projectEnd, 14);
     } else {
@@ -155,16 +116,17 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const timeline = eachDayOfInterval({ start: projectStart, end: projectEnd });
     const totalDays = timeline.length;
 
-    const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date; bd: number }>();
+    const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date }>();
     tasks.forEach((task, index) => {
-        const { s, e, bd } = normalizeTaskSpan(task.start, task.end);
-        const offset = differenceInDays(startOfDay(s), projectStart);
-        const durationCalendar = differenceInDays(startOfDay(e), startOfDay(s)); // includes weekends visually
+        const s = startOfDay(task.start);
+        const e = startOfDay(task.end);
+        const offset = differenceInDays(s, projectStart);
+        const durationCalendar = differenceInDays(e, s); // includes weekends visually
         taskPositions.set(task.id, {
             x: offset * dayWidth,
             y: index * ROW_HEIGHT,
             width: (durationCalendar + 1) * dayWidth,
-            s, e, bd
+            s, e
         });
     });
 
@@ -195,7 +157,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
             }
         });
 
-        // Adjust last group to not overflow
         if (groups.length > 0) {
             const totalGroupedDays = groups.reduce((acc, g) => acc + g.days, 0);
             if (totalGroupedDays > totalDays) {
@@ -217,11 +178,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
   const dateToX = (d: Date) => differenceInDays(startOfDay(d), startOfDay(projectStart)) * pxPerDay;
   const xToDayDelta = (xPx: number) => Math.round(xPx / pxPerDay);
 
-  const taskDurationDays = (t: Task) => {
-    const pos = taskPositions.get(t.id);
-    return pos ? pos.bd : 1;
-  }
-
   // Build reverse deps once
   const successorsById = useMemo(() => {
     const m = new Map<string, string[]>();
@@ -233,36 +189,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     });
     return m;
   }, [tasks]);
-
-  // Compute draggable bounds for a task (in dates)
-  const getTaskBounds = useCallback((task: Task) => {
-    const taskPos = taskPositions.get(task.id);
-    if (!taskPos) return { minStart: projectStart, maxStart: projectEnd };
-
-    const preds = task.dependencies
-      .map(id => taskPositions.get(id))
-      .filter(Boolean) as {e: Date}[];
-
-    const succs = (successorsById.get(task.id) || [])
-      .map(id => taskPositions.get(id))
-      .filter(Boolean) as {s: Date}[];
-
-    const leftBoundStartDate = preds.length
-      ? addDays(startOfDay(new Date(Math.max(...preds.map(p => p.e.getTime())))), 1)
-      : startOfDay(projectStart);
-
-    const rightLimitStartDate = succs.length
-      ? addDays(
-          startOfDay(new Date(Math.min(...succs.map(s => s.s.getTime())))),
-          -(taskPos.bd)
-        )
-      : startOfDay(projectEnd);
-
-    return {
-      minStart: nextBusinessDay(leftBoundStartDate),
-      maxStart: rightLimitStartDate, // This can be a weekend, nextBusinessDay will fix it
-    };
-  }, [taskPositions, projectStart, projectEnd, successorsById]);
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
     wasDraggedRef.current = false;
@@ -280,20 +206,8 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     if (Math.abs(rawDeltaPx) > 2) { // Threshold to consider it a drag
         wasDraggedRef.current = true;
     }
-  
-    // compute pixel bounds from date bounds
-    const { minStart, maxStart } = getTaskBounds(task);
-  
-    const minLeftPx = dateToX(minStart);
-    const maxLeftPx = dateToX(maxStart);
-
+    
     let nextLeftPx = dragState.startLeftPx + rawDeltaPx;
-
-    if (maxStart < minStart) {
-       nextLeftPx = dragState.startLeftPx;
-    } else {
-       nextLeftPx = Math.max(minLeftPx, Math.min(maxLeftPx, nextLeftPx));
-    }
   
     // snap to day grid in preview
     const snapDeltaPx = xToDayDelta(nextLeftPx - dragState.startLeftPx) * pxPerDay;
@@ -321,11 +235,9 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     const calDelta = xToDayDelta(dragState.previewDeltaPx);
   
     if (calDelta !== 0) {
-      // candidate start in calendar days, then snap to next business day
-      const candStart = addDays(pos.s, calDelta);
-      const newStart = nextBusinessDay(candStart);
-      // preserve business duration
-      const newEnd = addBusinessDaysIncl(newStart, pos.bd - 1);
+      const newStart = addDays(pos.s, calDelta);
+      const duration = Math.max(0, differenceInDays(pos.e, pos.s));
+      const newEnd = addDays(newStart, duration);
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
     }
   
@@ -339,21 +251,76 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     }
   }
 
+  const minStartAllowed = (task: Task) => {
+    if (!task.dependencies.length) return projectStart;
+    const latestPredEnd = new Date(Math.max(...task.dependencies
+      .map(id => tasks.find(t => t.id === id))
+      .filter(Boolean)!.map(t => startOfDay((t as Task).end).getTime())));
+    return addDays(startOfDay(latestPredEnd), 1);
+  };
+
+  const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
+    e.stopPropagation();
+    (e.target as Element).setPointerCapture(e.pointerId);
+    document.body.style.userSelect = 'none';
+    setResizeState({ id: task.id, edge: 'left', startX: e.clientX });
+  };
+
+  const onRightHandleDown = (e: React.PointerEvent, task: Task) => {
+    e.stopPropagation();
+    (e.target as Element).setPointerCapture(e.pointerId);
+    document.body.style.userSelect = 'none';
+    setResizeState({ id: task.id, edge: 'right', startX: e.clientX });
+  };
+
+  const onResizeMove = (e: React.PointerEvent, task: Task) => {
+    if (resizeState.id !== task.id || !resizeState.edge) return;
+    // live preview by reusing dragState.previewDeltaPx
+    const deltaPx = e.clientX - resizeState.startX;
+    setDragState(s => ({ ...s, previewDeltaPx: Math.round(deltaPx / pxPerDay) * pxPerDay }));
+  };
+  
+  const onResizeUp = (e: React.PointerEvent, task: Task) => {
+    if (resizeState.id !== task.id || !resizeState.edge) return;
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    document.body.style.userSelect = '';
+  
+    const pos = taskPositions.get(task.id);
+    if (!pos) { setResizeState({ id: null, edge: null, startX: 0 }); setDragState(s => ({...s, previewDeltaPx:0})); return; }
+  
+    const dayDelta = xToDayDelta(dragState.previewDeltaPx);
+    let newStart = pos.s;
+    let newEnd = pos.e;
+  
+    if (resizeState.edge === 'left' && dayDelta !== 0) {
+      newStart = addDays(pos.s, dayDelta);
+      // bound by predecessors and at least 1 day
+      const minStart = minStartAllowed(task);
+      if (newStart < minStart) newStart = minStart;
+      if (newStart > newEnd) newStart = newEnd; // keep ? 1 day inclusive
+    }
+    if (resizeState.edge === 'right' && dayDelta !== 0) {
+      newEnd = addDays(pos.e, dayDelta);
+      if (newEnd < newStart) newEnd = newStart; // ? 1 day
+    }
+  
+    if (newStart.getTime() !== task.start.getTime() || newEnd.getTime() !== task.end.getTime()) {
+      onTaskUpdate({ ...task, start: newStart, end: newEnd });
+    }
+  
+    setResizeState({ id: null, edge: null, startX: 0 });
+    setDragState(s => ({ ...s, previewDeltaPx: 0 }));
+  };
+
   const orthPath = (sx:number, sy:number, tx:number, ty:number) => {
-    const R = 10;                  // corner radius
-    const minRun = 16;             // min horizontal before first turn
+    const R = 10;
     let mx = (sx + tx) / 2;
-    if (mx < sx + R + 4) mx = sx + R + 4;
-    if (mx > tx - R - 4) mx = tx - R - 4;
+    const minMx = sx + R + 6;
+    const maxMx = tx - R - 6;
+    if (mx < minMx) mx = minMx;
+    if (mx > maxMx) mx = maxMx;
     const dir:1|-1 = ty >= sy ? 1 : -1;
-    return [
-      `M ${sx} ${sy}`,
-      `H ${mx - R}`,
-      `Q ${mx} ${sy} ${mx} ${sy + dir*R}`,
-      `V ${ty - dir*R}`,
-      `Q ${mx} ${ty} ${mx + R} ${ty}`,
-      `H ${tx}`
-    ].join(' ');
+    return `M ${sx} ${sy} H ${mx - R} Q ${mx} ${sy} ${mx} ${sy + dir*R} V ${ty - dir*R} Q ${mx} ${ty} ${mx + R} ${ty} H ${tx}`;
   };
   
   // proximity hit-test for dropping on a start-dot
@@ -369,6 +336,39 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     }
     return null;
   };
+  
+  useEffect(() => {
+    if (!linkDraft.fromTaskId) return;
+
+    const onMove = (e: MouseEvent) => {
+      if (!timelineRef.current) return;
+      const svg = timelineRef.current.querySelector('svg') as SVGSVGElement;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      setLinkDraft(ld => ({ ...ld,
+        toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
+        toY: e.clientY - rect.top
+      }));
+    };
+
+    const onUp = () => {
+      const hit = hitStartDot(linkDraft.toX, linkDraft.toY);
+      if (hit && hit.taskId !== linkDraft.fromTaskId) {
+        const target = tasks.find(t => t.id === hit.taskId)!;
+        if (!target.dependencies.includes(linkDraft.fromTaskId)) {
+          onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId] });
+        }
+      }
+      setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [linkDraft.fromTaskId, linkDraft.toX, linkDraft.toY, tasks, onTaskUpdate]);
 
 
   return (
@@ -478,30 +478,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                   ))}
                 </div>
                 
-                {/* Dependency Lines (existing + preview) */}
-                <svg
-                  className="absolute top-0 left-0 w-full h-full z-30"
-                  onMouseMove={e => {
-                    if (!linkDraft.fromTaskId || !timelineRef.current) return;
-                    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
-                    setLinkDraft(ld => ({ ...ld, toX: e.clientX - rect.left + timelineRef.current!.scrollLeft, toY: e.clientY - rect.top }));
-                  }}
-                  onMouseUp={() => {
-                    if (!linkDraft.fromTaskId) return;
-                    const hit = hitStartDot(linkDraft.toX, linkDraft.toY);
-                    if (hit && hit.taskId !== linkDraft.fromTaskId) {
-                      // create Finish->Start: fromTask finishes -> hit.taskId starts
-                      const target = tasks.find(t => t.id === hit.taskId)!;
-                      if (!target.dependencies.includes(linkDraft.fromTaskId)) {
-                        onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId] });
-                      }
-                    }
-                    setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
-                  }}
-                  onMouseLeave={() => {
-                    if (linkDraft.fromTaskId) setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
-                  }}
-                >
+                <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
                   {/* existing links */}
                   {tasks.map((task) => {
                     const toPos = taskPositions.get(task.id);
@@ -559,14 +536,14 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                     );
                   })()}
                 </svg>
-
+                
                 {/* Task Bars */}
                 {tasks.map((task, index) => {
                   const pos = taskPositions.get(task.id);
                   if(!pos) return null;
-                  const duration = pos.bd;
                   
-                  const isDragging = dragState.id === task.id;
+                  const isDragging = dragState.id === task.id && !resizeState.edge;
+                  const isResizing = resizeState.id === task.id;
 
                   return (
                       <TooltipProvider key={task.id} delayDuration={100}>
@@ -574,9 +551,15 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                           <TooltipTrigger asChild>
                             <div
                                onPointerDown={(e) => onBarPointerDown(e, task, pos.x + 2)}
-                               onPointerMove={(e) => onBarPointerMove(e, task)}
-                               onPointerUp={(e) => onBarPointerUp(e, task)}
-                               onPointerCancel={(e) => onBarPointerUp(e, task)}
+                               onPointerMove={(e) => {
+                                isResizing ? onResizeMove(e, task) : onBarPointerMove(e, task)
+                               }}
+                               onPointerUp={(e) => {
+                                isResizing ? onResizeUp(e, task) : onBarPointerUp(e, task)
+                               }}
+                               onPointerCancel={(e) => {
+                                isResizing ? onResizeUp(e, task) : onBarPointerUp(e, task)
+                               }}
                                onMouseEnter={() => setHoverTaskId(task.id)}
                                onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
                                onClick={() => handleBarClick(task)}
@@ -586,17 +569,25 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                )}
                                style={{
                                 top: `${pos.y + BAR_TOP_MARGIN}px`,
-                                left: `${pos.x + 2}px`,
-                                width: `${pos.width - 4}px`,
+                                left: `${pos.x + 2 + (isResizing && resizeState.edge==='left' ? dragState.previewDeltaPx : 0)}px`,
+                                width: `${pos.width - 4 + (isResizing && resizeState.edge==='right' ? dragState.previewDeltaPx : isResizing && resizeState.edge==='left' ? -dragState.previewDeltaPx : 0)}px`,
                                 height: `${BAR_HEIGHT}px`,
                                 transform: `translateX(${isDragging ? dragState.previewDeltaPx : 0}px)`,
-                                willChange: "transform",
+                                willChange: "transform,width,left",
                                }}
                             >
                               <div className="absolute top-0 left-0 h-full bg-primary/60 rounded-md" style={{ width: `${task.progress}%` }}></div>
                               <span className="relative text-primary-foreground text-xs font-medium truncate z-10">{task.name}</span>
                               
-                                {/* terminal dots (hidden until hover) */}
+                              <div
+                                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
+                                onPointerDown={(e)=>onLeftHandleDown(e, task)}
+                              />
+                              <div
+                                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
+                                onPointerDown={(e)=>onRightHandleDown(e, task)}
+                              />
+
                                 <div
                                   className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
                                 >
@@ -606,7 +597,6 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                                 </div>
                                 <div
                                   className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                  // this one is interactive: start link drag from END dot
                                   onMouseDown={(e) => {
                                     e.stopPropagation();
                                     const sx = pos.x + pos.width - 2;
@@ -633,7 +623,7 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
                             {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
                             <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
                             <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
-                            <p>Duration: {duration} business day{duration === 1 ? '' : 's'}</p>
+                            <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
                             <p>Progress: {task.progress}%</p>
                           </TooltipContent>
                         </Tooltip>
@@ -648,4 +638,3 @@ export default function GanttasticChart({ tasks, project, onTaskClick, onAddTask
     </Card>
   );
 }
-
