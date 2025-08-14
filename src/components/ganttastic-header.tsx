@@ -5,6 +5,7 @@ import { GanttChartSquare, Plus, ChevronsUpDown, Upload, UserCircle, FolderOpen 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
+import { ThemeToggle } from './theme-toggle';
 
 
 type GanttasticHeaderProps = {
@@ -50,6 +51,7 @@ export default function GanttasticHeader({ openSidebar, projectName }: Ganttasti
             </Link>
           </Button>
         </div>
+        <ThemeToggle />
       </div>
     </header>
   );
