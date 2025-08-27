@@ -45,7 +45,9 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
         .sort((a,b) => {
             if(a.type === 'category' && b.type !== 'category') return -1;
             if(a.type !== 'category' && b.type === 'category') return 1;
-            return a.start.getTime() - b.start.getTime();
+            const startTimeA = a.start ? a.start.getTime() : 0;
+            const startTimeB = b.start ? b.start.getTime() : 0;
+            return startTimeA - startTimeB;
         });
 
     const flatList: HierarchicalTask[] = [];
@@ -54,7 +56,11 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
         const id = `${prefix}${flatList.filter(t => t.level === level && t.hierarchicalId.startsWith(prefix.slice(0, -1))).length + 1}`;
         flatList.push({ ...task, level, hierarchicalId: id });
         
-        const children = (taskToChildren.get(task.id) || []).sort((a,b) => a.start.getTime() - b.start.getTime());
+        const children = (taskToChildren.get(task.id) || []).sort((a,b) => {
+            const startTimeA = a.start ? a.start.getTime() : 0;
+            const startTimeB = b.start ? b.start.getTime() : 0;
+            return startTimeA - startTimeB;
+        });
         children.forEach((child) => {
             buildHierarchy(child, level + 1, `${id}.`);
         });
@@ -105,9 +111,14 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
                   <span>{task.name}</span>
                 </div>
               </TableCell>
-              <TableCell>{format(task.start, 'MMM d, yyyy')}</TableCell>
-              <TableCell>{format(task.end, 'MMM d, yyyy')}</TableCell>
-              <TableCell>{differenceInDays(task.end, task.start) + 1} days</TableCell>
+              <TableCell>{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell>
+                {task.start && task.end 
+                  ? `${differenceInDays(task.end, task.start) + 1} day(s)`
+                  : '-'
+                }
+              </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {task.dependencies.map(depId => {
