@@ -2,7 +2,7 @@
 'use client';
 
 import type { Task } from '@/types';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -70,6 +70,18 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
 
   const getTaskById = (id: string) => tasks.find(t => t.id === id);
 
+  const getTaskColor = useCallback((task: Task) => {
+    if (task.type === 'category') {
+        return task.color;
+    }
+    if (task.parentId) {
+        const parent = tasks.find(t => t.id === task.parentId);
+        return parent?.color || 'hsl(var(--primary))';
+    }
+    return 'hsl(var(--primary))';
+  }, [tasks]);
+
+
   return (
     <div className="w-full overflow-auto">
       <Table>
@@ -89,7 +101,7 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
               <TableCell className={cn(task.type === 'category' && 'font-bold')}>{task.hierarchicalId}</TableCell>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2" style={{ paddingLeft: `${task.level * 1.5}rem`}}>
-                 {task.type === 'category' ? <Folder className="h-4 w-4 text-primary" /> : <GanttChartSquare className="h-4 w-4" style={{ color: task.color || 'hsl(var(--primary))' }} />}
+                 {task.type === 'category' ? <Folder className="h-4 w-4 text-primary" /> : <GanttChartSquare className="h-4 w-4" style={{ color: getTaskColor(task) || 'hsl(var(--primary))' }} />}
                   <span>{task.name}</span>
                 </div>
               </TableCell>

@@ -501,7 +501,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const isCategory = task?.type === 'category';
 
     const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
-    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) : BAR_TOP_MARGIN;
+    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) / 2 : BAR_TOP_MARGIN;
     const cy = p.y + topMargin + barHeight / 2;
 
     return { left, right: left + width, cy };
@@ -523,23 +523,14 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   }, [dateToX, dayWidth]);
   
   useEffect(() => {
-    if (timelineRef.current) {
-        setTimeout(() => {
-            const scroller = timelineRef.current;
-            if (!scroller) return;
-
-            const todayX = dateToX(new Date());
-            const scrollerWidth = scroller.clientWidth;
-            
-            const scrollTo = todayX - (scrollerWidth / 2) + (dayWidth / 2);
-            
-            scroller.scrollTo({
-              left: scrollTo,
-              behavior: 'auto'
-            });
-        }, 100);
+    const scroller = timelineRef.current;
+    if (scroller) {
+      const todayX = dateToX(new Date());
+      const scrollerWidth = scroller.clientWidth;
+      const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
+      scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id]); // Re-center on project change
+  }, [project.id, dateToX, dayWidth]); // Re-center on project change
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -575,6 +566,17 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         t.id === categoryId ? { ...t, isExpanded: !t.isExpanded } : t
     ));
   }
+  
+  const getTaskColor = useCallback((task: Task) => {
+    if (task.type === 'category') {
+        return task.color || 'hsl(var(--secondary))';
+    }
+    if (task.parentId) {
+        const parent = tasks.find(t => t.id === task.parentId);
+        return parent?.color || 'hsl(var(--primary))';
+    }
+    return 'hsl(var(--primary))';
+  }, [tasks]);
 
 
   return (
@@ -689,7 +691,10 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                   onPointerLeave={handlePanEnd}
                   onPointerCancel={handlePanEnd}
               >
-                <div style={{ width: `${totalDays * dayWidth}px`}} className="sticky top-0 bg-background z-40 border-b">
+                 <div
+                  style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
+                  className="sticky top-0 bg-background z-40 border-b"
+                >
                   <div className="flex flex-col">
                     <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
                         {headerGroups.map((group, index) => (
@@ -798,7 +803,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                     
                     const isCategory = task.type === 'category';
                     const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
-                    const topMargin = isCategory ? ROW_HEIGHT - barHeight - 2 : BAR_TOP_MARGIN;
+                    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) / 2 : BAR_TOP_MARGIN;
 
                     return (
                         <TooltipProvider key={task.id} delayDuration={100}>
@@ -830,7 +835,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                                 width: `${vPos.right - vPos.left}px`,
                                 height: `${barHeight}px`,
                                 willChange: "transform,width,left",
-                                backgroundColor: isCategory ? 'hsl(var(--secondary))' : (task.color || 'hsl(var(--primary))')
+                                backgroundColor: getTaskColor(task),
                                 }}
                               >
                                <div

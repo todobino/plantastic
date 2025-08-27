@@ -48,6 +48,7 @@ type TaskEditorProps = {
   onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[], color?: string }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  initialTaskType: 'task' | 'category';
 };
 
 const defaultColor = '#3b82f6';
@@ -55,7 +56,7 @@ const colorPalette = [
   '#3b82f6', '#10b981', '#f97316', '#ef4444', '#a855f7', '#6366f1', '#ec4899', '#84cc16'
 ];
 
-export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask }: TaskEditorProps) {
+export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, initialTaskType }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -63,7 +64,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       description: '',
       dependencies: [],
       color: defaultColor,
-      type: 'task',
+      type: initialTaskType,
       parentId: null,
     },
   });
@@ -95,12 +96,12 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         end: addDays(defaultStartDate, defaultDuration - 1),
         dependencies: [],
         color: defaultColor,
-        type: 'task',
+        type: initialTaskType,
         parentId: null,
       });
       setDuration(defaultDuration);
     }
-  }, [selectedTask, form]);
+  }, [selectedTask, form, initialTaskType]);
 
 
   const handleStartDateChange = (date: Date) => {
@@ -126,7 +127,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       start: data.start,
       end: data.end,
       dependencies: data.dependencies || [],
-      color: data.type === 'task' ? (data.color || defaultColor) : undefined,
+      color: data.type === 'category' ? (data.color || defaultColor) : undefined,
       type: data.type,
       parentId: data.parentId,
       isExpanded: selectedTask?.isExpanded ?? true,
@@ -200,7 +201,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parent Category</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                   <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Assign to a category..." />
@@ -262,13 +263,13 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
              </FormItem>
           </div>
           
-          {taskType === 'task' && (
+          {taskType === 'category' && (
             <FormField
               control={form.control}
               name="color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Task Color</FormLabel>
+                  <FormLabel>Category Color</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
                       {colorPalette.map(color => (
