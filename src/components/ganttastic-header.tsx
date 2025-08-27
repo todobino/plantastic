@@ -10,10 +10,10 @@ import { AuthForm } from './auth-form';
 
 
 type GanttasticHeaderProps = {
-  openSidebar: (view: 'TASK_EDITOR' | 'IMPORTER' | 'NEW_PROJECT', task?: any) => void;
+  onNewProjectClick: () => void;
 };
 
-export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps) {
+export default function GanttasticHeader({ onNewProjectClick }: GanttasticHeaderProps) {
   const [isLoginOpen, setLoginOpen] = useState(false);
   
   return (
@@ -41,7 +41,7 @@ export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps)
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={() => openSidebar('NEW_PROJECT')}>
+        <Button size="sm" onClick={onNewProjectClick}>
           <Plus className="h-4 w-4" />
           New Project
         </Button>

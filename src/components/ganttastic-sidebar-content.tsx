@@ -3,16 +3,17 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskEditor from './task-editor';
+import CategoryEditor from './category-editor';
 import Importer from './importer';
 import type { Task, Project } from '@/types';
 import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 type GanttasticSidebarContentProps = {
-  view: 'TASK_EDITOR' | 'IMPORTER' | 'NEW_PROJECT';
+  view: 'TASK_EDITOR' | 'CATEGORY_EDITOR' | 'IMPORTER';
   tasks: Task[];
   selectedTask: Task | null;
-  initialTaskType: 'task' | 'category';
   onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
+  onAddCategory?: (category: Omit<Task, 'id' | 'type'>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onImportProject: (project: Project, tasks: Task[]) => void;
@@ -23,8 +24,8 @@ export default function GanttasticSidebarContent({
   view,
   tasks,
   selectedTask,
-  initialTaskType,
   onAddTask,
+  onAddCategory,
   onUpdateTask,
   onDeleteTask,
   onImportProject,
@@ -32,16 +33,53 @@ export default function GanttasticSidebarContent({
 }: GanttasticSidebarContentProps) {
     
   const getTitle = () => {
-    if (view === 'IMPORTER' || view === 'NEW_PROJECT') return 'Create New Project';
-    if (selectedTask) return selectedTask.type === 'category' ? 'Edit Category' : 'Edit Task';
-    return initialTaskType === 'category' ? 'New Category' : 'New Task';
+    switch (view) {
+      case 'IMPORTER':
+        return 'Create New Project';
+      case 'TASK_EDITOR':
+        return selectedTask ? 'Edit Task' : 'New Task';
+      case 'CATEGORY_EDITOR':
+        return selectedTask ? 'Edit Category' : 'New Category';
+    }
   }
   
   const getDescription = () => {
-    if (view === 'IMPORTER') return 'Import project data from a CSV or text file.';
-    if (view === 'NEW_PROJECT') return 'Create a new project manually or import from a file.';
-    if (selectedTask) return `Update the details for this ${selectedTask.type}.`;
-    return `Add a new ${initialTaskType} to your project.`;
+     switch (view) {
+      case 'IMPORTER':
+        return 'Create a new project manually or import from a file.';
+      case 'TASK_EDITOR':
+        return selectedTask ? 'Update the details for this task.' : 'Add a new task to your project.';
+      case 'CATEGORY_EDITOR':
+        return selectedTask ? 'Update the details for this category.' : 'Add a new category to your project.';
+    }
+  }
+
+  const renderContent = () => {
+    switch (view) {
+        case 'TASK_EDITOR':
+            return (
+                <TaskEditor
+                    tasks={tasks}
+                    selectedTask={selectedTask}
+                    onAddTask={onAddTask}
+                    onUpdateTask={onUpdateTask}
+                    onDeleteTask={onDeleteTask}
+                />
+            );
+        case 'CATEGORY_EDITOR':
+            return (
+                <CategoryEditor
+                    selectedCategory={selectedTask}
+                    onAddCategory={onAddCategory!}
+                    onUpdateCategory={onUpdateTask}
+                    onDeleteCategory={onDeleteTask}
+                />
+            );
+        case 'IMPORTER':
+            return (
+                <Importer onImport={onImportProject} onClose={onClose} />
+            );
+    }
   }
 
   return (
@@ -53,18 +91,7 @@ export default function GanttasticSidebarContent({
         </DialogDescription>
       </DialogHeader>
       <div className="flex-grow flex flex-col py-4 min-h-0">
-          {view === 'TASK_EDITOR' ? (
-              <TaskEditor
-                tasks={tasks}
-                selectedTask={selectedTask}
-                initialTaskType={initialTaskType}
-                onAddTask={onAddTask}
-                onUpdateTask={onUpdateTask}
-                onDeleteTask={onDeleteTask}
-              />
-          ) : (
-              <Importer onImport={onImportProject} onClose={onClose} />
-          )}
+          {renderContent()}
       </div>
     </>
   );

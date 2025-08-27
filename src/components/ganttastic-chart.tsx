@@ -28,7 +28,8 @@ type GanttasticChartProps = {
   setTasks: (tasks: Task[]) => void;
   project: Project;
   onTaskClick: (task: Task) => void;
-  onAddTaskClick: (type?: 'task' | 'category') => void;
+  onAddTaskClick: () => void;
+  onAddCategoryClick: () => void;
   onProjectUpdate: (project: Project) => void;
   onReorderTasks: (reorderedTasks: Task[]) => void;
   onTaskUpdate: (task: Task) => void;
@@ -43,7 +44,7 @@ const MONTH_ROW_HEIGHT = 32;
 const DAY_ROW_HEIGHT = 40;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
-export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -633,11 +634,11 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onAddTaskClick('task')}>
+                      <DropdownMenuItem onClick={onAddTaskClick}>
                         <CirclePlus className="mr-2 h-4 w-4" />
                         New Task
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAddTaskClick('category')}>
+                      <DropdownMenuItem onClick={onAddCategoryClick}>
                         <FolderPlus className="mr-2 h-4 w-4" />
                         New Category
                       </DropdownMenuItem>
