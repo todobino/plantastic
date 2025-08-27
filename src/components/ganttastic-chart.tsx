@@ -589,16 +589,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 <span className="font-semibold text-sm">{project.name}</span>
                 <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
             </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Project Details
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-              </DialogContent>
-            </Dialog>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>
                     <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -610,13 +600,20 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </Button>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => alert('Export functionality coming soon!')}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Project Details
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
+              </DialogContent>
+            </Dialog>
+            <Button variant="secondary" size="sm" onClick={() => alert('Export functionality coming soon!')}>
                 <Download className="h-4 w-4 mr-2" />
-                Export
-            </Button>
-            <Button size="sm" onClick={() => onAddTaskClick('task')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
+                Download
             </Button>
         </div>
       </div>
@@ -631,7 +628,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 <span className="font-semibold text-sm">Tasks & Milestones</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon">
+                      <Button size="icon" variant="default">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
