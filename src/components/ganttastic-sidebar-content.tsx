@@ -8,7 +8,7 @@ import type { Task, Project } from '@/types';
 import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 type GanttasticSidebarContentProps = {
-  view: 'TASK_EDITOR' | 'IMPORTER';
+  view: 'TASK_EDITOR' | 'IMPORTER' | 'NEW_PROJECT';
   tasks: Task[];
   selectedTask: Task | null;
   initialTaskType: 'task' | 'category';
@@ -32,13 +32,14 @@ export default function GanttasticSidebarContent({
 }: GanttasticSidebarContentProps) {
     
   const getTitle = () => {
-    if (view === 'IMPORTER') return 'Import Project';
+    if (view === 'IMPORTER' || view === 'NEW_PROJECT') return 'Create New Project';
     if (selectedTask) return selectedTask.type === 'category' ? 'Edit Category' : 'Edit Task';
     return initialTaskType === 'category' ? 'New Category' : 'New Task';
   }
   
   const getDescription = () => {
     if (view === 'IMPORTER') return 'Import project data from a CSV or text file.';
+    if (view === 'NEW_PROJECT') return 'Create a new project manually or import from a file.';
     if (selectedTask) return `Update the details for this ${selectedTask.type}.`;
     return `Add a new ${initialTaskType} to your project.`;
   }
@@ -62,7 +63,7 @@ export default function GanttasticSidebarContent({
                 onDeleteTask={onDeleteTask}
               />
           ) : (
-              <Importer onImport={onImportProject} />
+              <Importer onImport={onImportProject} onClose={onClose} />
           )}
       </div>
     </>

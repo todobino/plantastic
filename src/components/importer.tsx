@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import type { Task, Project, ExtractedProjectOutput, ExtractedTask } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { FileUp, Sparkles, Wand2 } from 'lucide-react';
+import { FileUp, Sparkles, Wand2, FilePlus2 } from 'lucide-react';
 import { runExtractProjectFromFile } from '@/lib/actions';
 import { Skeleton } from './ui/skeleton';
 import { Input } from './ui/input';
@@ -15,17 +15,19 @@ import { Label } from './ui/label';
 
 type ImporterProps = {
   onImport: (project: Project, tasks: Task[]) => void;
+  onClose: () => void;
 };
 
 enum Stage {
+  Choice,
   Upload,
   Processing,
   Review,
   Finished,
 }
 
-export default function Importer({ onImport }: ImporterProps) {
-  const [stage, setStage] = useState<Stage>(Stage.Upload);
+export default function Importer({ onImport, onClose }: ImporterProps) {
+  const [stage, setStage] = useState<Stage>(Stage.Choice);
   const [file, setFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,16 @@ export default function Importer({ onImport }: ImporterProps) {
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+  }
+  
+  const createManualProject = () => {
+    const newProject: Project = {
+        id: `proj-${Date.now()}`,
+        name: 'Untitled Project',
+        description: 'A new project created manually.',
+    };
+    onImport(newProject, []);
+    onClose();
   }
 
   const handleProcessFile = () => {
@@ -120,6 +132,25 @@ export default function Importer({ onImport }: ImporterProps) {
 
   const renderContent = () => {
     switch (stage) {
+      case Stage.Choice:
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full items-center">
+                <Card className="hover:border-primary hover:shadow-lg transition-all cursor-pointer h-full flex flex-col" onClick={createManualProject}>
+                    <CardHeader>
+                        <FilePlus2 className="h-10 w-10 text-primary mb-2" />
+                        <CardTitle>Create Manually</CardTitle>
+                        <CardDescription>Start with a blank canvas and build your project from scratch.</CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card className="hover:border-primary hover:shadow-lg transition-all cursor-pointer h-full flex flex-col" onClick={() => setStage(Stage.Upload)}>
+                    <CardHeader>
+                        <Sparkles className="h-10 w-10 text-primary mb-2" />
+                        <CardTitle>Import with AI</CardTitle>
+                        <CardDescription>Upload a CSV or text file and let AI build your project plan automatically.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )
       case Stage.Upload:
         return (
           <div className="flex flex-col items-center justify-center gap-4 h-full">
@@ -137,10 +168,13 @@ export default function Importer({ onImport }: ImporterProps) {
             </div>
             {file && <p className="text-sm font-medium">Selected file: {file.name}</p>}
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button onClick={handleProcessFile} disabled={!file || isPending}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Process with AI
-            </Button>
+             <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setStage(Stage.Choice)}>Back</Button>
+                <Button onClick={handleProcessFile} disabled={!file || isPending}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Process with AI
+                </Button>
+            </div>
           </div>
         );
         
@@ -204,9 +238,12 @@ export default function Importer({ onImport }: ImporterProps) {
                     ))}
                 </div>
             </ScrollArea>
-            <Button onClick={handleFinishImport} className="mt-auto">
-              Finish Import
-            </Button>
+             <div className="flex justify-between items-center pt-4 mt-auto">
+                <Button variant="outline" onClick={() => setStage(Stage.Upload)}>Back</Button>
+                <Button onClick={handleFinishImport}>
+                  Finish Import
+                </Button>
+            </div>
           </div>
         );
         case Stage.Finished:
