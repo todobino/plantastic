@@ -77,7 +77,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
   useEffect(() => {
     if (selectedTask) {
-      const taskDuration = differenceInDays(selectedTask.end, selectedTask.start) + 1;
       form.reset({
         name: selectedTask.name,
         description: selectedTask.description || '',
@@ -88,6 +87,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         type: selectedTask.type || 'task',
         parentId: selectedTask.parentId || null,
       });
+      const taskDuration = differenceInDays(selectedTask.end, selectedTask.start) + 1;
       setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
       const defaultStartDate = new Date();
@@ -104,7 +104,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       });
       setDuration(defaultDuration);
     }
-  }, [selectedTask, initialTaskType, form.reset]);
+  }, [selectedTask, initialTaskType, form]);
 
 
   const handleStartDateChange = (date: Date) => {
@@ -206,14 +206,18 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parent Category</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
+                   <Select 
+                     onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                     value={field.value || 'none'}
+                     defaultValue={field.value || 'none'}
+                    >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Assign to a category..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {availableCategories.map(cat => (
                             <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                         ))}
@@ -378,3 +382,5 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
+    
