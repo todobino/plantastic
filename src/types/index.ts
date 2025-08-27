@@ -1,11 +1,12 @@
+
 import { z } from 'zod';
 
 export interface Task {
   id: string;
   name: string;
   description?: string;
-  start: Date;
-  end: Date;
+  start?: Date;
+  end?: Date;
   dependencies: string[];
   color?: string;
   milestone?: string;

@@ -87,10 +87,9 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const taskMap = new Map(tasks.map(t => [t.id, t]));
 
     const sortedTasks = [...tasks].sort((a, b) => {
-        // Simple sort: categories first, then by name
         if (a.type === 'category' && b.type !== 'category') return -1;
         if (a.type !== 'category' && b.type === 'category') return 1;
-        return a.name.localeCompare(b.name);
+        return (a.start?.getTime() || 0) - (b.start?.getTime() || 0);
     });
 
     const taskToChildren = new Map<string, Task[]>();
@@ -108,7 +107,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const addTaskRecursive = (task: Task, level: number) => {
         flatList.push({ ...task, milestone: `${level}` }); // Using milestone to store level for indentation
         if (task.type === 'category' && task.isExpanded) {
-            const children = taskToChildren.get(task.id) || [];
+            const children = (taskToChildren.get(task.id) || []).sort((a,b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0));
             children.forEach(child => addTaskRecursive(child, level + 1));
         }
     }
@@ -122,19 +121,66 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     let projectStart: Date;
     let projectEnd: Date;
     
-    const allTasks = displayTasks;
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const taskToChildren = new Map<string, Task[]>();
+    tasks.forEach(task => {
+        if (task.parentId && taskMap.has(task.parentId)) {
+            if (!taskToChildren.has(task.parentId)) {
+                taskToChildren.set(task.parentId, []);
+            }
+            taskToChildren.get(task.parentId)!.push(task);
+        }
+    });
+
+    const getCategoryDates = (categoryId: string): { start: Date | null, end: Date | null } => {
+        const children = taskToChildren.get(categoryId) || [];
+        if (children.length === 0) return { start: null, end: null };
+
+        let minStart: Date | null = null;
+        let maxEnd: Date | null = null;
+
+        children.forEach(child => {
+            let childStart = child.start;
+            let childEnd = child.end;
+            if (child.type === 'category') {
+                const { start, end } = getCategoryDates(child.id);
+                childStart = start;
+                childEnd = end;
+            }
+
+            if (childStart) {
+                if (!minStart || childStart < minStart) {
+                    minStart = childStart;
+                }
+            }
+            if (childEnd) {
+                if (!maxEnd || childEnd > maxEnd) {
+                    maxEnd = childEnd;
+                }
+            }
+        });
+        return { start: minStart, end: maxEnd };
+    };
+
+    const allTasks = displayTasks.map(t => {
+      if (t.type === 'category') {
+        const { start, end } = getCategoryDates(t.id);
+        return { ...t, start, end };
+      }
+      return t;
+    }).filter(t => t.start && t.end);
+
 
     if (allTasks.length === 0) {
         projectStart = startOfWeek(startOfMonth(today));
         projectEnd = endOfWeek(endOfMonth(today));
     } else {
-        const startDates = allTasks.map(t => startOfDay(t.start));
-        const endDates = allTasks.map(t => startOfDay(t.end));
+        const startDates = allTasks.map(t => startOfDay(t.start!));
+        const endDates = allTasks.map(t => startOfDay(t.end!));
         projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
         projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
     }
     
-    // Extend the timeline significantly for an "infinite" feel
     projectStart = addDays(projectStart, -365 * 2);
     projectEnd = addDays(projectEnd, 365 * 2);
 
@@ -144,17 +190,29 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const totalDays = timeline.length;
 
     const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date }>();
-    allTasks.forEach((task, index) => {
-        const s = startOfDay(task.start);
-        const e = startOfDay(task.end);
-        const offset = differenceInDays(s, projectStart);
-        const durationCalendar = differenceInDays(e, s); // includes weekends visually
-        taskPositions.set(task.id, {
-            x: offset * dayWidth,
-            y: index * ROW_HEIGHT,
-            width: (durationCalendar + 1) * dayWidth,
-            s, e
-        });
+    displayTasks.forEach((task, index) => {
+        let s: Date | undefined | null = task.start;
+        let e: Date | undefined | null = task.end;
+
+        if (task.type === 'category') {
+            const { start, end } = getCategoryDates(task.id);
+            s = start;
+            e = end;
+        }
+
+        if (s && e) {
+            const startOfDay_s = startOfDay(s);
+            const startOfDay_e = startOfDay(e);
+            const offset = differenceInDays(startOfDay_s, projectStart);
+            const durationCalendar = differenceInDays(startOfDay_e, startOfDay_s);
+            taskPositions.set(task.id, {
+                x: offset * dayWidth,
+                y: index * ROW_HEIGHT,
+                width: (durationCalendar + 1) * dayWidth,
+                s: startOfDay_s, 
+                e: startOfDay_e
+            });
+        }
     });
 
     const getHeaderGroups = () => {
@@ -181,7 +239,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     }
 
     return { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups };
-  }, [displayTasks]);
+  }, [displayTasks, tasks]);
 
   const headerGroups = getHeaderGroups();
 
@@ -235,10 +293,10 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   }, [tasks]);
 
   const minStartAllowed = (task: Task) => {
-    if (!task.dependencies.length) return projectStart;
+    if (!task.dependencies.length) return null; // No dependencies, no minimum start
     const latestPredEnd = new Date(Math.max(...task.dependencies
       .map(id => tasks.find(t => t.id === id))
-      .filter((t): t is Task => !!t)!.map(t => startOfDay((t as Task).end).getTime())));
+      .filter((t): t is Task => !!t && !!t.end)!.map(t => startOfDay((t as Task).end!).getTime())));
     return addDays(startOfDay(latestPredEnd), 1);
   };
     
@@ -263,7 +321,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     const rawDeltaPx = e.clientX - dragState.startX;
     
     const minStart = minStartAllowed(task);
-    const minLeftPx = dateToX(minStart);
+    const minLeftPx = minStart ? dateToX(minStart) : -Infinity;
     const desiredLeftPx = dragState.startLeftPx + rawDeltaPx;
     const clampedLeftPx = Math.max(desiredLeftPx, minLeftPx);
 
@@ -285,14 +343,14 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     document.body.style.userSelect = '';
   
     const pos = taskPositions.get(task.id);
-    if (!pos) return;
+    if (!pos || !task.start || !task.end) return;
   
     const calDelta = xToDayDelta(dragState.previewDeltaPx);
   
     if (calDelta !== 0) {
       const minStart = minStartAllowed(task);
       const proposedStart = addDays(pos.s, calDelta);
-      const newStart = proposedStart < minStart ? minStart : proposedStart;
+      const newStart = (minStart && proposedStart < minStart) ? minStart : proposedStart;
       const duration = Math.max(0, differenceInDays(pos.e, pos.s));
       const newEnd = addDays(newStart, duration);
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
@@ -331,7 +389,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   };
   
   const onResizeUp = (e: React.PointerEvent, task: Task) => {
-    if (resizeState.id !== task.id || !resizeState.edge) return;
+    if (resizeState.id !== task.id || !resizeState.edge || !task.start || !task.end) return;
     (e.target as Element).releasePointerCapture(e.pointerId);
     document.body.style.userSelect = '';
   
@@ -345,7 +403,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     if (resizeState.edge === 'left' && dayDelta !== 0) {
       newStart = addDays(pos.s, dayDelta);
       const minStart = minStartAllowed(task);
-      if (newStart < minStart) newStart = minStart;
+      if (minStart && newStart < minStart) newStart = minStart;
       if (newStart > newEnd) newStart = newEnd;
     }
     if (resizeState.edge === 'right' && dayDelta !== 0) {
@@ -413,7 +471,8 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   
     const seedId = resizeState.id ?? dragState.id!;
     const base = taskPositions.get(seedId);
-    if (!base) return m;
+    const seedTask = tasks.find(t => t.id === seedId);
+    if (!base || !seedTask || !seedTask.start) return m;
   
     const dayDelta = xToDayDelta(dragState.previewDeltaPx);
   
@@ -428,14 +487,11 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
       seedEnd = addDays(base.e, dayDelta);
     }
     
-    const seedTask = tasks.find(t => t.id === seedId);
-    if(seedTask){
-        const minStart = minStartAllowed(seedTask);
-        if (seedStart < minStart) {
-          const fixDays = differenceInDays(minStart, seedStart);
-          seedStart = addDays(seedStart, fixDays);
-          seedEnd = addDays(seedEnd, fixDays);
-        }
+    const minStart = minStartAllowed(seedTask);
+    if(minStart && seedStart < minStart){
+      const fixDays = differenceInDays(minStart, seedStart);
+      seedStart = addDays(seedStart, fixDays);
+      seedEnd = addDays(seedEnd, fixDays);
     }
   
     m.set(seedId, differenceInDays(seedStart, base.s) * pxPerDay);
@@ -469,7 +525,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         const newStart = addDays(startOfDay(latestPredEnd), 1);
         const newOffsetPx = differenceInDays(newStart, vPos.s) * pxPerDay;
         
-        if (newOffsetPx > (m.get(vId) ?? -1)) {
+        if (newOffsetPx > (m.get(vId) ?? -Infinity)) {
           m.set(vId, newOffsetPx);
           visited.add(vId);
           q.push(vId);
@@ -526,13 +582,13 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   
   useEffect(() => {
     const scroller = timelineRef.current;
-    if (scroller) {
+    if (scroller && totalDays > 0) {
       const todayX = dateToX(new Date());
       const scrollerWidth = scroller.clientWidth;
       const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
       scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id, dateToX, dayWidth]); // Re-center on project change
+  }, [project.id, dateToX, dayWidth, totalDays]);
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -739,6 +795,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
                   <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
                     {tasks.map((task) => {
+                      if (task.type === 'category' || !task.start) return null;
                       const toV = getVisualPos(task.id);
                       if (!toV) return null;
 

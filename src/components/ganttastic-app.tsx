@@ -12,14 +12,14 @@ import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
 
 const getInitialTasks = (): Task[] => [
-  { id: 'cat-1', name: 'Planning Phase', start: new Date(), end: addDays(new Date(), 7), dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
+  { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], type: 'task', parentId: 'cat-1' },
   { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], type: 'task', parentId: 'cat-1' },
   { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'], type: 'task', parentId: 'cat-1' },
-  { id: 'cat-2', name: 'Development Phase', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#10b981' },
+  { id: 'cat-2', name: 'Development Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#10b981' },
   { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'], type: 'task', parentId: 'cat-2' },
   { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'], type: 'task', parentId: 'cat-2' },
-  { id: 'cat-3', name: 'Release Phase', start: addDays(new Date(), 21), end: addDays(new Date(), 27), dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#f97316' },
+  { id: 'cat-3', name: 'Release Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#f97316' },
   { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'], type: 'task', parentId: 'cat-3' },
   { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'], type: 'task', parentId: 'cat-3' },
 ];
@@ -48,8 +48,8 @@ export default function GanttasticApp() {
       if (savedTasks) {
         const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
           ...task,
-          start: new Date(task.start),
-          end: new Date(task.end),
+          start: task.start ? new Date(task.start) : undefined,
+          end: task.end ? new Date(task.end) : undefined,
         }));
         setTasks(parsedTasks);
       } else {
@@ -82,7 +82,7 @@ export default function GanttasticApp() {
   const updateDependentTasks = useCallback((updatedTaskId: string, tasksToUpdate: Task[]): Task[] => {
     const newTasks = [...tasksToUpdate];
     const updatedTask = newTasks.find(t => t.id === updatedTaskId);
-    if (!updatedTask) return newTasks;
+    if (!updatedTask || !updatedTask.start || !updatedTask.end) return newTasks;
   
     const queue: string[] = [updatedTaskId];
     const visited = new Set<string>();
@@ -97,22 +97,24 @@ export default function GanttasticApp() {
       tasksThatDependOnCurrent.forEach(dependentTask => {
         const parentTasks = dependentTask.dependencies
           .map(depId => newTasks.find(t => t.id === depId))
-          .filter((t): t is Task => !!t);
+          .filter((t): t is Task => !!t && !!t.end);
         
         if (parentTasks.length > 0) {
-          const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end.getTime())));
+          const latestParentEndDate = new Date(Math.max(...parentTasks.map(t => t.end!.getTime())));
           const newStartDate = startOfDay(addDays(latestParentEndDate, 1));
           
-          const duration = Math.max(0, differenceInDays(dependentTask.end, dependentTask.start));
-          const newEndDate = addDays(newStartDate, duration);
+          if (dependentTask.start && dependentTask.end) {
+            const duration = Math.max(0, differenceInDays(dependentTask.end, dependentTask.start));
+            const newEndDate = addDays(newStartDate, duration);
           
-          const taskIndex = newTasks.findIndex(t => t.id === dependentTask.id);
-          if (taskIndex !== -1) {
-             if (newTasks[taskIndex].start.getTime() !== newStartDate.getTime() || newTasks[taskIndex].end.getTime() !== newEndDate.getTime()) {
-                newTasks[taskIndex].start = newStartDate;
-                newTasks[taskIndex].end = newEndDate;
-                queue.push(dependentTask.id);
-             }
+            const taskIndex = newTasks.findIndex(t => t.id === dependentTask.id);
+            if (taskIndex !== -1) {
+              if (newTasks[taskIndex].start!.getTime() !== newStartDate.getTime() || newTasks[taskIndex].end!.getTime() !== newEndDate.getTime()) {
+                  newTasks[taskIndex].start = newStartDate;
+                  newTasks[taskIndex].end = newEndDate;
+                  queue.push(dependentTask.id);
+              }
+            }
           }
         }
       });
@@ -151,14 +153,37 @@ export default function GanttasticApp() {
 
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId).map(t => ({
-      ...t,
-      dependencies: t.dependencies.filter(depId => depId !== taskId)
-    })));
+    setTasks(prev => {
+        const tasksToDelete = new Set<string>([taskId]);
+        const taskToDelete = prev.find(t => t.id === taskId);
+
+        // If it's a category, also delete all its children
+        if (taskToDelete?.type === 'category') {
+            const findChildrenRecursive = (parentId: string) => {
+                prev.forEach(t => {
+                    if (t.parentId === parentId) {
+                        tasksToDelete.add(t.id);
+                        if (t.type === 'category') {
+                            findChildrenRecursive(t.id);
+                        }
+                    }
+                });
+            };
+            findChildrenRecursive(taskId);
+        }
+
+        const remainingTasks = prev.filter(task => !tasksToDelete.has(task.id));
+
+        // Remove deleted tasks from dependencies of other tasks
+        return remainingTasks.map(t => ({
+            ...t,
+            dependencies: t.dependencies.filter(depId => !tasksToDelete.has(depId))
+        }));
+    });
     setTaskEditorOpen(false);
     setCategoryEditorOpen(false);
     setSelectedTask(null);
-  }
+  };
   
   const handleProjectUpdate = (updatedProject: Project) => {
     setProject(updatedProject);

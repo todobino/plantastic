@@ -12,8 +12,8 @@ type GanttasticSidebarContentProps = {
   view: 'TASK_EDITOR' | 'CATEGORY_EDITOR' | 'IMPORTER';
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[] }) => void;
-  onAddCategory?: (category: Omit<Task, 'id' | 'type'>) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'type'>) => void;
+  onAddCategory?: (category: Pick<Task, 'name' | 'color' | 'dependencies'>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onImportProject: (project: Project, tasks: Task[]) => void;
