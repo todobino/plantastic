@@ -583,12 +583,12 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   useEffect(() => {
     const scroller = timelineRef.current;
     if (scroller && totalDays > 0) {
-      const todayX = dateToX(new Date());
-      const scrollerWidth = scroller.clientWidth;
-      const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
-      scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
+        const todayX = dateToX(new Date());
+        const scrollerWidth = scroller.clientWidth;
+        const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
+        scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id, dateToX, dayWidth, totalDays]);
+  }, [project.id]);
   
     const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -959,9 +959,13 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                             <TooltipContent className="bg-card border-primary">
                               <p className="font-bold">{task.name}</p>
                               {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
-                              <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
-                              <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
-                              <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
+                              {pos.s && pos.e && (
+                                <>
+                                  <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
+                                  <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
+                                  <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
+                                </>
+                              )}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -978,5 +982,3 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     </div>
   );
 }
-
-    
