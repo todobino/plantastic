@@ -133,8 +133,9 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
     }
     
-    projectStart = addDays(projectStart, -14);
-    projectEnd = addDays(projectEnd, 14);
+    // Extend the timeline significantly for an "infinite" feel
+    projectStart = addDays(projectStart, -365 * 2);
+    projectEnd = addDays(projectEnd, 365 * 2);
 
     const dayWidth = 40;
 
