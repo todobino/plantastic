@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare } from 'lucide-react';
+import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -60,17 +62,20 @@ export function AuthForm() {
   };
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <div className="flex justify-center items-center gap-3 mb-2">
-            <GanttChartSquare className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground font-headline">
-            Ganttastic
-            </h1>
-        </div>
-        <CardDescription>Quick and Easy Project Management</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <>
+      <DialogHeader>
+        <DialogTitle>
+            <div className="flex justify-center items-center gap-3 mb-2">
+                <GanttChartSquare className="h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold tracking-tight text-foreground font-headline">
+                Ganttastic
+                </h1>
+            </div>
+        </DialogTitle>
+        <DialogDescription className="text-center">
+            Quick and Easy Project Management
+        </DialogDescription>
+      </DialogHeader>
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
@@ -160,7 +165,6 @@ export function AuthForm() {
             </Form>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+    </>
   );
 }
