@@ -630,9 +630,9 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 <span className="font-semibold text-sm">Tasks & Milestones</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Plus className="h-4 w-4" />
-                        <span className="sr-only">Add</span>
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -693,7 +693,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
               >
                  <div
                   style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
-                  className="sticky top-0 bg-background z-40"
+                  className="sticky top-0 bg-background z-40 border-b"
                 >
                   <div className="border-b">
                     <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
@@ -923,3 +923,5 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     </div>
   );
 }
+
+    
