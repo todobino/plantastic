@@ -41,21 +41,29 @@ export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewPro
         }
     });
 
-    const topLevelCategories = tasks.filter(t => t.type === 'category' && (!t.parentId || !taskMap.has(t.parentId)))
-        .sort((a,b) => a.name.localeCompare(b.name));
+    const topLevelTasks = tasks.filter(t => !t.parentId || !taskMap.has(t.parentId))
+        .sort((a,b) => {
+            if(a.type === 'category' && b.type !== 'category') return -1;
+            if(a.type !== 'category' && b.type === 'category') return 1;
+            return a.start.getTime() - b.start.getTime();
+        });
 
     const flatList: HierarchicalTask[] = [];
 
-    topLevelCategories.forEach((category, catIndex) => {
-        const categoryId = `${catIndex + 1}`;
-        flatList.push({ ...category, level: 0, hierarchicalId: categoryId });
-
-        const children = taskToChildren.get(category.id) || [];
-        children.forEach((task, taskIndex) => {
-            const taskId = `${categoryId}.${taskIndex + 1}`;
-            flatList.push({ ...task, level: 1, hierarchicalId: taskId });
+    const buildHierarchy = (task: Task, level: number, prefix: string) => {
+        const id = `${prefix}${flatList.filter(t => t.level === level && t.hierarchicalId.startsWith(prefix.slice(0, -1))).length + 1}`;
+        flatList.push({ ...task, level, hierarchicalId: id });
+        
+        const children = (taskToChildren.get(task.id) || []).sort((a,b) => a.start.getTime() - b.start.getTime());
+        children.forEach((child) => {
+            buildHierarchy(child, level + 1, `${id}.`);
         });
+    };
+    
+    topLevelTasks.forEach((task) => {
+        buildHierarchy(task, 0, '');
     });
+
 
     return flatList;
   }, [tasks]);
