@@ -101,7 +101,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       });
       setDuration(defaultDuration);
     }
-  }, [selectedTask, form, initialTaskType]);
+  }, [selectedTask, initialTaskType, form.reset]);
 
 
   const handleStartDateChange = (date: Date) => {
