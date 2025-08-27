@@ -630,9 +630,8 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 <span className="font-semibold text-sm">Tasks & Milestones</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add
+                      <Button size="icon">
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
