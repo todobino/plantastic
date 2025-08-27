@@ -1,10 +1,12 @@
 
 'use client';
 
+import { useState } from 'react';
 import { GanttChartSquare, Plus, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
+import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
+import { AuthForm } from './auth-form';
 
 
 type GanttasticHeaderProps = {
@@ -12,16 +14,22 @@ type GanttasticHeaderProps = {
 };
 
 export default function GanttasticHeader({ openSidebar }: GanttasticHeaderProps) {
+  const [isLoginOpen, setLoginOpen] = useState(false);
   
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
-         <Button asChild variant="secondary" size="sm">
-          <Link href="/login">
-            <UserCircle />
-            Login
-          </Link>
-        </Button>
+        <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
+          <DialogTrigger asChild>
+            <Button variant="secondary" size="sm">
+              <UserCircle />
+              Login
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <AuthForm />
+          </DialogContent>
+        </Dialog>
         <ThemeToggle />
       </div>
 
