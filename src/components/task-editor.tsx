@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Trash2 } from 'lucide-react';
+import { CalendarIcon, Check, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, addDays } from 'date-fns';
 import type { Task } from '@/types';
@@ -25,6 +25,9 @@ import { useEffect, useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Badge } from './ui/badge';
+
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
@@ -140,6 +143,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   };
   
   const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id);
+  const availableDependencies = tasks.filter(t => t.type === 'task' && t.id !== selectedTask?.id);
 
   return (
     <Form {...form}>
@@ -195,20 +199,21 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
           />
 
          {taskType === 'task' && (
+           <>
             <FormField
               control={form.control}
               name="parentId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parent Category</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
+                   <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Assign to a category..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
+                        <SelectItem value="">None</SelectItem>
                         {availableCategories.map(cat => (
                             <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                         ))}
@@ -218,6 +223,72 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </FormItem>
               )}
             />
+
+            <FormField
+                control={form.control}
+                name="dependencies"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Dependencies</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn(
+                                            "w-full justify-between h-auto min-h-10",
+                                            !field.value?.length && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <div className="flex gap-1 flex-wrap">
+                                            {field.value && field.value.length > 0 ? field.value.map(depId => (
+                                                <Badge key={depId} variant="secondary">{tasks.find(t => t.id === depId)?.name}</Badge>
+                                            )) : "Select dependencies..."}
+                                        </div>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search tasks..." />
+                                    <CommandList>
+                                        <CommandEmpty>No tasks found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {availableDependencies.map(task => (
+                                                <CommandItem
+                                                    value={task.name}
+                                                    key={task.id}
+                                                    onSelect={() => {
+                                                        const currentDeps = field.value || [];
+                                                        const newDeps = currentDeps.includes(task.id)
+                                                            ? currentDeps.filter(id => id !== task.id)
+                                                            : [...currentDeps, task.id];
+                                                        field.onChange(newDeps);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            (field.value || []).includes(task.id)
+                                                                ? "opacity-100"
+                                                                : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {task.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            </>
           )}
 
           <div className="grid grid-cols-2 gap-4">
