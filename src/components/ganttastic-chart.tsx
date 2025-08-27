@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, FolderOpen as FolderOpenIcon } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -584,7 +584,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
             <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
-                <FolderOpenIcon className="h-5 w-5 text-primary" />
+                <GanttChartSquare className="h-5 w-5 text-primary" />
                 <span className="font-semibold text-sm">{project.name}</span>
                 <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -693,9 +693,9 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
               >
                  <div
                   style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
-                  className="sticky top-0 bg-background z-40 border-b"
+                  className="sticky top-0 bg-background z-40"
                 >
-                  <div className="flex flex-col">
+                  <div className="border-b">
                     <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
                         {headerGroups.map((group, index) => (
                             <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
