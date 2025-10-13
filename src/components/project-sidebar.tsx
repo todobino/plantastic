@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   SidebarHeader,
   SidebarInput,
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle } from 'lucide-react';
@@ -101,6 +100,11 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isLoginOpen, setLoginOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -117,7 +121,6 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
 
   const handleProjectClick = (name: string) => {
     onProjectChange(name);
-    // setOpen(false); // Do not close sidebar on selection in this layout
   };
   
   const handleDragStart = (event: DragStartEvent) => {
@@ -174,32 +177,46 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <DndContext 
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
-        >
-          <SortableContext items={filteredProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+        {isClient ? (
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <SortableContext items={filteredProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+              <SidebarMenu>
+                {filteredProjects.map((project) => (
+                  <SidebarMenuItem 
+                      key={project.id}
+                  >
+                    <DraggableProject 
+                      item={project} 
+                      isActive={project.name === currentProjectName}
+                      onClick={() => handleProjectClick(project.name)}
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SortableContext>
+            <DragOverlay dropAnimation={null}>
+                {activeProject ? <ProjectItem item={activeProject} isOverlay /> : null}
+            </DragOverlay>
+          </DndContext>
+        ) : (
             <SidebarMenu>
               {filteredProjects.map((project) => (
-                <SidebarMenuItem 
-                    key={project.id}
-                >
-                  <DraggableProject 
-                    item={project} 
-                    isActive={project.name === currentProjectName}
-                    onClick={() => handleProjectClick(project.name)}
-                  />
+                <SidebarMenuItem key={project.id}>
+                    <ProjectItem 
+                      item={project} 
+                      isActive={project.name === currentProjectName}
+                      onClick={() => handleProjectClick(project.name)}
+                    />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-          </SortableContext>
-          <DragOverlay dropAnimation={null}>
-              {activeProject ? <ProjectItem item={activeProject} isOverlay /> : null}
-          </DragOverlay>
-        </DndContext>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto border-t">
