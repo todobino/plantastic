@@ -72,7 +72,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
             {!isOverlay && (
-                 <Popover>
+                 <Popover onOpenChange={(e) => e.stopPropagation()}>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto opacity-0 group-hover/item:opacity-100" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-4 w-4" />
@@ -145,10 +145,10 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
 
   return (
     <TooltipProvider>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <GanttChartSquare className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-headline">
+      <SidebarHeader className="p-2">
+        <div className="flex items-center gap-2">
+          <GanttChartSquare className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
             Ganttastic
           </h1>
         </div>
