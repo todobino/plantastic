@@ -9,7 +9,6 @@ import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
-import { useSidebar } from './ui/sidebar';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },

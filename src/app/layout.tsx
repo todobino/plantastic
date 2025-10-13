@@ -3,7 +3,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ClientSidebarProvider } from '@/components/sidebar-provider';
 
 export const metadata: Metadata = {
   title: 'Ganttastic',
@@ -30,9 +29,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClientSidebarProvider>
-            {children}
-          </ClientSidebarProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

@@ -12,14 +12,13 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle } from 'lucide-react';
-import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ThemeToggle } from './theme-toggle';
 import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
@@ -101,7 +100,6 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const { setOpen, toggleSidebar } = useSidebar();
   const [isLoginOpen, setLoginOpen] = useState(false);
   
   const sensors = useSensors(
@@ -143,7 +141,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   }
 
   return (
-    <>
+    <TooltipProvider>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <GanttChartSquare className="h-8 w-8 text-primary" />
@@ -220,6 +218,6 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
             <ThemeToggle />
         </div>
       </SidebarFooter>
-    </>
+    </TooltipProvider>
   );
 }

@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, PanelLeft } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -15,7 +15,6 @@ import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { GanttasticListView } from './ganttastic-list-view';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
-import { useSidebar } from './ui/sidebar';
 
 
 const isWeekend = (d: Date) => {
@@ -50,7 +49,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list'>('timeline');
-  const { toggleSidebar } = useSidebar();
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -642,9 +640,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-              <PanelLeft />
-            </Button>
             <h2 className="font-semibold text-lg">{project.name}</h2>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>

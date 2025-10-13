@@ -1,12 +1,12 @@
 
 'use client';
 
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider as Provider } from "@/components/ui/sidebar";
 
 export function ClientSidebarProvider({ children }: { children: React.ReactNode }) {
     return (
-        <SidebarProvider>
+        <Provider>
             {children}
-        </SidebarProvider>
+        </Provider>
     )
 }
