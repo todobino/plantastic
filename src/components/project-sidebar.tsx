@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Search, Plus, GripVertical } from 'lucide-react';
+import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 type Project = {
   id: string;
@@ -38,7 +39,7 @@ const initialProjects: Project[] = [
   { id: 'proj-5', name: 'Mobile App Development' },
 ];
 
-function DraggableProject({ item }: { item: Project }) {
+function DraggableProject({ item, isActive, onClick }: { item: Project; isActive?: boolean; onClick?: () => void; }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -47,29 +48,41 @@ function DraggableProject({ item }: { item: Project }) {
     
     return (
         <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
-            <SidebarMenuButton
-                className="justify-start items-center w-full"
-            >
-                <span {...attributes} {...listeners} className="cursor-grab p-1">
-                    <GripVertical className="h-5 w-5 text-muted-foreground" />
-                </span>
-                <span className="flex-grow ml-1 truncate">{item.name}</span>
-            </SidebarMenuButton>
+            <ProjectItem item={item} isActive={isActive} onClick={onClick} dragAttributes={attributes} dragListeners={listeners} />
         </div>
     );
 }
 
-function ProjectItem({ item, isActive, onClick, isOverlay = false }: { item: Project; isActive?: boolean; onClick?: () => void; isOverlay?: boolean}) {
+function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttributes, dragListeners }: { item: Project; isActive?: boolean; onClick?: () => void; isOverlay?: boolean; dragAttributes?: any; dragListeners?: any; }) {
     return (
         <SidebarMenuButton
             isActive={isActive}
             onClick={onClick}
-            className={cn("justify-start items-center w-full", isOverlay && "shadow-xl ring-1 ring-border cursor-grabbing")}
+            className={cn("justify-start items-center w-full group/item", isOverlay && "shadow-xl ring-1 ring-border cursor-grabbing")}
         >
-            <span className={cn("cursor-grab p-1", isOverlay && "cursor-grabbing")}>
+            <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab p-1", isOverlay && "cursor-grabbing")}>
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
+            {!isOverlay && (
+                 <Popover onOpenChange={(e) => e.stopPropagation()}>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto opacity-0 group-hover/item:opacity-100" onClick={(e) => e.stopPropagation()}>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col gap-1">
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => alert(`Editing ${item.name}`)}>
+                                <Edit className="h-4 w-4" /> Edit
+                            </Button>
+                             <Button variant="ghost" size="sm" className="justify-start gap-2 text-destructive hover:text-destructive" onClick={() => alert(`Deleting ${item.name}`)}>
+                                <Trash2 className="h-4 w-4" /> Delete
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            )}
         </SidebarMenuButton>
     )
 }
@@ -160,9 +173,12 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
               {filteredProjects.map((project) => (
                 <SidebarMenuItem 
                     key={project.id}
-                    onClick={() => handleProjectClick(project.name)}
                 >
-                  <DraggableProject item={project} />
+                  <DraggableProject 
+                    item={project} 
+                    isActive={project.name === currentProjectName}
+                    onClick={() => handleProjectClick(project.name)}
+                  />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
