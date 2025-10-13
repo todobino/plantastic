@@ -763,7 +763,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                                 today && "bg-primary text-primary-foreground font-bold"
                               )}>
                                 <div>{format(day, 'dd')}</div>
-                                <div className={cn("text-muted-foreground", today && "text-primary-foreground/80")}>{format(day, 'E')}</div>
+                                <div className={cn("text-muted-foreground", today && "text-background")}>{format(day, 'E')}</div>
                               </div>
                             );
                         })}
@@ -981,3 +981,4 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
