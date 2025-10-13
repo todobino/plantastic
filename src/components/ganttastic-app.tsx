@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Project } from '@/types';
 import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import GanttasticHeader from './ganttastic-header';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
+import { useSidebar } from './ui/sidebar';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
@@ -224,75 +224,67 @@ export default function GanttasticApp() {
 
   return (
     <div className="flex h-screen flex-col">
-      <GanttasticHeader onNewProjectClick={() => setImporterOpen(true)} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar side="left" collapsible="icon">
-          <ProjectSidebar currentProjectName={project.name} onProjectChange={(name) => setProject({...project, name})} />
-        </Sidebar>
-
-        <SidebarInset>
-          <div className="flex-grow overflow-auto">
-            <GanttasticChart
+      <div className="flex-grow overflow-auto">
+        <GanttasticChart
+          tasks={tasks}
+          setTasks={setTasks}
+          project={project}
+          onTaskClick={openEditor}
+          onAddTaskClick={openNewTaskEditor}
+          onAddCategoryClick={openNewCategoryEditor}
+          onProjectUpdate={handleProjectUpdate}
+          onReorderTasks={handleReorderTasks}
+          onTaskUpdate={handleUpdateTask}
+          onNewProjectClick={() => setImporterOpen(true)}
+        />
+      </div>
+      
+      <Dialog open={isImporterOpen} onOpenChange={setImporterOpen}>
+        <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+            <GanttasticSidebarContent
+              view='IMPORTER'
+              onImportProject={handleImportProject}
+              onClose={() => setImporterOpen(false)}
               tasks={tasks}
-              setTasks={setTasks}
-              project={project}
-              onTaskClick={openEditor}
-              onAddTaskClick={openNewTaskEditor}
-              onAddCategoryClick={openNewCategoryEditor}
-              onProjectUpdate={handleProjectUpdate}
-              onReorderTasks={handleReorderTasks}
-              onTaskUpdate={handleUpdateTask}
+              selectedTask={null}
+              onAddTask={() => {}}
+              onUpdateTask={() => {}}
+              onDeleteTask={() => {}}
             />
-          </div>
-        </SidebarInset>
-        
-        <Dialog open={isImporterOpen} onOpenChange={setImporterOpen}>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isTaskEditorOpen} onOpenChange={setTaskEditorOpen}>
           <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
               <GanttasticSidebarContent
-                view='IMPORTER'
-                onImportProject={handleImportProject}
-                onClose={() => setImporterOpen(false)}
-                tasks={tasks}
-                selectedTask={null}
-                onAddTask={() => {}}
-                onUpdateTask={() => {}}
-                onDeleteTask={() => {}}
+                  view='TASK_EDITOR'
+                  tasks={tasks}
+                  selectedTask={selectedTask}
+                  onAddTask={handleAddTask}
+                  onUpdateTask={handleUpdateTask}
+                  onDeleteTask={handleDeleteTask}
+                  onClose={() => setTaskEditorOpen(false)}
+                  onImportProject={() => {}}
               />
           </DialogContent>
-        </Dialog>
-        
-        <Dialog open={isTaskEditorOpen} onOpenChange={setTaskEditorOpen}>
-            <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-                <GanttasticSidebarContent
-                    view='TASK_EDITOR'
-                    tasks={tasks}
-                    selectedTask={selectedTask}
-                    onAddTask={handleAddTask}
-                    onUpdateTask={handleUpdateTask}
-                    onDeleteTask={handleDeleteTask}
-                    onClose={() => setTaskEditorOpen(false)}
-                    onImportProject={() => {}}
-                />
-            </DialogContent>
-        </Dialog>
-        
-        <Dialog open={isCategoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
-            <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-                 <GanttasticSidebarContent
-                    view='CATEGORY_EDITOR'
-                    tasks={tasks}
-                    selectedTask={selectedTask}
-                    onAddCategory={handleAddCategory}
-                    onUpdateTask={handleUpdateTask}
-                    onDeleteTask={handleDeleteTask}
-                    onClose={() => setCategoryEditorOpen(false)}
-                    onImportProject={() => {}}
-                    onAddTask={() => {}}
-                />
-            </DialogContent>
-        </Dialog>
+      </Dialog>
+      
+      <Dialog open={isCategoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+               <GanttasticSidebarContent
+                  view='CATEGORY_EDITOR'
+                  tasks={tasks}
+                  selectedTask={selectedTask}
+                  onAddCategory={handleAddCategory}
+                  onUpdateTask={handleUpdateTask}
+                  onDeleteTask={handleDeleteTask}
+                  onClose={() => setCategoryEditorOpen(false)}
+                  onImportProject={() => {}}
+                  onAddTask={() => {}}
+              />
+          </DialogContent>
+      </Dialog>
 
-      </div>
     </div>
   );
 }

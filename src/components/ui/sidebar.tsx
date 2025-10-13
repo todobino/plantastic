@@ -58,7 +58,7 @@ const SidebarProvider = React.forwardRef<
 >(
   (
     {
-      defaultOpen = false,
+      defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
       className,
@@ -131,27 +131,25 @@ const SidebarProvider = React.forwardRef<
     )
 
     return (
-      <SidebarContext.Provider value={contextValue}>
-        <TooltipProvider delayDuration={0}>
-          <div
-            style={
-              {
-                "--sidebar-width": isMobile ? SIDEBAR_WIDTH_MOBILE : SIDEBAR_WIDTH,
-                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-                ...style,
-              } as React.CSSProperties
-            }
-            className={cn(
-              "group/sidebar-wrapper flex w-full min-w-0 overflow-x-clip",
-              className
-            )}
-            ref={ref}
-            {...props}
-          >
-            {children}
-          </div>
-        </TooltipProvider>
-      </SidebarContext.Provider>
+      <TooltipProvider delayDuration={0}>
+        <div
+          style={
+            {
+              "--sidebar-width": isMobile ? SIDEBAR_WIDTH_MOBILE : SIDEBAR_WIDTH,
+              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+              ...style,
+            } as React.CSSProperties
+          }
+          className={cn(
+            "group/sidebar-wrapper flex h-screen w-full min-w-0 overflow-x-clip",
+            className
+          )}
+          ref={ref}
+          {...props}
+        >
+          {children}
+        </div>
+      </TooltipProvider>
     )
   }
 )
@@ -167,49 +165,45 @@ type SidebarProps = React.ComponentProps<"div"> & {
 }
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ side = "left", collapsible = "icon", className, children, open, onOpenChange, ...props }, ref) => {
-    const { isMobile } = useSidebar();
+  ({ side = "left", collapsible = "icon", className, children, open: openProp, onOpenChange: onOpenChangeProp, ...props }, ref) => {
+    const { isMobile, openMobile, setOpenMobile, open, setOpen } = useSidebar();
     
-    // For right sidebar, we use a sheet (drawer)
-    if (side === 'right') {
-       if (!open) return null;
-      return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent
-            data-sidebar="sidebar"
-            className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground"
-            side={side}
-          >
-            <SheetHeader className="hidden">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Sidebar navigation and content</SheetDescription>
-            </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetContent>
-        </Sheet>
-      );
-    }
-    
-    const { open: isLeftSidebarOpen } = useSidebar();
+    const sidebarOpen = isMobile ? openMobile : open;
+    const setSidebarOpen = isMobile ? setOpenMobile : setOpen;
 
-    // For left sidebar, we use a div that pushes content
+    if (isMobile) {
+        return (
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetContent
+                data-sidebar="sidebar"
+                className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground"
+                side={side}
+            >
+                <SheetHeader className="hidden">
+                <SheetTitle>Sidebar</SheetTitle>
+                <SheetDescription>Sidebar navigation and content</SheetDescription>
+                </SheetHeader>
+                <div className="flex h-full w-full flex-col">{children}</div>
+            </SheetContent>
+            </Sheet>
+        )
+    }
+
     return (
       <div
         ref={ref}
-        data-state={isLeftSidebarOpen ? 'expanded' : 'collapsed'}
+        data-state={sidebarOpen ? 'expanded' : 'collapsed'}
         data-side={side}
         data-collapsible={collapsible}
         className={cn(
-          "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out h-full overflow-hidden",
-          isLeftSidebarOpen ? "w-[var(--sidebar-width)] border-r" : "w-0"
+          "bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out h-full overflow-hidden flex-shrink-0",
+          sidebarOpen ? "w-[var(--sidebar-width)] border-r" : "w-0 border-r-0"
         )}
         {...props}
       >
-        {isLeftSidebarOpen ? (
-          <div className="flex h-full flex-col w-[var(--sidebar-width)]">
+        <div className="flex h-full flex-col w-[var(--sidebar-width)]">
             {children}
-          </div>
-        ) : null}
+        </div>
       </div>
     );
   }

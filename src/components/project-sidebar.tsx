@@ -9,8 +9,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -20,6 +21,9 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { ThemeToggle } from './theme-toggle';
+import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
+import { AuthForm } from './auth-form';
 
 type Project = {
   id: string;
@@ -60,7 +64,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
             data-active={isActive}
             className={cn(
                 "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground",
-                "h-8 text-sm", // from default size of SidebarMenuButton
+                "h-8 text-sm",
                 "justify-start items-center w-full group/item cursor-pointer", 
                 isOverlay && "shadow-xl ring-1 ring-border cursor-grabbing"
             )}
@@ -98,14 +102,13 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const { setOpen, toggleSidebar } = useSidebar();
+  const [isLoginOpen, setLoginOpen] = useState(false);
   
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      // Require the mouse to move by 6 pixels before starting a drag
       activationConstraint: { distance: 6 },
     }),
     useSensor(TouchSensor, {
-      // Press delay of 120ms, with a tolerance of 5px of movement
       activationConstraint: { delay: 120, tolerance: 5 },
     })
   );
@@ -116,7 +119,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
 
   const handleProjectClick = (name: string) => {
     onProjectChange(name);
-    setOpen(false); // Close sidebar on selection
+    // setOpen(false); // Do not close sidebar on selection in this layout
   };
   
   const handleDragStart = (event: DragStartEvent) => {
@@ -141,9 +144,18 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
 
   return (
     <>
-      <SidebarHeader>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3">
+          <GanttChartSquare className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground font-headline">
+            Ganttastic
+          </h1>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="flex-grow p-4">
+        <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button size="icon" variant="ghost" onClick={() => alert('New Project functionality coming soon!')}>
@@ -155,7 +167,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
               </TooltipContent>
             </Tooltip>
         </div>
-        <div className="relative">
+        <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <SidebarInput
             placeholder="Search projects..."
@@ -164,8 +176,6 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-      </SidebarHeader>
-      <SidebarContent className="px-2">
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -193,6 +203,23 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
           </DragOverlay>
         </DndContext>
       </SidebarContent>
+
+      <SidebarFooter className="p-4 mt-auto border-t">
+        <div className="flex items-center gap-2">
+            <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
+            <DialogTrigger asChild>
+                <Button variant="secondary" className="w-full justify-start">
+                <UserCircle className="mr-2"/>
+                Login
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+                <AuthForm />
+            </DialogContent>
+            </Dialog>
+            <ThemeToggle />
+        </div>
+      </SidebarFooter>
     </>
   );
 }

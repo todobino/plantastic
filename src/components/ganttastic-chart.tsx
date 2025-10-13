@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, PanelLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -33,6 +33,7 @@ type GanttasticChartProps = {
   onProjectUpdate: (project: Project) => void;
   onReorderTasks: (reorderedTasks: Task[]) => void;
   onTaskUpdate: (task: Task) => void;
+  onNewProjectClick: () => void;
 };
 
 
@@ -44,7 +45,7 @@ const MONTH_ROW_HEIGHT = 32;
 const DAY_ROW_HEIGHT = 40;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
-export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate }: GanttasticChartProps) {
+export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick }: GanttasticChartProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -641,11 +642,10 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
-            <Button variant="outline" className="flex items-center gap-2 shadow-sm" onClick={toggleSidebar}>
-                <GanttChartSquare className="h-5 w-5 text-primary" />
-                <span className="font-semibold text-sm">{project.name}</span>
-                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+            <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+              <PanelLeft />
             </Button>
+            <h2 className="font-semibold text-lg">{project.name}</h2>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>
                     <TabsTrigger value="timeline">Timeline</TabsTrigger>
