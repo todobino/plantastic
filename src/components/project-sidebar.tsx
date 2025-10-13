@@ -159,7 +159,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
             <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" onClick={() => alert('New Project functionality coming soon!')}>
+                <Button size="icon" variant="secondary" onClick={() => alert('New Project functionality coming soon!')}>
                     <Plus className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
