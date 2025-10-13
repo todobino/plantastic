@@ -7,6 +7,7 @@ import CategoryEditor from './category-editor';
 import Importer from './importer';
 import type { Task, Project } from '@/types';
 import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { ScrollArea } from './ui/scroll-area';
 
 type GanttasticSidebarContentProps = {
   view: 'TASK_EDITOR' | 'CATEGORY_EDITOR' | 'IMPORTER';
@@ -84,15 +85,17 @@ export default function GanttasticSidebarContent({
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="p-6 border-b">
         <DialogTitle>{getTitle()}</DialogTitle>
         <DialogDescription>
             {getDescription()}
         </DialogDescription>
       </DialogHeader>
-      <div className="flex-grow flex flex-col py-4 min-h-0">
-          {renderContent()}
-      </div>
+      <ScrollArea className="flex-grow">
+        <div className="p-6">
+            {renderContent()}
+        </div>
+      </ScrollArea>
     </>
   );
 }

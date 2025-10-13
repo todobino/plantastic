@@ -648,7 +648,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                     {project.name}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="max-w-md">
+              <SheetContent side="left" className="max-w-md p-0">
                 <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
               </SheetContent>
             </Sheet>
