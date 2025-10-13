@@ -640,7 +640,18 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
-            <h2 className="font-semibold text-lg">{project.name}</h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className="group text-lg font-semibold">
+                    <Folder className="h-5 w-5 mr-2 group-hover:hidden" />
+                    <Pencil className="h-5 w-5 mr-2 hidden group-hover:inline-block" />
+                    {project.name}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
+              </DialogContent>
+            </Dialog>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>
                     <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -652,17 +663,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </Button>
         </div>
         <div className="flex items-center gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Project Details
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-              </DialogContent>
-            </Dialog>
             <Button variant="secondary" size="sm" onClick={() => alert('Export functionality coming soon!')}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
@@ -977,3 +977,5 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     </div>
   );
 }
+
+    
