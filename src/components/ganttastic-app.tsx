@@ -3,12 +3,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Project } from '@/types';
-import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import GanttasticChart from './ganttastic-chart';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
-import ProjectSidebar from './project-sidebar';
 import { Dialog, DialogContent } from './ui/dialog';
+import { Sheet, SheetContent } from './ui/sheet';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
@@ -34,12 +33,15 @@ const getInitialProject = (): Project => ({
   value: 250000,
 });
 
+type GanttasticAppProps = {
+    isImporterOpen: boolean;
+    setImporterOpen: (isOpen: boolean) => void;
+}
 
-export default function GanttasticApp() {
+export default function GanttasticApp({ isImporterOpen, setImporterOpen }: GanttasticAppProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState<Project>(getInitialProject());
-  const [isImporterOpen, setImporterOpen] = useState(false);
   const [isTaskEditorOpen, setTaskEditorOpen] = useState(false);
   const [isCategoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -247,8 +249,8 @@ export default function GanttasticApp() {
         />
       </div>
       
-      <Dialog open={isImporterOpen} onOpenChange={setImporterOpen}>
-        <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
+      <Sheet open={isImporterOpen} onOpenChange={setImporterOpen}>
+        <SheetContent side="left" className="max-w-2xl p-0">
             <GanttasticSidebarContent
               view='IMPORTER'
               onImportProject={handleImportProject}
@@ -259,11 +261,11 @@ export default function GanttasticApp() {
               onUpdateTask={() => {}}
               onDeleteTask={() => {}}
             />
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
       
       <Dialog open={isTaskEditorOpen} onOpenChange={setTaskEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
               <GanttasticSidebarContent
                   view='TASK_EDITOR'
                   tasks={tasks}
@@ -278,7 +280,7 @@ export default function GanttasticApp() {
       </Dialog>
       
       <Dialog open={isCategoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
                <GanttasticSidebarContent
                   view='CATEGORY_EDITOR'
                   tasks={tasks}
@@ -296,5 +298,3 @@ export default function GanttasticApp() {
     </div>
   );
 }
-
-    

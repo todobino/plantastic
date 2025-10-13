@@ -31,6 +31,7 @@ type Project = {
 type ProjectSidebarProps = {
   currentProjectName: string;
   onProjectChange: (name: string) => void;
+  onNewProjectClick: () => void;
 };
 
 const initialProjects: Project[] = [
@@ -95,7 +96,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
 }
 
 
-export default function ProjectSidebar({ currentProjectName, onProjectChange }: ProjectSidebarProps) {
+export default function ProjectSidebar({ currentProjectName, onProjectChange, onNewProjectClick }: ProjectSidebarProps) {
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
@@ -148,7 +149,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       <SidebarHeader className="p-2 border-b">
         <div className="flex items-center gap-2">
           <GanttChartSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
+          <h1 className="text-lg font-bold tracking-tight text-foreground font-headline">
             Ganttastic
           </h1>
         </div>
@@ -157,16 +158,10 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange }: 
       <SidebarContent className="flex-grow p-4">
         <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon" variant="secondary" onClick={() => alert('New Project functionality coming soon!')}>
-                    <Plus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>New Project</p>
-              </TooltipContent>
-            </Tooltip>
+            <Button size="sm" variant="secondary" onClick={onNewProjectClick}>
+                <Plus className="h-4 w-4 mr-2" />
+                New
+            </Button>
         </div>
         <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
