@@ -28,6 +28,10 @@ const getInitialProject = (): Project => ({
   id: 'proj-1',
   name: 'Ganttastic Plan',
   description: 'A sample project plan for the Ganttastic application.',
+  startDate: new Date(),
+  endDate: addDays(new Date(), 30),
+  budget: 100000,
+  value: 250000,
 });
 
 
@@ -57,7 +61,12 @@ export default function GanttasticApp() {
       
       const savedProject = localStorage.getItem('ganttastic-project');
       if (savedProject) {
-        setProject(JSON.parse(savedProject));
+        const parsedProject = JSON.parse(savedProject);
+        setProject({
+          ...parsedProject,
+          startDate: parsedProject.startDate ? new Date(parsedProject.startDate) : undefined,
+          endDate: parsedProject.endDate ? new Date(parsedProject.endDate) : undefined,
+        });
       }
 
     } catch (error) {
@@ -287,3 +296,5 @@ export default function GanttasticApp() {
     </div>
   );
 }
+
+    

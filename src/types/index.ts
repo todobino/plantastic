@@ -19,6 +19,10 @@ export interface Project {
   id: string;
   name: string;
   description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  budget?: number;
+  value?: number;
 }
 
 export interface Milestone {
@@ -52,3 +56,5 @@ export const ExtractedProjectOutputSchema = z.object({
   tasks: z.array(ExtractedTaskSchema).describe('The list of tasks extracted from the document.'),
 });
 export type ExtractedProjectOutput = z.infer<typeof ExtractedProjectOutputSchema>;
+
+    

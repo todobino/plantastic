@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
@@ -640,18 +640,18 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-4 px-4 md:px-6">
         <div className="flex items-center gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
+            <Sheet>
+              <SheetTrigger asChild>
                 <Button variant="ghost" className="group text-lg font-semibold">
                     <Folder className="h-5 w-5 mr-2 group-hover:hidden" />
                     <Pencil className="h-5 w-5 mr-2 hidden group-hover:inline-block" />
                     {project.name}
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
+              </SheetTrigger>
+              <SheetContent side="left" className="max-w-md">
                 <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-              </DialogContent>
-            </Dialog>
+              </SheetContent>
+            </Sheet>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>
                     <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -977,5 +977,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     </div>
   );
 }
+
+    
 
     
