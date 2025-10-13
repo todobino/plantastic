@@ -673,11 +673,12 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
             <div className="col-span-3 border-r overflow-y-auto">
-              <div 
-                style={{ height: `${HEADER_HEIGHT}px`}} 
-                className="sticky top-0 bg-background z-40 flex items-center justify-between p-4 border-b"
+              <div
+                style={{ height: `${HEADER_HEIGHT}px` }}
+                className="sticky top-0 bg-background z-40 flex flex-col border-b"
               >
-                <span className="font-semibold text-sm">Tasks & Milestones</span>
+                <div style={{ height: `${MONTH_ROW_HEIGHT}px` }} className="flex items-center justify-between p-4 border-b">
+                  <span className="font-semibold text-sm">Tasks</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="default">
@@ -699,6 +700,11 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                </div>
+                <div style={{ height: `${DAY_ROW_HEIGHT}px`}} className="grid grid-cols-5 items-center text-xs font-medium text-muted-foreground">
+                    <div className="col-span-1 text-center border-r h-full flex items-center justify-center">ID</div>
+                    <div className="col-span-4 text-center h-full flex items-center justify-center">Name</div>
+                </div>
               </div>
               <div className='relative'>
                 {displayTasks.map((task) => {
@@ -763,7 +769,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                                 today && "bg-primary text-primary-foreground font-bold"
                               )}>
                                 <div>{format(day, 'dd')}</div>
-                                <div className={cn("text-muted-foreground", today && "text-background")}>{format(day, 'E')}</div>
+                                <div className={cn("text-background", today && "text-background")}>{format(day, 'E')}</div>
                               </div>
                             );
                         })}
@@ -979,6 +985,3 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 }
 
     
-
-    
-
