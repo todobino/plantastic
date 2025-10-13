@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from './ui/badge';
+import { DialogBody, DialogFooter } from './ui/dialog';
 
 
 const taskSchema = z.object({
@@ -131,187 +132,188 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col h-full">
-        <div className="space-y-4 flex-grow overflow-y-auto pr-2 pb-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Task Name</FormLabel>
-                <FormControl>
-                  <Input placeholder={"e.g., Design homepage"} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Add a short description..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+        <DialogBody>
+            <div className="space-y-4">
             <FormField
-              control={form.control}
-              name="parentId"
-              render={({ field }) => (
+                control={form.control}
+                name="name"
+                render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent Category</FormLabel>
-                   <Select 
-                     onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
-                     value={field.value || 'none'}
-                     defaultValue={field.value || 'none'}
-                    >
+                    <FormLabel>Task Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Assign to a category..." />
-                      </SelectTrigger>
+                    <Input placeholder={"e.g., Design homepage"} {...field} />
                     </FormControl>
-                    <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {availableCategories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                    <FormMessage />
                 </FormItem>
-              )}
+                )}
             />
 
             <FormField
                 control={form.control}
-                name="dependencies"
+                name="description"
                 render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Dependencies</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn(
-                                            "w-full justify-between h-auto min-h-10",
-                                            !field.value?.length && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <div className="flex gap-1 flex-wrap">
-                                            {field.value && field.value.length > 0 ? field.value.map(depId => (
-                                                <Badge key={depId} variant="secondary">{tasks.find(t => t.id === depId)?.name}</Badge>
-                                            )) : "Select dependencies..."}
-                                        </div>
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search tasks..." />
-                                    <CommandList>
-                                        <CommandEmpty>No tasks found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {availableDependencies.map(task => (
-                                                <CommandItem
-                                                    value={task.name}
-                                                    key={task.id}
-                                                    onSelect={() => {
-                                                        const currentDeps = field.value || [];
-                                                        const newDeps = currentDeps.includes(task.id)
-                                                            ? currentDeps.filter(id => id !== task.id)
-                                                            : [...currentDeps, task.id];
-                                                        field.onChange(newDeps);
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            "mr-2 h-4 w-4",
-                                                            (field.value || []).includes(task.id)
-                                                                ? "opacity-100"
-                                                                : "opacity-0"
-                                                        )}
-                                                    />
-                                                    {task.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
+                <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                    <Textarea placeholder="Add a short description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
                 )}
             />
 
-          <div className="grid grid-cols-2 gap-4">
-             <FormField
-              control={form.control}
-              name="start"
-              render={({ field }) => (
-                <FormItem className="flex flex-col gap-2">
-                  <FormLabel>Start Date</FormLabel>
-                   <Popover>
-                      <PopoverTrigger asChild>
+                <FormField
+                control={form.control}
+                name="parentId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Parent Category</FormLabel>
+                    <Select 
+                        onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                        value={field.value || 'none'}
+                        defaultValue={field.value || 'none'}
+                        >
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Assign to a category..." />
+                        </SelectTrigger>
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={(date) => date && handleStartDateChange(date)} initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormItem className="flex flex-col gap-2">
-                <FormLabel>Duration (days)</FormLabel>
-                <FormControl>
-                    <Input 
-                    type="number" 
-                    min="1" 
-                    value={duration}
-                    onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
-                    />
-                </FormControl>
-             </FormItem>
-          </div>
-          
-        </div>
+                        <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {availableCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
 
-        <div className="flex justify-between items-center pt-4 border-t mt-auto">
-          <Button type="submit">
-            {selectedTask ? 'Save Changes' : 'Add Task'}
-          </Button>
-          {selectedTask && (
-             <Button type="button" variant="destructive" size="icon" onClick={() => onDeleteTask(selectedTask.id)}>
-              <Trash2 className="h-4 w-4" />
+                <FormField
+                    control={form.control}
+                    name="dependencies"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Dependencies</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn(
+                                                "w-full justify-between h-auto min-h-10",
+                                                !field.value?.length && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <div className="flex gap-1 flex-wrap">
+                                                {field.value && field.value.length > 0 ? field.value.map(depId => (
+                                                    <Badge key={depId} variant="secondary">{tasks.find(t => t.id === depId)?.name}</Badge>
+                                                )) : "Select dependencies..."}
+                                            </div>
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search tasks..." />
+                                        <CommandList>
+                                            <CommandEmpty>No tasks found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {availableDependencies.map(task => (
+                                                    <CommandItem
+                                                        value={task.name}
+                                                        key={task.id}
+                                                        onSelect={() => {
+                                                            const currentDeps = field.value || [];
+                                                            const newDeps = currentDeps.includes(task.id)
+                                                                ? currentDeps.filter(id => id !== task.id)
+                                                                : [...currentDeps, task.id];
+                                                            field.onChange(newDeps);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                (field.value || []).includes(task.id)
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {task.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="start"
+                render={({ field }) => (
+                    <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Start Date</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                                )}
+                            >
+                                {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={field.value} onSelect={(date) => date && handleStartDateChange(date)} initialFocus />
+                        </PopoverContent>
+                        </Popover>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Duration (days)</FormLabel>
+                    <FormControl>
+                        <Input 
+                        type="number" 
+                        min="1" 
+                        value={duration}
+                        onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
+                        />
+                    </FormControl>
+                </FormItem>
+            </div>
+            </div>
+        </DialogBody>
+
+        <DialogFooter>
+          <div className="flex justify-between items-center w-full">
+            <Button type="submit">
+                {selectedTask ? 'Save Changes' : 'Add Task'}
             </Button>
-          )}
-        </div>
+            {selectedTask && (
+                <Button type="button" variant="destructive" size="icon" onClick={() => onDeleteTask(selectedTask.id)}>
+                <Trash2 className="h-4 w-4" />
+                </Button>
+            )}
+          </div>
+        </DialogFooter>
       </form>
     </Form>
   );
 }
-
-    

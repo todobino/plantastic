@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare } from 'lucide-react';
-import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter } from './ui/dialog';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -76,6 +76,7 @@ export function AuthForm() {
             Quick and Easy Project Management
         </DialogDescription>
       </DialogHeader>
+      <DialogBody>
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
@@ -110,9 +111,11 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending ? 'Logging in...' : 'Login'}
-                </Button>
+                <DialogFooter>
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                    {isPending ? 'Logging in...' : 'Login'}
+                    </Button>
+                </DialogFooter>
               </form>
             </Form>
           </TabsContent>
@@ -158,13 +161,16 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending ? 'Signing up...' : 'Sign Up'}
-                </Button>
+                <DialogFooter>
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                    {isPending ? 'Signing up...' : 'Sign Up'}
+                    </Button>
+                </DialogFooter>
               </form>
             </Form>
           </TabsContent>
         </Tabs>
+    </DialogBody>
     </>
   );
 }

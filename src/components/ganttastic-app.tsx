@@ -248,7 +248,7 @@ export default function GanttasticApp() {
       </div>
       
       <Dialog open={isImporterOpen} onOpenChange={setImporterOpen}>
-        <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
             <GanttasticSidebarContent
               view='IMPORTER'
               onImportProject={handleImportProject}
@@ -263,7 +263,7 @@ export default function GanttasticApp() {
       </Dialog>
       
       <Dialog open={isTaskEditorOpen} onOpenChange={setTaskEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
               <GanttasticSidebarContent
                   view='TASK_EDITOR'
                   tasks={tasks}
@@ -278,7 +278,7 @@ export default function GanttasticApp() {
       </Dialog>
       
       <Dialog open={isCategoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+          <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
                <GanttasticSidebarContent
                   view='CATEGORY_EDITOR'
                   tasks={tasks}

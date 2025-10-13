@@ -85,17 +85,13 @@ export default function GanttasticSidebarContent({
 
   return (
     <>
-      <DialogHeader className="p-6 border-b">
+      <DialogHeader>
         <DialogTitle>{getTitle()}</DialogTitle>
         <DialogDescription>
             {getDescription()}
         </DialogDescription>
       </DialogHeader>
-      <ScrollArea className="flex-grow">
-        <div className="p-6">
-            {renderContent()}
-        </div>
-      </ScrollArea>
+      {renderContent()}
     </>
   );
 }
