@@ -17,22 +17,15 @@ import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverla
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ThemeToggle } from './theme-toggle';
 import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { AuthForm } from './auth-form';
+import { Sheet, SheetContent } from './ui/sheet';
+import ProjectEditor from './project-editor';
+import { DeleteProjectDialog } from './delete-project-dialog';
+import type { Project } from '@/types';
 
-type Project = {
-  id: string;
-  name: string;
-};
-
-type ProjectSidebarProps = {
-  currentProjectName: string;
-  onProjectChange: (name: string) => void;
-  onNewProjectClick: () => void;
-};
 
 const initialProjects: Project[] = [
   { id: 'proj-1', name: 'Ganttastic Plan' },
@@ -42,7 +35,7 @@ const initialProjects: Project[] = [
   { id: 'proj-5', name: 'Mobile App Development' },
 ];
 
-function DraggableProject({ item, isActive, onClick }: { item: Project; isActive?: boolean; onClick?: () => void; }) {
+function DraggableProject({ item, onEdit, onDelete, isActive, onClick }: { item: Project; isActive?: boolean; onClick?: () => void; onEdit: () => void; onDelete: () => void; }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -51,12 +44,12 @@ function DraggableProject({ item, isActive, onClick }: { item: Project; isActive
     
     return (
         <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
-            <ProjectItem item={item} isActive={isActive} onClick={onClick} dragAttributes={attributes} dragListeners={listeners} />
+            <ProjectItem item={item} isActive={isActive} onClick={onClick} onEdit={onEdit} onDelete={onDelete} dragAttributes={attributes} dragListeners={listeners} />
         </div>
     );
 }
 
-function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttributes, dragListeners }: { item: Project; isActive?: boolean; onClick?: () => void; isOverlay?: boolean; dragAttributes?: any; dragListeners?: any; }) {
+function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttributes, dragListeners, onEdit, onDelete }: { item: Project; isActive?: boolean; onClick?: () => void; isOverlay?: boolean; dragAttributes?: any; dragListeners?: any; onEdit?: () => void; onDelete?: () => void; }) {
     return (
         <div
             onClick={onClick}
@@ -72,7 +65,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
-            {!isOverlay && (
+            {!isOverlay && onEdit && onDelete && (
                  <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto opacity-0 group-hover/item:opacity-100" onClick={(e) => e.stopPropagation()}>
@@ -81,10 +74,10 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
                     </PopoverTrigger>
                     <PopoverContent className="w-48 p-1" onClick={(e) => e.stopPropagation()}>
                         <div className="flex flex-col gap-1">
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => alert(`Editing ${item.name}`)}>
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={onEdit}>
                                 <Edit className="h-4 w-4" /> Edit
                             </Button>
-                             <Button variant="ghost" size="sm" className="justify-start gap-2 text-destructive hover:text-destructive" onClick={() => alert(`Deleting ${item.name}`)}>
+                             <Button variant="ghost" size="sm" className="justify-start gap-2 text-destructive hover:text-destructive" onClick={onDelete}>
                                 <Trash2 className="h-4 w-4" /> Delete
                             </Button>
                         </div>
@@ -103,8 +96,12 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
   const [isLoginOpen, setLoginOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+
   useEffect(() => {
     setIsClient(true);
+    // Load projects from local storage
   }, []);
   
   const sensors = useSensors(
@@ -144,8 +141,26 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
     setActiveProject(null);
   }
 
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
+    if (currentProjectName === editingProject?.name) {
+        onProjectChange(updatedProject.name);
+    }
+    setEditingProject(null);
+  }
+
+  const handleDeleteProject = (projectId: string) => {
+    setProjects(projects.filter(p => p.id !== projectId));
+    if (currentProjectName === deletingProject?.name) {
+        const remainingProjects = projects.filter(p => p.id !== projectId);
+        onProjectChange(remainingProjects.length > 0 ? remainingProjects[0].name : '');
+    }
+    setDeletingProject(null);
+  };
+
+
   return (
-    <TooltipProvider>
+    <>
       <SidebarContent className="flex-grow p-4">
         <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
@@ -181,6 +196,8 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
                       item={project} 
                       isActive={project.name === currentProjectName}
                       onClick={() => handleProjectClick(project.name)}
+                      onEdit={() => setEditingProject(project)}
+                      onDelete={() => setDeletingProject(project)}
                     />
                   </SidebarMenuItem>
                 ))}
@@ -221,6 +238,23 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
             <ThemeToggle />
         </div>
       </SidebarFooter>
-    </TooltipProvider>
+
+      {editingProject && (
+        <Sheet open={!!editingProject} onOpenChange={(isOpen) => !isOpen && setEditingProject(null)}>
+            <SheetContent side="left" className="max-w-md p-0">
+                <ProjectEditor project={editingProject} onProjectUpdate={handleUpdateProject} />
+            </SheetContent>
+        </Sheet>
+      )}
+
+      {deletingProject && (
+        <DeleteProjectDialog
+            project={deletingProject}
+            open={!!deletingProject}
+            onOpenChange={(isOpen) => !isOpen && setDeletingProject(null)}
+            onDelete={() => handleDeleteProject(deletingProject.id)}
+        />
+      )}
+    </>
   );
 }
