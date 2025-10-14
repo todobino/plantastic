@@ -663,12 +663,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 Today
             </Button>
         </div>
-        <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => alert('Export functionality coming soon!')}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-            </Button>
-        </div>
       </div>
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
@@ -977,6 +971,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
 
 
 
