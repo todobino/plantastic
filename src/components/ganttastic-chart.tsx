@@ -667,7 +667,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
-            <div className="col-span-3 border-r overflow-y-auto">
+            <div className="col-span-3 border-r overflow-y-auto shadow-md z-20">
               <div
                 style={{ height: `${HEADER_HEIGHT}px` }}
                 className="sticky top-0 bg-background z-40 flex flex-col border-b"
@@ -971,6 +971,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
 
 
 
