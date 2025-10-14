@@ -635,6 +635,8 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     return 'hsl(var(--primary))';
   }, [tasks]);
 
+  const getTaskIdNumericPart = (id: string) => id.split('-')[1];
+
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -710,25 +712,31 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
               <div className='relative'>
                 {displayTasks.map((task) => {
                   const level = parseInt(task.milestone || '0', 10);
+                  const isCategory = task.type === 'category';
                   return (
                     <div 
                       key={task.id} 
-                      style={{height: `${ROW_HEIGHT}px`, paddingLeft: `${level * 1.5 + 1}rem`}} 
-                      className="group w-full text-sm hover:bg-secondary flex items-center gap-2 cursor-pointer border-b"
+                      style={{height: `${ROW_HEIGHT}px`}} 
+                      className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center cursor-pointer border-b"
                       onClick={() => onTaskClick(task)}
                     >
-                      {task.type === 'category' ? (
-                        <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1 -ml-1">
-                          {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </button>
-                      ) : <div className="w-5" />}
+                      <div className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center">
+                          {!isCategory ? getTaskIdNumericPart(task.id) : ''}
+                      </div>
+                      <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}>
+                         {task.type === 'category' ? (
+                            <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1 -ml-1">
+                            {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                        ) : <div className="w-5" />}
 
-                      {task.type === 'category' ? (
-                        task.isExpanded ? <FolderOpen className="h-4 w-4 text-primary" /> : <Folder className="h-4 w-4 text-primary" />
-                      ) : null}
+                        {task.type === 'category' ? (
+                            task.isExpanded ? <FolderOpen className="h-4 w-4 text-primary" /> : <Folder className="h-4 w-4 text-primary" />
+                        ) : null}
 
-                      <span className="truncate flex-1">{task.name}</span>
-                      <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
+                        <span className="truncate flex-1">{task.name}</span>
+                        <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
+                      </div>
                     </div>
                   )
                 })}
@@ -988,3 +996,4 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
