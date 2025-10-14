@@ -73,7 +73,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
             {!isOverlay && (
-                 <Popover onOpenChange={(e) => e.stopPropagation()}>
+                 <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto opacity-0 group-hover/item:opacity-100" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-4 w-4" />
