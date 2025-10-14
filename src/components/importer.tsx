@@ -4,13 +4,12 @@
 import { useState, useTransition } from 'react';
 import type { Task, Project, ExtractedProjectOutput, ExtractedTask } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { FileUp, Sparkles, Wand2, FilePlus2 } from 'lucide-react';
 import { runExtractProjectFromFile } from '@/lib/actions';
 import { Skeleton } from './ui/skeleton';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { ScrollArea } from './ui/scroll-area';
 import { Label } from './ui/label';
 import { DialogBody, DialogFooter } from './ui/dialog';
 
@@ -136,7 +135,7 @@ export default function Importer({ onImport, onClose }: ImporterProps) {
       case Stage.Choice:
         return (
             <DialogBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full items-center">
+                <div className="grid grid-cols-1 gap-4">
                     <Card className="hover:border-primary hover:shadow-lg transition-all cursor-pointer h-full flex flex-col" onClick={createManualProject}>
                         <CardHeader>
                             <FilePlus2 className="h-10 w-10 text-primary mb-2" />
