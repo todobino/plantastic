@@ -63,6 +63,7 @@ const SheetContent = React.forwardRef<
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), "flex flex-col h-full", className)}
+      onOpenAutoFocus={(e) => e.preventDefault()}
       {...props}
     >
       {children}
