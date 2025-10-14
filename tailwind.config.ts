@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        body: ['"DM Sans"', 'sans-serif'],
         headline: ['"Plus Jakarta Sans"', 'sans-serif'],
         code: ['"Source Code Pro"', 'monospace'],
       },
