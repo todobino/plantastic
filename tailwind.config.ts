@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -11,7 +12,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        headline: ['"Plus Jakarta Sans"', 'sans-serif'],
         code: ['"Source Code Pro"', 'monospace'],
       },
       colors: {
