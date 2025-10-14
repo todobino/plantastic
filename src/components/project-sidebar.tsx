@@ -146,7 +146,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
 
   return (
     <TooltipProvider>
-      <SidebarHeader className="p-2 border-b">
+      <SidebarHeader className="px-4 py-2 border-b">
         <div className="flex items-center gap-2">
           <GanttChartSquare className="h-6 w-6 text-primary" />
           <h1 className="text-lg font-bold tracking-tight text-foreground font-headline">
