@@ -663,6 +663,28 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </Button>
         </div>
         <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="default" >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onAddTaskClick}>
+                  <CirclePlus className="mr-2 h-4 w-4" />
+                  New Task
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onAddCategoryClick}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  New Category
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
+                  <DiamondPlus className="mr-2 h-4 w-4" />
+                  New Milestone
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="secondary" size="sm" onClick={() => alert('Export functionality coming soon!')}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
@@ -679,27 +701,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
               >
                 <div style={{ height: `${MONTH_ROW_HEIGHT}px` }} className="flex items-center justify-between p-4 border-b">
                   <span className="font-semibold text-sm">Tasks</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={onAddTaskClick}>
-                        <CirclePlus className="mr-2 h-4 w-4" />
-                        New Task
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onAddCategoryClick}>
-                        <FolderPlus className="mr-2 h-4 w-4" />
-                        New Category
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
-                        <DiamondPlus className="mr-2 h-4 w-4" />
-                        New Milestone
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
                 <div style={{ height: `${DAY_ROW_HEIGHT}px`}} className="grid grid-cols-5 items-center text-xs font-medium text-muted-foreground">
                     <div className="col-span-1 text-center border-r h-full flex items-center justify-center">ID</div>
@@ -769,7 +770,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                                 today && "bg-primary text-primary-foreground font-bold"
                               )}>
                                 <div>{format(day, 'dd')}</div>
-                                <div className={cn("text-background", today && "text-background")}>{format(day, 'E')}</div>
+                                <div className={cn(today ? "text-primary-foreground" : "text-muted-foreground")}>{format(day, 'E')}</div>
                               </div>
                             );
                         })}
