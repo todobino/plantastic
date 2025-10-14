@@ -666,7 +666,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm" className="h-7 px-2">
+                <Button variant="default" size="sm">
                     <Plus className="h-3 w-3 mr-1" />
                     <span className="text-xs">Add</span>
                 </Button>
@@ -1004,3 +1004,4 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
 
     
+
