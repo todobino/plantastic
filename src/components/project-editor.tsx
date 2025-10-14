@@ -74,9 +74,6 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
     <>
       <SheetHeader>
         <SheetTitle>Edit Project</SheetTitle>
-        <SheetDescription>
-          Update the details of your project.
-        </SheetDescription>
       </SheetHeader>
       
       <Form {...form}>
@@ -222,5 +219,3 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
     </>
   );
 }
-
-    
