@@ -635,8 +635,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     return 'hsl(var(--primary))';
   }, [tasks]);
 
-  const getTaskIdNumericPart = (id: string) => id.split('-')[1];
-
+  const justTasks = useMemo(() => displayTasks.filter(t => t.type === 'task'), [displayTasks]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -713,6 +712,10 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                 {displayTasks.map((task) => {
                   const level = parseInt(task.milestone || '0', 10);
                   const isCategory = task.type === 'category';
+                  let taskIndex = -1;
+                  if (!isCategory) {
+                      taskIndex = justTasks.findIndex(t => t.id === task.id);
+                  }
                   return (
                     <div 
                       key={task.id} 
@@ -721,7 +724,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                       onClick={() => onTaskClick(task)}
                     >
                       <div className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center">
-                          {!isCategory ? getTaskIdNumericPart(task.id) : ''}
+                          {!isCategory ? taskIndex + 1 : ''}
                       </div>
                       <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}>
                          {task.type === 'category' ? (
@@ -996,4 +999,5 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
 
