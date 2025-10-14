@@ -330,7 +330,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     if (scroller) {
       const margin = 40;
       if (e.clientX > scroller.getBoundingClientRect().right - margin) scroller.scrollLeft += pxPerDay;
-      else if (e.clientX < scroller.getBoundingClientRect().left + margin) scroller.scrollLeft -= pxPerDay;
+      else if (e.clientX < scroller.getBoundingClientRect().left - margin) scroller.scrollLeft -= pxPerDay;
     }
   
     setDragState(s => ({ ...s, previewDeltaPx: snapDeltaPx }));
@@ -664,28 +664,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </Button>
         </div>
         <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="default" >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onAddTaskClick}>
-                  <CirclePlus className="mr-2 h-4 w-4" />
-                  New Task
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onAddCategoryClick}>
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  New Category
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alert('Milestone functionality coming soon!')}>
-                  <DiamondPlus className="mr-2 h-4 w-4" />
-                  New Milestone
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button variant="secondary" size="sm" onClick={() => alert('Export functionality coming soon!')}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
@@ -999,6 +977,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
 
 
 
