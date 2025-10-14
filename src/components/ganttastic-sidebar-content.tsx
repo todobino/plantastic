@@ -47,7 +47,7 @@ export default function GanttasticSidebarContent({
   const getDescription = () => {
      switch (view) {
       case 'IMPORTER':
-        return 'Create a new project manually or import from a file.';
+        return '';
       case 'TASK_EDITOR':
         return selectedTask ? 'Update the details for this task.' : 'Add a new task to your project.';
       case 'CATEGORY_EDITOR':
