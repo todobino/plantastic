@@ -726,7 +726,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                       <div className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center">
                           {!isCategory ? taskIndex + 1 : ''}
                       </div>
-                      <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}>
+                      <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}>
                          {task.type === 'category' ? (
                             <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1 -ml-1">
                             {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -999,5 +999,6 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     
 
     
+
 
 
