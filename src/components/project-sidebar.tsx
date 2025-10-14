@@ -168,7 +168,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
     <>
       <SidebarContent className="flex-grow p-4">
         <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
+            <h2 className="text-lg font-semibold tracking-tight font-headline">Projects</h2>
             <Button size="sm" variant="secondary" onClick={onNewProjectClick}>
                 <Plus className="h-4 w-4 mr-2" />
                 New
@@ -263,5 +263,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
     </>
   );
 }
+
+    
 
     
