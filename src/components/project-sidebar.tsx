@@ -61,7 +61,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
                 isOverlay && "shadow-xl ring-1 ring-border cursor-grabbing"
             )}
         >
-            <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab p-1", isOverlay && "cursor-grabbing")}>
+            <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab py-1", isOverlay && "cursor-grabbing")}>
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
@@ -89,6 +89,11 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
 }
 
 
+type ProjectSidebarProps = {
+    currentProjectName: string;
+    onProjectChange: (name: string) => void;
+    onNewProjectClick: () => void;
+};
 export default function ProjectSidebar({ currentProjectName, onProjectChange, onNewProjectClick }: ProjectSidebarProps) {
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -258,3 +263,5 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
     </>
   );
 }
+
+    
