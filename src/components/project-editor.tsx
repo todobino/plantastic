@@ -78,7 +78,7 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow flex flex-col min-h-0">
-          <ScrollArea className="flex-grow p-6">
+          <ScrollArea className="flex-grow p-4">
             <div className="space-y-4">
               <FormField
                   control={form.control}
@@ -219,3 +219,4 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
     </>
   );
 }
+
