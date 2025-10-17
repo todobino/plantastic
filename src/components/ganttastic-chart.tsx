@@ -665,15 +665,14 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                     </TabsTrigger>
                 </TabsList>
             </Tabs>
-             <Button variant="secondary" size="sm" onClick={handleTodayClick}>
-                Today
-            </Button>
+            {view === 'timeline' && (
+              <Button variant="secondary" size="sm" onClick={handleTodayClick}>
+                  Today
+              </Button>
+            )}
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="default" size="sm" onClick={onAddTaskClick}>
-                <Plus className="h-3 w-3 mr-1" />
-                <span className="text-xs">Add Task</span>
-            </Button>
+            
         </div>
       </div>
       <div className="flex-grow flex overflow-hidden">
@@ -688,7 +687,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                   <span className="font-semibold text-sm">Tasks</span>
                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="default" size="sm" className="h-7 px-2">
+                        <Button variant="default" size="sm">
                             <Plus className="h-3 w-3 mr-1" />
                             <span className="text-xs">Add</span>
                         </Button>
@@ -1014,6 +1013,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
 
     
+
 
 
 
