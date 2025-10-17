@@ -15,6 +15,7 @@ import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { GanttasticListView } from './ganttastic-list-view';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import AppHeader from './app-header';
 
 
 const isWeekend = (d: Date) => {
@@ -639,45 +640,14 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-2 px-4">
-        <div className="flex items-center gap-4">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="group text-lg font-semibold font-headline">
-                    <Folder className="h-5 w-5 mr-1 group-hover:hidden" />
-                    <Pencil className="h-5 w-5 mr-1 hidden group-hover:inline-block" />
-                    {project.name}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="max-w-md p-0">
-                <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
-              </SheetContent>
-            </Sheet>
-            <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
-                <TabsList>
-                    <TabsTrigger value="timeline">
-                        <GanttChart className="h-4 w-4 mr-2" />
-                        Timeline
-                    </TabsTrigger>
-                    <TabsTrigger value="list">
-                        <List className="h-4 w-4 mr-2" />
-                        List
-                    </TabsTrigger>
-                </TabsList>
-            </Tabs>
-            {view === 'timeline' && (
-              <Button variant="secondary" size="sm" onClick={handleTodayClick}>
-                  Today
-              </Button>
-            )}
-        </div>
-        <div className="flex items-center gap-2">
-            <Button size="sm" onClick={onAddTaskClick}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
-            </Button>
-        </div>
-      </div>
+      <AppHeader
+        project={project}
+        onProjectUpdate={onProjectUpdate}
+        view={view}
+        onViewChange={setView}
+        onTodayClick={handleTodayClick}
+        onAddTaskClick={onAddTaskClick}
+      />
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
@@ -1016,6 +986,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
 
     
+
 
 
 
