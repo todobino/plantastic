@@ -643,7 +643,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
         <div className="flex items-center gap-4">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="group text-lg font-semibold">
+                <Button variant="outline" className="group text-lg font-semibold font-headline">
                     <Folder className="h-5 w-5 mr-1 group-hover:hidden" />
                     <Pencil className="h-5 w-5 mr-1 hidden group-hover:inline-block" />
                     {project.name}
@@ -672,7 +672,10 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             )}
         </div>
         <div className="flex items-center gap-2">
-            
+            <Button size="sm" onClick={onAddTaskClick}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+            </Button>
         </div>
       </div>
       <div className="flex-grow flex overflow-hidden">
@@ -1013,6 +1016,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
 
     
+
 
 
 
