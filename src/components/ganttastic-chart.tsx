@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -415,7 +415,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
     }
   
     setResizeState({ id: null, edge: null, startX: 0 });
-    setDragState(s => ({ ...s, previewDeltaPx: 0 }));
+    setDragState(s => ({ s, previewDeltaPx: 0 }));
   };
 
   const hitStartDot = (x:number, y:number) => {
@@ -655,8 +655,14 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </Sheet>
             <Tabs value={view} onValueChange={(v) => setView(v as 'timeline' | 'list')}>
                 <TabsList>
-                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                    <TabsTrigger value="list">List</TabsTrigger>
+                    <TabsTrigger value="timeline">
+                        <GanttChart className="h-4 w-4 mr-2" />
+                        Timeline
+                    </TabsTrigger>
+                    <TabsTrigger value="list">
+                        <List className="h-4 w-4 mr-2" />
+                        List
+                    </TabsTrigger>
                 </TabsList>
             </Tabs>
              <Button variant="secondary" size="sm" onClick={handleTodayClick}>
@@ -1008,6 +1014,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
 
 
     
+
 
 
 
