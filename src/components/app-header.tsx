@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Folder, GanttChart, List, Pencil, Plus, Users, Download } from 'lucide-react';
+import { Briefcase, GanttChart, List, Pencil, Users, Download } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 
@@ -31,7 +31,7 @@ export default function AppHeader({
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" className="group text-lg font-semibold font-headline">
-              <Folder className="h-5 w-5 mr-1 group-hover:hidden" />
+              <Briefcase className="h-5 w-5 mr-1 group-hover:hidden" />
               <Pencil className="h-5 w-5 mr-1 hidden group-hover:inline-block" />
               {project.name}
             </Button>
