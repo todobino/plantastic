@@ -41,7 +41,7 @@ const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 28; // height of a task bar
 const CATEGORY_BAR_HEIGHT = 14;
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
-const MONTH_ROW_HEIGHT = 32;
+const MONTH_ROW_HEIGHT = 40;
 const DAY_ROW_HEIGHT = 40;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
