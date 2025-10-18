@@ -15,6 +15,7 @@ type AppHeaderProps = {
   onViewChange: (view: 'timeline' | 'list') => void;
   onTodayClick: () => void;
   onTeamClick: () => void;
+  onNewProjectClick: () => void;
 };
 
 export default function AppHeader({
@@ -24,6 +25,7 @@ export default function AppHeader({
   onViewChange,
   onTodayClick,
   onTeamClick,
+  onNewProjectClick,
 }: AppHeaderProps) {
   return (
     <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-2 px-4">
@@ -63,9 +65,9 @@ export default function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={onNewProjectClick}>
             <Download className="h-4 w-4 mr-2" />
-            Download
+            Import/Export
         </Button>
       </div>
     </div>

@@ -665,6 +665,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         onViewChange={setView}
         onTodayClick={handleTodayClick}
         onTeamClick={onTeamClick}
+        onNewProjectClick={onNewProjectClick}
       />
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
@@ -1029,9 +1030,3 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
-
-    
-
-    
-
-
