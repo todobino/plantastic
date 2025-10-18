@@ -65,7 +65,7 @@ export function AuthForm() {
     <>
       <DialogHeader>
         <DialogTitle>
-            <div className="flex justify-center items-center gap-3 mb-2">
+            <div className="flex justify-center items-center gap-3">
                 <GanttChartSquare className="h-8 w-8 text-primary" />
                 <h1 className="text-2xl font-bold tracking-tight text-foreground font-headline">
                 Ganttastic
