@@ -35,18 +35,18 @@ export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasks
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50%]">Task</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Priority</TableHead>
+                <TableHead className="w-[50%] border-r">Task</TableHead>
+                <TableHead className="border-r">Due Date</TableHead>
+                <TableHead className="border-r">Priority</TableHead>
                 <TableHead>Progress</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tasks.length > 0 ? tasks.map(task => (
                 <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.name}</TableCell>
-                  <TableCell>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium border-r">{task.name}</TableCell>
+                  <TableCell className="border-r">{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+                  <TableCell className="border-r">
                       <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell>
