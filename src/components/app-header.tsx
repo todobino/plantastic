@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Folder, GanttChart, List, Pencil, Plus } from 'lucide-react';
+import { Folder, GanttChart, List, Pencil, Plus, Users } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 
@@ -15,6 +15,7 @@ type AppHeaderProps = {
   onViewChange: (view: 'timeline' | 'list') => void;
   onTodayClick: () => void;
   onAddTaskClick: () => void;
+  onTeamClick: () => void;
 };
 
 export default function AppHeader({
@@ -24,6 +25,7 @@ export default function AppHeader({
   onViewChange,
   onTodayClick,
   onAddTaskClick,
+  onTeamClick,
 }: AppHeaderProps) {
   return (
     <div className="flex flex-row items-center justify-between border-b bg-background z-10 py-2 px-4">
@@ -62,6 +64,10 @@ export default function AppHeader({
         <Button size="sm" onClick={onAddTaskClick}>
           <Plus className="h-4 w-4 mr-2" />
           Add Task
+        </Button>
+         <Button size="sm" variant="outline" onClick={onTeamClick}>
+          <Users className="h-4 w-4 mr-2" />
+          Team
         </Button>
       </div>
     </div>

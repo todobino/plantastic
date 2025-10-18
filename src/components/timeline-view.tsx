@@ -34,6 +34,7 @@ type TimelineViewProps = {
   onReorderTasks: (reorderedTasks: Task[]) => void;
   onTaskUpdate: (task: Task) => void;
   onNewProjectClick: () => void;
+  onTeamClick: () => void;
 };
 
 
@@ -45,7 +46,7 @@ const MONTH_ROW_HEIGHT = 48;
 const DAY_ROW_HEIGHT = 48;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
-export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -647,6 +648,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         onViewChange={setView}
         onTodayClick={handleTodayClick}
         onAddTaskClick={onAddTaskClick}
+        onTeamClick={onTeamClick}
       />
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
@@ -660,7 +662,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                   <span className="font-semibold text-sm">Tasks</span>
                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="default" size="sm" className="h-7 px-2">
+                        <Button variant="secondary" size="sm" className="h-7 px-2">
                             <Plus className="h-3 w-3 mr-1" />
                             <span className="text-xs">Add</span>
                         </Button>
@@ -969,5 +971,3 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
-
-    

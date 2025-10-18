@@ -8,6 +8,7 @@ import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Sheet, SheetContent } from './ui/sheet';
+import TeamManager from './team-manager';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
@@ -45,6 +46,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
   const [isTaskEditorOpen, setTaskEditorOpen] = useState(false);
   const [isCategoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTeamManagerOpen, setTeamManagerOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -246,6 +248,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           onReorderTasks={handleReorderTasks}
           onTaskUpdate={handleUpdateTask}
           onNewProjectClick={() => setImporterOpen(true)}
+          onTeamClick={() => setTeamManagerOpen(true)}
         />
       </div>
       
@@ -294,6 +297,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
               />
           </DialogContent>
       </Dialog>
+
+      <Sheet open={isTeamManagerOpen} onOpenChange={setTeamManagerOpen}>
+        <SheetContent side="right" className="max-w-md p-0">
+          <TeamManager />
+        </SheetContent>
+      </Sheet>
 
     </div>
   );
