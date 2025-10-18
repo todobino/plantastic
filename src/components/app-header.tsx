@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Folder, GanttChart, List, Pencil, Plus, Users } from 'lucide-react';
+import { Folder, GanttChart, List, Pencil, Plus, Users, Download } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 
@@ -63,6 +63,10 @@ export default function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Download
+        </Button>
       </div>
     </div>
   );
