@@ -31,37 +31,39 @@ export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasks
         <DialogTitle>{member.name}'s Tasks</DialogTitle>
       </DialogHeader>
       <DialogBody>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50%]">Task</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Progress</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tasks.length > 0 ? tasks.map(task => (
-              <TableRow key={task.id}>
-                <TableCell className="font-medium">{task.name}</TableCell>
-                <TableCell>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
-                <TableCell>
-                    <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority || 'N/A'}</Badge>
-                </TableCell>
-                <TableCell>
-                    <div className="flex items-center gap-2">
-                        <Progress value={task.progress || 0} className="w-[60%]" />
-                        <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
-                    </div>
-                </TableCell>
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50%]">Task</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Progress</TableHead>
               </TableRow>
-            )) : (
-                <TableRow>
-                    <TableCell colSpan={4} className="text-center">No tasks assigned to this member.</TableCell>
+            </TableHeader>
+            <TableBody>
+              {tasks.length > 0 ? tasks.map(task => (
+                <TableRow key={task.id}>
+                  <TableCell className="font-medium">{task.name}</TableCell>
+                  <TableCell>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+                  <TableCell>
+                      <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority || 'N/A'}</Badge>
+                  </TableCell>
+                  <TableCell>
+                      <div className="flex items-center gap-2">
+                          <Progress value={task.progress || 0} className="w-[60%]" />
+                          <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
+                      </div>
+                  </TableCell>
                 </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )) : (
+                  <TableRow>
+                      <TableCell colSpan={4} className="text-center">No tasks assigned to this member.</TableCell>
+                  </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </DialogBody>
     </>
   );
