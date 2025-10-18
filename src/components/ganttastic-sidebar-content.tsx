@@ -87,9 +87,6 @@ export default function GanttasticSidebarContent({
     <>
       <DialogHeader>
         <DialogTitle>{getTitle()}</DialogTitle>
-        <DialogDescription>
-            {getDescription()}
-        </DialogDescription>
       </DialogHeader>
       {renderContent()}
     </>
