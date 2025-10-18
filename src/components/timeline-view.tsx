@@ -647,7 +647,6 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         view={view}
         onViewChange={setView}
         onTodayClick={handleTodayClick}
-        onAddTaskClick={onAddTaskClick}
         onTeamClick={onTeamClick}
       />
       <div className="flex-grow flex overflow-hidden">
@@ -660,24 +659,40 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
               >
                 <div style={{ height: `${MONTH_ROW_HEIGHT}px` }} className="flex items-center justify-between p-4 border-b">
                   <span className="font-semibold text-sm">Tasks</span>
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" size="sm" className="h-7 px-2">
-                            <Plus className="h-3 w-3 mr-1" />
-                            <span className="text-xs">Add</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={onAddTaskClick}>
-                            <CirclePlus className="mr-2 h-4 w-4" />
-                            New Task
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={onAddCategoryClick}>
-                            <FolderPlus className="mr-2 h-4 w-4" />
-                            New Category
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                   <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAddTaskClick}>
+                            <CirclePlus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>New Task</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAddCategoryClick}>
+                            <FolderPlus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>New Category</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}}>
+                            <DiamondPlus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>New Milestone</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
                 <div style={{ height: `${DAY_ROW_HEIGHT}px`}} className="grid grid-cols-5 items-center text-xs font-medium text-muted-foreground">
                     <div className="col-span-1 text-center border-r h-full flex items-center justify-center">ID</div>
@@ -971,3 +986,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
