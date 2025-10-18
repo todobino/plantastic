@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskEditor from './task-editor';
 import CategoryEditor from './category-editor';
 import Importer from './importer';
-import type { Task, Project } from '@/types';
+import type { Task, Project, TeamMember } from '@/types';
 import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -19,6 +19,7 @@ type GanttasticSidebarContentProps = {
   onDeleteTask: (taskId: string) => void;
   onImportProject: (project: Project, tasks: Task[]) => void;
   onClose: () => void;
+  teamMembers: TeamMember[];
 };
 
 export default function GanttasticSidebarContent({
@@ -30,7 +31,8 @@ export default function GanttasticSidebarContent({
   onUpdateTask,
   onDeleteTask,
   onImportProject,
-  onClose
+  onClose,
+  teamMembers
 }: GanttasticSidebarContentProps) {
     
   const getTitle = () => {
@@ -65,6 +67,7 @@ export default function GanttasticSidebarContent({
                     onAddTask={onAddTask}
                     onUpdateTask={onUpdateTask}
                     onDeleteTask={onDeleteTask}
+                    teamMembers={teamMembers}
                 />
             );
         case 'CATEGORY_EDITOR':

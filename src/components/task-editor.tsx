@@ -20,7 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Check, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, addDays } from 'date-fns';
-import type { Task } from '@/types';
+import type { Task, TeamMember } from '@/types';
 import { useEffect, useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -28,6 +28,7 @@ import { Switch } from './ui/switch';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from './ui/badge';
 import { DialogBody, DialogFooter } from './ui/dialog';
+import { Slider } from './ui/slider';
 
 
 const taskSchema = z.object({
@@ -37,6 +38,9 @@ const taskSchema = z.object({
   end: z.date({ required_error: 'An end date is required.' }),
   dependencies: z.array(z.string()).optional(),
   parentId: z.string().nullable().optional(),
+  assigneeId: z.string().nullable().optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  progress: z.number().min(0).max(100).optional(),
 }).refine(data => data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
@@ -50,9 +54,10 @@ type TaskEditorProps = {
   onAddTask: (task: Omit<Task, 'id' | 'dependencies' | 'type'> & { dependencies: string[] }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  teamMembers: TeamMember[];
 };
 
-export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask }: TaskEditorProps) {
+export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, teamMembers }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -60,6 +65,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       description: '',
       dependencies: [],
       parentId: null,
+      assigneeId: null,
+      priority: 'medium',
+      progress: 0,
     },
   });
   
@@ -74,8 +82,11 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         end: selectedTask.end,
         dependencies: selectedTask.dependencies || [],
         parentId: selectedTask.parentId || null,
+        assigneeId: selectedTask.assigneeId || null,
+        priority: selectedTask.priority || 'medium',
+        progress: selectedTask.progress || 0,
       });
-      const taskDuration = differenceInDays(selectedTask.end, selectedTask.start) + 1;
+      const taskDuration = selectedTask.end && selectedTask.start ? differenceInDays(selectedTask.end, selectedTask.start) + 1 : 1;
       setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
       const defaultStartDate = new Date();
@@ -87,6 +98,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         end: addDays(defaultStartDate, defaultDuration - 1),
         dependencies: [],
         parentId: null,
+        assigneeId: null,
+        priority: 'medium',
+        progress: 0,
       });
       setDuration(defaultDuration);
     }
@@ -118,6 +132,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       dependencies: data.dependencies || [],
       type: 'task' as const,
       parentId: data.parentId,
+      assigneeId: data.assigneeId,
+      priority: data.priority,
+      progress: data.progress,
       isExpanded: selectedTask?.isExpanded ?? true,
     };
     if (selectedTask) {
@@ -162,8 +179,59 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </FormItem>
                 )}
             />
+            
+            <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="assigneeId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Assignee</FormLabel>
+                        <Select 
+                            onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                            value={field.value || 'none'}
+                            >
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Assign to a team member..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {teamMembers.map(member => (
+                                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                 <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Set priority" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+            </div>
 
-                <FormField
+            <FormField
                 control={form.control}
                 name="parentId"
                 render={({ field }) => (
@@ -298,6 +366,23 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                     </FormControl>
                 </FormItem>
             </div>
+             <FormField
+                control={form.control}
+                name="progress"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Progress: {field.value}%</FormLabel>
+                    <FormControl>
+                        <Slider
+                            value={[field.value ?? 0]}
+                            onValueChange={(value) => field.onChange(value[0])}
+                            max={100}
+                            step={5}
+                        />
+                    </FormControl>
+                    </FormItem>
+                )}
+                />
             </div>
         </DialogBody>
 

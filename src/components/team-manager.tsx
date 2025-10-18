@@ -7,24 +7,22 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetHeader, SheetTitle, SheetFooter } from './ui/sheet';
 import { Edit, Trash2, UserPlus, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import type { TeamMember, Task } from '@/types';
+import { Dialog, DialogContent } from './ui/dialog';
+import TeamMemberTasksDialog from './team-member-tasks-dialog';
 
-interface TeamMember {
-    id: string;
-    name: string;
+interface TeamManagerProps {
+    teamMembers: TeamMember[];
+    setTeamMembers: (teamMembers: TeamMember[]) => void;
+    tasks: Task[];
 }
 
-const initialTeamMembers: TeamMember[] = [
-    { id: '1', name: 'Alex Johnson' },
-    { id: '2', name: 'Maria Garcia' },
-    { id: '3', name: 'James Smith' },
-];
-
-export default function TeamManager() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers);
+export default function TeamManager({ teamMembers, setTeamMembers, tasks }: TeamManagerProps) {
   const [newMemberName, setNewMemberName] = useState('');
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [isTaskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const handleAddMember = () => {
     if (newMemberName.trim() === '') return;
@@ -43,7 +41,8 @@ export default function TeamManager() {
     }
   }
 
-  const handleEditClick = (member: TeamMember) => {
+  const handleEditClick = (e: React.MouseEvent, member: TeamMember) => {
+    e.stopPropagation();
     setEditingMemberId(member.id);
     setEditingName(member.name);
   }
@@ -66,8 +65,14 @@ export default function TeamManager() {
     }
   }
   
-  const handleDeleteMember = (memberId: string) => {
+  const handleDeleteMember = (e: React.MouseEvent, memberId: string) => {
+    e.stopPropagation();
     setTeamMembers(teamMembers.filter(m => m.id !== memberId));
+  }
+
+  const handleMemberClick = (member: TeamMember) => {
+    setSelectedMember(member);
+    setTaskDialogOpen(true);
   }
 
   return (
@@ -92,7 +97,11 @@ export default function TeamManager() {
             
             <div className="space-y-2 pt-4">
                 {teamMembers.map(member => (
-                    <div key={member.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted group">
+                    <div 
+                        key={member.id} 
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted group cursor-pointer"
+                        onClick={() => handleMemberClick(member)}
+                    >
                         {editingMemberId === member.id ? (
                             <Input
                                 type="text"
@@ -102,22 +111,23 @@ export default function TeamManager() {
                                 onBlur={handleSaveEdit}
                                 autoFocus
                                 className="h-8"
+                                onClick={(e) => e.stopPropagation()}
                             />
                         ) : (
                             <p className="font-medium">{member.name}</p>
                         )}
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                            {editingMemberId === member.id ? (
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveEdit}>
                                     <Check className="h-4 w-4" />
                                 </Button>
                            ) : (
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(member)}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEditClick(e, member)}>
                                     <Edit className="h-4 w-4" />
                                 </Button>
 
                            )}
-                            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteMember(member.id)}>
+                            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={(e) => handleDeleteMember(e, member.id)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
@@ -129,6 +139,17 @@ export default function TeamManager() {
        <SheetFooter>
         <Button variant="outline">Close</Button>
       </SheetFooter>
+      
+      {selectedMember && (
+        <Dialog open={isTaskDialogOpen} onOpenChange={setTaskDialogOpen}>
+            <DialogContent className="max-w-4xl">
+                <TeamMemberTasksDialog 
+                    member={selectedMember} 
+                    tasks={tasks.filter(t => t.assigneeId === selectedMember.id)}
+                />
+            </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

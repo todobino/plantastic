@@ -1,6 +1,11 @@
 
 import { z } from 'zod';
 
+export interface TeamMember {
+    id: string;
+    name: string;
+}
+
 export interface Task {
   id: string;
   name: string;
@@ -13,6 +18,9 @@ export interface Task {
   type: 'task' | 'category';
   parentId?: string | null;
   isExpanded?: boolean;
+  assigneeId?: string | null;
+  priority?: 'low' | 'medium' | 'high';
+  progress?: number;
 }
 
 export interface Project {

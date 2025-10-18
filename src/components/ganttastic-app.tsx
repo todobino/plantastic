@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Task, Project } from '@/types';
+import type { Task, Project, TeamMember } from '@/types';
 import TimelineView from './timeline-view';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
@@ -12,15 +12,21 @@ import TeamManager from './team-manager';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
-  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], type: 'task', parentId: 'cat-1' },
-  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], type: 'task', parentId: 'cat-1' },
-  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'], type: 'task', parentId: 'cat-1' },
+  { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], type: 'task', parentId: 'cat-1', assigneeId: '1', priority: 'high', progress: 100 },
+  { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], type: 'task', parentId: 'cat-1', assigneeId: '2', priority: 'high', progress: 75 },
+  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 2), end: addDays(new Date(), 7), dependencies: ['task-2'], type: 'task', parentId: 'cat-1', assigneeId: '1', priority: 'medium', progress: 50 },
   { id: 'cat-2', name: 'Development Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#10b981' },
-  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'], type: 'task', parentId: 'cat-2' },
-  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'], type: 'task', parentId: 'cat-2' },
+  { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 18), dependencies: ['task-3'], type: 'task', parentId: 'cat-2', assigneeId: '3', priority: 'high', progress: 20 },
+  { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 8), end: addDays(new Date(), 20), dependencies: ['task-3'], type: 'task', parentId: 'cat-2', assigneeId: '2', priority: 'high', progress: 10 },
   { id: 'cat-3', name: 'Release Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#f97316' },
-  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'], type: 'task', parentId: 'cat-3' },
-  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'], type: 'task', parentId: 'cat-3' },
+  { id: 'task-6', name: 'Testing & QA', description: 'Testing the application for bugs and quality assurance.', start: addDays(new Date(), 21), end: addDays(new Date(), 25), dependencies: ['task-4', 'task-5'], type: 'task', parentId: 'cat-3', assigneeId: '1', priority: 'medium', progress: 0 },
+  { id: 'task-7', name: 'Deployment', description: 'Deploying the application to production.', start: addDays(new Date(), 26), end: addDays(new Date(), 27), dependencies: ['task-6'], type: 'task', parentId: 'cat-3', assigneeId: '3', priority: 'low', progress: 0 },
+];
+
+const getInitialTeam = (): TeamMember[] => [
+    { id: '1', name: 'Alex Johnson' },
+    { id: '2', name: 'Maria Garcia' },
+    { id: '3', name: 'James Smith' },
 ];
 
 
@@ -41,6 +47,7 @@ type GanttasticAppProps = {
 
 export default function GanttasticApp({ isImporterOpen, setImporterOpen }: GanttasticAppProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState<Project>(getInitialProject());
   const [isTaskEditorOpen, setTaskEditorOpen] = useState(false);
@@ -73,10 +80,18 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
         });
       }
 
+      const savedTeam = localStorage.getItem('ganttastic-team');
+      if (savedTeam) {
+        setTeamMembers(JSON.parse(savedTeam));
+      } else {
+        setTeamMembers(getInitialTeam());
+      }
+
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
       setTasks(getInitialTasks());
       setProject(getInitialProject());
+      setTeamMembers(getInitialTeam());
     }
   }, []);
 
@@ -85,11 +100,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
         try {
             localStorage.setItem('ganttastic-tasks', JSON.stringify(tasks));
             localStorage.setItem('ganttastic-project', JSON.stringify(project));
+            localStorage.setItem('ganttastic-team', JSON.stringify(teamMembers));
         } catch (error) {
             console.error("Failed to save data to localStorage", error);
         }
     }
-  }, [tasks, project, isMounted]);
+  }, [tasks, project, teamMembers, isMounted]);
 
   const updateDependentTasks = useCallback((updatedTaskId: string, tasksToUpdate: Task[]): Task[] => {
     const newTasks = [...tasksToUpdate];
@@ -263,6 +279,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
               onAddTask={() => {}}
               onUpdateTask={() => {}}
               onDeleteTask={() => {}}
+              teamMembers={teamMembers}
             />
         </SheetContent>
       </Sheet>
@@ -278,6 +295,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
                   onDeleteTask={handleDeleteTask}
                   onClose={() => setTaskEditorOpen(false)}
                   onImportProject={() => {}}
+                  teamMembers={teamMembers}
               />
           </DialogContent>
       </Dialog>
@@ -294,13 +312,14 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
                   onClose={() => setCategoryEditorOpen(false)}
                   onImportProject={() => {}}
                   onAddTask={() => {}}
+                  teamMembers={teamMembers}
               />
           </DialogContent>
       </Dialog>
 
       <Sheet open={isTeamManagerOpen} onOpenChange={setTeamManagerOpen}>
         <SheetContent side="left" className="max-w-md p-0">
-          <TeamManager />
+          <TeamManager teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} />
         </SheetContent>
       </Sheet>
 
