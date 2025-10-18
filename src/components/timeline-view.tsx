@@ -766,7 +766,10 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                                 </span>
                             </>
                         ) : (
-                           <span className="truncate flex-1">{task.name}</span>
+                           <>
+                              <GanttChartSquare className="h-4 w-4" style={{ color: getTaskColor(task) }} />
+                              <span className="truncate flex-1">{task.name}</span>
+                           </>
                         )}
 
                         <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
@@ -1030,4 +1033,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     
 
     
+
 
