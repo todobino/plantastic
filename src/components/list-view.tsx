@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { Folder, GanttChartSquare } from 'lucide-react';
 
 
-type GanttasticListViewProps = {
+type ListViewProps = {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
 };
@@ -26,7 +26,7 @@ type ListedTask = Task & {
   category?: Task;
 };
 
-export function GanttasticListView({ tasks, onTaskClick }: GanttasticListViewProps) {
+export function ListView({ tasks, onTaskClick }: ListViewProps) {
   const listedTasks = useMemo(() => {
     const categories = new Map(tasks.filter(t => t.type === 'category').map(c => [c.id, c]));
     const justTasks = tasks

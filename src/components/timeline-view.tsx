@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
-import { GanttasticListView } from './ganttastic-list-view';
+import { ListView } from './list-view';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import AppHeader from './app-header';
 
@@ -23,7 +23,7 @@ const isWeekend = (d: Date) => {
   return day === 0 || day === 6;
 };
 
-type GanttasticChartProps = {
+type TimelineViewProps = {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
   project: Project;
@@ -45,7 +45,7 @@ const MONTH_ROW_HEIGHT = 32;
 const DAY_ROW_HEIGHT = 40;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
-export default function GanttasticChart({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick }: GanttasticChartProps) {
+export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -660,7 +660,7 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
                   <span className="font-semibold text-sm">Tasks</span>
                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="default" size="sm" className="h-7 px-2">
+                        <Button variant="default" size="sm">
                             <Plus className="h-3 w-3 mr-1" />
                             <span className="text-xs">Add</span>
                         </Button>
@@ -963,34 +963,9 @@ export default function GanttasticChart({ tasks, setTasks, project, onTaskClick,
             </div>
           </div>
         ) : (
-          <GanttasticListView tasks={tasks} onTaskClick={onTaskClick} />
+          <ListView tasks={tasks} onTaskClick={onTaskClick} />
         )}
       </div>
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-

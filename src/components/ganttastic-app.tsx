@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Project } from '@/types';
-import GanttasticChart from './ganttastic-chart';
+import TimelineView from './timeline-view';
 import GanttasticSidebarContent from './ganttastic-sidebar-content';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import { Dialog, DialogContent } from './ui/dialog';
@@ -235,7 +235,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
   return (
     <div className="flex h-screen flex-col">
       <div className="flex-grow overflow-auto">
-        <GanttasticChart
+        <TimelineView
           tasks={tasks}
           setTasks={setTasks}
           project={project}
