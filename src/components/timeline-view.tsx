@@ -46,6 +46,23 @@ const MONTH_ROW_HEIGHT = 48;
 const DAY_ROW_HEIGHT = 48;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
+function hexToRgba(hex: string, alpha: number) {
+    let r = 0, g = 0, b = 0;
+    // 3 digits
+    if (hex.length === 4) {
+        r = parseInt(hex[1] + hex[1], 16);
+        g = parseInt(hex[2] + hex[2], 16);
+        b = parseInt(hex[3] + hex[3], 16);
+    } 
+    // 6 digits
+    else if (hex.length === 7) {
+        r = parseInt(hex.slice(1, 3), 16);
+        g = parseInt(hex.slice(3, 5), 16);
+        b = parseInt(hex.slice(5, 7), 16);
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
@@ -725,10 +742,19 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       </div>
                       <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}>
                         {task.type === 'category' ? (
-                            task.isExpanded ? <FolderOpen className="h-4 w-4 text-primary" /> : <Folder className="h-4 w-4 text-primary" />
-                        ) : null}
+                            <span 
+                                className="px-2 py-0.5 rounded-full font-semibold"
+                                style={{
+                                    color: task.color || 'hsl(var(--foreground))',
+                                    backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
+                                }}
+                            >
+                                {task.name}
+                            </span>
+                        ) : (
+                           <span className="truncate flex-1">{task.name}</span>
+                        )}
 
-                        <span className="truncate flex-1">{task.name}</span>
                         <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
                       </div>
                     </div>
@@ -986,5 +1012,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
 
     
