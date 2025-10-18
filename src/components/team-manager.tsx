@@ -22,9 +22,6 @@ export default function TeamManager() {
     <>
       <SheetHeader>
         <SheetTitle>Manage Team</SheetTitle>
-        <SheetDescription>
-          Add, edit, or remove team members for this project.
-        </SheetDescription>
       </SheetHeader>
       <ScrollArea className="flex-grow p-4">
         <div className="space-y-4">
@@ -76,3 +73,4 @@ export default function TeamManager() {
     </>
   );
 }
+
