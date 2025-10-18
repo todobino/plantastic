@@ -715,15 +715,15 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       onClick={() => onTaskClick(task)}
                     >
                       <div className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center">
-                          {!isCategory ? taskIndex + 1 : ''}
+                          {isCategory ? (
+                              <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1">
+                                  {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              </button>
+                          ) : (
+                            taskIndex + 1
+                          )}
                       </div>
                       <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}>
-                         {task.type === 'category' ? (
-                            <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1 -ml-1">
-                            {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </button>
-                        ) : <div className="w-5" />}
-
                         {task.type === 'category' ? (
                             task.isExpanded ? <FolderOpen className="h-4 w-4 text-primary" /> : <Folder className="h-4 w-4 text-primary" />
                         ) : null}
