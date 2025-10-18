@@ -61,10 +61,6 @@ export default function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={onAddTaskClick}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Task
-        </Button>
          <Button size="sm" variant="outline" onClick={onTeamClick}>
           <Users className="h-4 w-4 mr-2" />
           Team
