@@ -14,7 +14,6 @@ type AppHeaderProps = {
   view: 'timeline' | 'list';
   onViewChange: (view: 'timeline' | 'list') => void;
   onTodayClick: () => void;
-  onAddTaskClick: () => void;
   onTeamClick: () => void;
 };
 
@@ -24,7 +23,6 @@ export default function AppHeader({
   view,
   onViewChange,
   onTodayClick,
-  onAddTaskClick,
   onTeamClick,
 }: AppHeaderProps) {
   return (
@@ -42,6 +40,10 @@ export default function AppHeader({
             <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
           </SheetContent>
         </Sheet>
+         <Button size="sm" variant="outline" onClick={onTeamClick}>
+          <Users className="h-4 w-4 mr-2" />
+          Team
+        </Button>
         <Tabs value={view} onValueChange={(v) => onViewChange(v as 'timeline' | 'list')}>
           <TabsList>
             <TabsTrigger value="timeline">
@@ -61,10 +63,6 @@ export default function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-2">
-         <Button size="sm" variant="outline" onClick={onTeamClick}>
-          <Users className="h-4 w-4 mr-2" />
-          Team
-        </Button>
       </div>
     </div>
   );

@@ -299,7 +299,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
       </Dialog>
 
       <Sheet open={isTeamManagerOpen} onOpenChange={setTeamManagerOpen}>
-        <SheetContent side="right" className="max-w-md p-0">
+        <SheetContent side="left" className="max-w-md p-0">
           <TeamManager />
         </SheetContent>
       </Sheet>
