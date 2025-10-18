@@ -1004,7 +1004,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                                   )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent className="bg-card border-primary">
+                            <TooltipContent className="bg-card border">
                               <p className="font-bold">{task.name}</p>
                               {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
                               {pos.s && pos.e && (
