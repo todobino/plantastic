@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import ProjectEditor from './project-editor';
 import { Separator } from './ui/separator';
@@ -728,29 +728,43 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                     <div 
                       key={task.id} 
                       style={{height: `${ROW_HEIGHT}px`}} 
-                      className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center cursor-pointer border-b"
-                      onClick={() => onTaskClick(task)}
+                      className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center border-b"
                     >
-                      <div className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center">
+                      <div 
+                        className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center"
+                        onClick={(e) => {
+                            if(isCategory) {
+                                e.stopPropagation();
+                                toggleCategory(task.id);
+                            }
+                        }}
+                      >
                           {isCategory ? (
-                              <button onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }} className="p-1">
-                                  {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                              </button>
+                            <div className="p-1 cursor-pointer">
+                                {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </div>
                           ) : (
-                            taskIndex + 1
+                            taskIndex > -1 ? taskIndex + 1 : ''
                           )}
                       </div>
-                      <div className="col-span-4 flex items-center gap-2" style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}>
+                      <div 
+                        className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
+                        style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}
+                        onClick={() => onTaskClick(task)}
+                      >
                         {task.type === 'category' ? (
-                            <span 
-                                className="px-2 py-0.5 rounded-full font-semibold"
-                                style={{
-                                    color: task.color || 'hsl(var(--foreground))',
-                                    backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
-                                }}
-                            >
-                                {task.name}
-                            </span>
+                            <>
+                                <Folder className="h-4 w-4" style={{ color: task.color }}/>
+                                <span 
+                                    className="px-2 py-0.5 rounded-full font-semibold"
+                                    style={{
+                                        color: task.color || 'hsl(var(--foreground))',
+                                        backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
+                                    }}
+                                >
+                                    {task.name}
+                                </span>
+                            </>
                         ) : (
                            <span className="truncate flex-1">{task.name}</span>
                         )}
