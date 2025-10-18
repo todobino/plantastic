@@ -749,14 +749,14 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       </div>
                       <div 
                         className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
-                        style={{ paddingLeft: `${level * 1.5 + 0.25}rem`}}
+                        style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}
                         onClick={() => onTaskClick(task)}
                       >
                         {task.type === 'category' ? (
                             <>
                                 <Folder className="h-4 w-4" style={{ color: task.color }}/>
                                 <span 
-                                    className="px-2 py-0.5 rounded-full font-semibold"
+                                    className="px-2 py-0.5 rounded-md font-semibold"
                                     style={{
                                         color: task.color || 'hsl(var(--foreground))',
                                         backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
@@ -1030,3 +1030,4 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     
 
     
+
