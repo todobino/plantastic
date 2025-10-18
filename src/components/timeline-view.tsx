@@ -41,8 +41,8 @@ const ROW_HEIGHT = 40; // height of a task row in pixels
 const BAR_HEIGHT = 28; // height of a task bar
 const CATEGORY_BAR_HEIGHT = 14;
 const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
-const MONTH_ROW_HEIGHT = 40;
-const DAY_ROW_HEIGHT = 40;
+const MONTH_ROW_HEIGHT = 48;
+const DAY_ROW_HEIGHT = 48;
 const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
 
 export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick }: TimelineViewProps) {
@@ -969,3 +969,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
