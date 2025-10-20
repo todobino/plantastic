@@ -11,7 +11,7 @@ export default function Home() {
 
     return (
         <main className="flex h-screen w-full">
-            <div className="w-[280px] border-r flex flex-col">
+            <div className="w-[240px] border-r flex flex-col">
                 <ProjectSidebar
                     currentProjectName={currentProject}
                     onProjectChange={setCurrentProject}
