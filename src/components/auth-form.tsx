@@ -86,9 +86,6 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
                 </h1>
             </div>
         </DialogTitle>
-        <DialogDescription>
-            Quick and Easy Project Management
-        </DialogDescription>
       </DialogHeader>
       <DialogBody>
         <Tabs defaultValue="login" className="w-full">
