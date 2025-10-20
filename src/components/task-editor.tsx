@@ -366,26 +366,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                         )}
                         />
                 </div>
-
-                <div className="md:col-span-2 space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="progress"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Progress: {field.value}%</FormLabel>
-                            <FormControl>
-                                <Slider
-                                    value={[field.value ?? 0]}
-                                    onValueChange={(value) => field.onChange(value[0])}
-                                    max={100}
-                                    step={5}
-                                />
-                            </FormControl>
-                            </FormItem>
-                        )}
-                        />
-                </div>
             </div>
         </DialogBody>
 
@@ -405,6 +385,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
+    
 
     
 
