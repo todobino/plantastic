@@ -329,7 +329,7 @@ export function TimelineCalendarView({
             const categoryStyle = isCategory && task.color ? {
                 backgroundColor: hexToRgba(task.color, 0.15),
                 color: task.color,
-                border: `1px solid ${task.color}`
+                border: `2px solid ${task.color}`
             } : {
                 backgroundColor: getTaskColor(task),
                 color: isCategory ? 'hsl(var(--secondary-foreground))' : 'hsl(var(--primary-foreground))'
@@ -493,4 +493,5 @@ export function TimelineCalendarView({
     
 
     
+
 
