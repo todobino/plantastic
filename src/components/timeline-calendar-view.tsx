@@ -223,7 +223,7 @@ export function TimelineCalendarView({
                     className={cn(
                       "text-center text-xs border-r relative flex flex-col justify-center",
                       weekend && "bg-zinc-100 dark:bg-zinc-900/40",
-                      today && "bg-primary text-primary-foreground font-bold"
+                      today && "bg-primary text-primary-foreground font-bold border-l-2 border-l-black dark:border-l-slate-200"
                     )}
                   >
                     <div>{format(day, "dd")}</div>
@@ -257,7 +257,8 @@ export function TimelineCalendarView({
                 key={`bg-${i}`}
                 className={cn(
                   "border-r h-full",
-                  isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40"
+                  isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40",
+                  isToday(day) && "border-l-2 border-l-black dark:border-l-slate-200"
                 )}
               ></div>
             ))}
@@ -271,11 +272,6 @@ export function TimelineCalendarView({
               ></div>
             ))}
           </div>
-
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-black dark:bg-slate-500 z-30"
-            style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
-          />
 
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
             {tasks.map((task) => {
