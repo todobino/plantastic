@@ -366,12 +366,6 @@ isResizingThis,
                         ...(!isPlaceholder && categoryStyle),
                       }}
                     >
-                      {!isCategory && !isPlaceholder && <div
-                        className={cn(
-                          "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
-                          "bg-primary-foreground"
-                        )}
-                      />}
                       <span
                         className={cn(
                           "relative text-xs font-semibold truncate z-10",
@@ -381,13 +375,7 @@ isResizingThis,
                       >
                         {task.name}
                       </span>
-                      {!isCategory && !isPlaceholder && <div
-                        className={cn(
-                          "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
-                          "bg-primary-foreground"
-                        )}
-                      />}
-
+                      
                       {!isPlaceholder && <div
                         className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
                         onPointerDown={(e) => onLeftHandleDown(e, task)}
