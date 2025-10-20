@@ -173,11 +173,11 @@ export function TimelineCalendarView({
                 <Button
                     data-today-button
                     onClick={onTodayClick}
-                    className="py-1 h-auto drop-shadow-md"
+                    className="py-1 h-auto"
                 >
                     Today
                 </Button>
-                <Button variant="secondary" className="py-1 h-auto font-semibold pointer-events-none drop-shadow-md">
+                <Button variant="secondary" className="py-1 h-auto font-semibold pointer-events-none">
                     {currentMonthLabel}
                 </Button>
             </div>
