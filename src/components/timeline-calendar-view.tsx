@@ -1,0 +1,464 @@
+
+import {
+  useRef,
+  useState,
+  useCallback,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import {
+  cn,
+  isWeekend,
+  HEADER_HEIGHT,
+  ROW_HEIGHT,
+  DAY_ROW_HEIGHT,
+  MONTH_ROW_HEIGHT,
+  BAR_HEIGHT,
+  BAR_TOP_MARGIN,
+  CATEGORY_BAR_HEIGHT,
+} from "@/lib/utils";
+import { Task } from "@/types";
+import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+
+type TimelineCalendarViewProps = {
+  timeline: Date[];
+  totalDays: number;
+  dayWidth: number;
+  headerGroups: { label: string; days: number }[];
+  displayTasks: (Task & { milestone?: string })[];
+  tasks: Task[];
+  taskPositions: Map<
+    string,
+    { x: number; y: number; width: number; s: Date; e: Date }
+  >;
+  linkDraft: {
+    fromTaskId: string | null;
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+  };
+  onBarPointerDown: (e: ReactPointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => void;
+  onBarPointerMove: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
+  onBarPointerUp: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
+  onResizeMove: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
+  onResizeUp: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
+  handleBarClick: (task: Task) => void;
+  onLeftHandleDown: (e: ReactPointerEvent, task: Task) => void;
+  onRightHandleDown: (e: ReactPointerEvent, task: Task) => void;
+  setHoverTaskId: (id: string | null) => void;
+  getVisualPos: (id: string) => { left: number; right: number; cy: number } | null;
+  getTaskColor: (task: Task) => string;
+  dateToX: (d: Date) => number;
+  routeFS: (sx: number, sy: number, tx: number, ty: number) => string;
+  setLinkDraft: (draft: any) => void;
+  hoverTaskId: string | null;
+  isResizingThis: (task: Task) => boolean;
+  isDraggingThis: (task: Task) => boolean;
+  timelineRef: React.RefObject<HTMLDivElement>;
+};
+
+export function TimelineCalendarView({
+  timeline,
+  totalDays,
+  dayWidth,
+  headerGroups,
+  displayTasks,
+  tasks,
+  taskPositions,
+  linkDraft,
+  onBarPointerDown,
+  onBarPointerMove,
+  onBarPointerUp,
+  onResizeMove,
+  onResizeUp,
+  handleBarClick,
+  onLeftHandleDown,
+  onRightHandleDown,
+  setHoverTaskId,
+  getVisualPos,
+  getTaskColor,
+  dateToX,
+  routeFS,
+  setLinkDraft,
+  hoverTaskId,
+  isResizingThis,
+  isDraggingThis,
+  timelineRef,
+}: TimelineCalendarViewProps) {
+  const [panState, setPanState] = useState<{
+    isPanning: boolean;
+    startX: number;
+    startScrollLeft: number;
+  }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
+
+  const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!timelineRef.current) return;
+    if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]")) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.cursor = "grabbing";
+    setPanState({
+      isPanning: true,
+      startX: e.clientX,
+      startScrollLeft: timelineRef.current.scrollLeft,
+    });
+  };
+
+  const handlePanMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!panState.isPanning || !timelineRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const x = e.clientX;
+    const walk = x - panState.startX;
+    timelineRef.current.scrollLeft = panState.startScrollLeft - walk;
+  };
+
+  const handlePanEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!panState.isPanning) return;
+    document.body.style.cursor = "default";
+    setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
+  };
+
+  return (
+    <div ref={timelineRef} className="col-span-8 overflow-auto">
+      <div
+        className={cn("relative", panState.isPanning && "cursor-grabbing")}
+        onPointerDown={handlePanStart}
+        onPointerMove={handlePanMove}
+        onPointerUp={handlePanEnd}
+        onPointerLeave={handlePanEnd}
+        onPointerCancel={handlePanEnd}
+      >
+        <div
+          style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
+          className="sticky top-0 bg-background z-40 border-b"
+        >
+          <div className="border-b">
+            <div
+              className="flex border-b"
+              style={{ height: `${MONTH_ROW_HEIGHT}px` }}
+            >
+              {headerGroups.map((group, index) => (
+                <div
+                  key={index}
+                  className="text-center font-semibold text-sm flex items-center justify-center border-r"
+                  style={{ width: `${group.days * dayWidth}px` }}
+                >
+                  <span className="truncate px-2">{group.label}</span>
+                </div>
+              ))}
+            </div>
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`,
+                height: `${DAY_ROW_HEIGHT}px`,
+              }}
+            >
+              {timeline.map((day) => {
+                const weekend = isWeekend(day);
+                const today = isToday(day);
+                return (
+                  <div
+                    key={day.toString()}
+                    className={cn(
+                      "text-center text-xs border-r relative flex flex-col justify-center",
+                      weekend && "bg-zinc-100 dark:bg-zinc-900/40",
+                      today && "bg-primary text-primary-foreground font-bold"
+                    )}
+                  >
+                    <div>{format(day, "dd")}</div>
+                    <div
+                      className={cn(
+                        today ? "text-primary-foreground" : "text-muted-foreground"
+                      )}
+                    >
+                      {format(day, "E")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            width: `${totalDays * dayWidth}px`,
+            height: `${displayTasks.length * ROW_HEIGHT}px`,
+          }}
+          className="relative"
+        >
+          <div
+            className="absolute top-0 left-0 w-full h-full grid pointer-events-none"
+            style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}
+          >
+            {timeline.map((day, i) => (
+              <div
+                key={`bg-${i}`}
+                className={cn(
+                  "border-r h-full",
+                  isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40"
+                )}
+              ></div>
+            ))}
+          </div>
+          <div className="absolute top-0 left-0 w-full h-full">
+            {displayTasks.map((_task, i) => (
+              <div
+                key={`row-bg-${i}`}
+                className="border-b"
+                style={{ height: `${ROW_HEIGHT}px` }}
+              ></div>
+            ))}
+          </div>
+
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-black dark:bg-slate-500 z-30"
+            style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
+          />
+
+          <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
+            {tasks.map((task) => {
+              if (task.type === "category" || !task.start) return null;
+              const toV = getVisualPos(task.id);
+              if (!toV) return null;
+
+              const deps = Array.from(
+                new Set(task.dependencies.filter((d) => d !== task.id))
+              );
+
+              return deps.map((depId) => {
+                const fromV = getVisualPos(depId);
+                if (!fromV) return null;
+
+                const sx = fromV.right;
+                const sy = fromV.cy;
+                const tx = toV.left;
+                const ty = toV.cy;
+
+                const d = routeFS(sx, sy, tx, ty);
+
+                return (
+                  <g key={`${depId}-${task.id}`}>
+                    <path
+                      d={d}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                      opacity="0.9"
+                    />
+                    <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                    <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
+                  </g>
+                );
+              });
+            })}
+
+            {linkDraft.fromTaskId &&
+              (() => {
+                const fromPos = taskPositions.get(linkDraft.fromTaskId);
+                if (!fromPos) return null;
+                const fromV = getVisualPos(linkDraft.fromTaskId);
+                if (!fromV) return null;
+                const d = routeFS(
+                  fromV.right,
+                  fromV.cy,
+                  linkDraft.toX,
+                  linkDraft.toY
+                );
+                return (
+                  <g>
+                    <path
+                      d={d}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                      opacity="0.6"
+                    />
+                    <circle
+                      cx={fromV.right}
+                      cy={fromV.cy}
+                      r={3.5}
+                      fill="hsl(var(--foreground))"
+                    />
+                  </g>
+                );
+              })()}
+          </svg>
+
+          {displayTasks.map((task) => {
+            const pos = taskPositions.get(task.id);
+            if (!pos) return null;
+
+            const vPos = getVisualPos(task.id);
+            if (!vPos) return null;
+
+            const isCategory = task.type === "category";
+            const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
+            const topMargin = isCategory
+              ? (ROW_HEIGHT - barHeight) / 2
+              : BAR_TOP_MARGIN;
+
+            return (
+              <TooltipProvider key={task.id} delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      data-task-bar="true"
+                      onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
+                      onPointerMove={(e) => {
+                        isResizingThis(task)
+                          ? onResizeMove(e, task)
+                          : onBarPointerMove(e, task);
+                      }}
+                      onPointerUp={(e) => {
+                        isResizingThis(task)
+                          ? onResizeUp(e, task)
+                          : onBarPointerUp(e, task);
+                      }}
+                      onPointerCancel={(e) => {
+                        isResizingThis(task)
+                          ? onResizeUp(e, task)
+                          : onBarPointerUp(e, task);
+                      }}
+                      onMouseEnter={() => setHoverTaskId(task.id)}
+                      onMouseLeave={() =>
+                        setHoverTaskId(cur => (cur === task.id ? null : cur))
+                      }
+                      onClick={() => handleBarClick(task)}
+                      className={cn(
+                        "absolute rounded-md hover:brightness-110 transition-all flex items-center px-2 overflow-hidden shadow z-20",
+                        isCategory
+                          ? "cursor-default"
+                          : "cursor-grab active:cursor-grabbing",
+                        isDraggingThis(task) && "opacity-90"
+                      )}
+                      style={{
+                        top: `${pos.y + topMargin}px`,
+                        left: `${vPos.left}px`,
+                        width: `${vPos.right - vPos.left}px`,
+                        height: `${barHeight}px`,
+                        willChange: "transform,width,left",
+                        backgroundColor: getTaskColor(task),
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
+                          isCategory
+                            ? "bg-secondary-foreground"
+                            : "bg-primary-foreground"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "relative text-xs font-medium truncate z-10",
+                          isCategory
+                            ? "text-secondary-foreground"
+                            : "text-primary-foreground"
+                        )}
+                      >
+                        {task.name}
+                      </span>
+                      <div
+                        className={cn(
+                          "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
+                          isCategory
+                            ? "bg-secondary-foreground"
+                            : "bg-primary-foreground"
+                        )}
+                      />
+
+                      <div
+                        className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
+                        onPointerDown={(e) => onLeftHandleDown(e, task)}
+                      />
+                      <div
+                        className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
+                        onPointerDown={(e) => onRightHandleDown(e, task)}
+                      />
+
+                      {!isCategory && (
+                        <>
+                          <div
+                            className={cn(
+                              "absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity",
+                              hoverTaskId === task.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          >
+                            <div className="relative w-3 h-3">
+                              <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
+                            </div>
+                          </div>
+                          <div
+                            className={cn(
+                              "absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity",
+                              hoverTaskId === task.id ? "opacity-100" : "opacity-0"
+                            )}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              const fromV = getVisualPos(task.id);
+                              if (!fromV) return;
+                              const sx = fromV.right;
+                              const sy = fromV.cy;
+                              const svg = timelineRef.current!.querySelector(
+                                "svg"
+                              ) as SVGSVGElement;
+                              const rect = svg.getBoundingClientRect();
+                              setLinkDraft({
+                                fromTaskId: task.id,
+                                fromX: sx,
+                                fromY: sy,
+                                toX:
+                                  e.clientX -
+                                  rect.left +
+                                  timelineRef.current!.scrollLeft,
+                                toY: e.clientY - rect.top,
+                              });
+                            }}
+                          >
+                            <div className="relative w-3 h-3 cursor-crosshair">
+                              <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-card border">
+                    <p className="font-bold">{task.name}</p>
+                    {task.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {task.description}
+                      </p>
+                    )}
+                    {pos.s && pos.e && (
+                      <>
+                        <p>Start: {format(pos.s, "MMM d, yyyy")}</p>
+                        <p>End: {format(pos.e, "MMM d, yyyy")}</p>
+                        <p>
+                          Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)
+                        </p>
+                      </>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

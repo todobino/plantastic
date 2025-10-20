@@ -1,67 +1,32 @@
 
 'use client';
 
-import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, Milestone, Project } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, CornerDownRight, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart, GanttChartSquare } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import ProjectEditor from './project-editor';
-import { Separator } from './ui/separator';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import AppHeader from "./app-header";
+import { TimelineTaskList } from './timeline-task-list';
+import { TimelineCalendarView } from './timeline-calendar-view';
 import { ListView } from './list-view';
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
-import AppHeader from './app-header';
 
 
-const isWeekend = (d: Date) => {
-  const day = d.getDay(); // 0 Sun .. 6 Sat
-  return day === 0 || day === 6;
-};
+const ROW_HEIGHT = 40; 
+const BAR_HEIGHT = 28;
 
 type TimelineViewProps = {
-  tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
-  project: Project;
-  onTaskClick: (task: Task) => void;
-  onAddTaskClick: () => void;
-  onAddCategoryClick: () => void;
-  onProjectUpdate: (project: Project) => void;
-  onReorderTasks: (reorderedTasks: Task[]) => void;
-  onTaskUpdate: (task: Task) => void;
-  onNewProjectClick: () => void;
-  onTeamClick: () => void;
+    tasks: Task[];
+    setTasks: (tasks: Task[]) => void;
+    project: Project;
+    onTaskClick: (task: Task) => void;
+    onAddTaskClick: () => void;
+    onAddCategoryClick: () => void;
+    onProjectUpdate: (project: Project) => void;
+    onReorderTasks: (reorderedTasks: Task[]) => void;
+    onTaskUpdate: (task: Task) => void;
+    onNewProjectClick: () => void;
+    onTeamClick: () => void;
 };
 
-
-const ROW_HEIGHT = 40; // height of a task row in pixels
-const BAR_HEIGHT = 28; // height of a task bar
-const CATEGORY_BAR_HEIGHT = 14;
-const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
-const MONTH_ROW_HEIGHT = 48;
-const DAY_ROW_HEIGHT = 48;
-const HEADER_HEIGHT = MONTH_ROW_HEIGHT + DAY_ROW_HEIGHT;
-
-function hexToRgba(hex: string, alpha: number) {
-    let r = 0, g = 0, b = 0;
-    // 3 digits
-    if (hex.length === 4) {
-        r = parseInt(hex[1] + hex[1], 16);
-        g = parseInt(hex[2] + hex[2], 16);
-        b = parseInt(hex[3] + hex[3], 16);
-    } 
-    // 6 digits
-    else if (hex.length === 7) {
-        r = parseInt(hex.slice(1, 3), 16);
-        g = parseInt(hex.slice(3, 5), 16);
-        b = parseInt(hex.slice(5, 7), 16);
-    }
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -91,12 +56,6 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     toX: number;
     toY: number;
   }>({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
-  
-  const [panState, setPanState] = useState<{
-    isPanning: boolean;
-    startX: number;
-    startScrollLeft: number;
-  }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
   const dragging = dragState.id !== null;
 
@@ -123,7 +82,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     const topLevelTasks = sortedTasks.filter(t => !t.parentId || !taskMap.has(t.parentId));
 
     const addTaskRecursive = (task: Task, level: number) => {
-        flatList.push({ ...task, milestone: `${level}` }); // Using milestone to store level for indentation
+        flatList.push({ ...task, milestone: `${level}` }); 
         if (task.type === 'category' && task.isExpanded) {
             const children = (taskToChildren.get(task.id) || []).sort((a,b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0));
             children.forEach(child => addTaskRecursive(child, level + 1));
@@ -263,14 +222,12 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
 
   const pxPerDay = dayWidth;
 
-  // Gap-aware FS router: S (tight), 90° (≈1 cell), gentle diagonal (wide)
   const routeFS = (sx: number, sy: number, tx: number, ty: number) => {
-    const gap = tx - sx;                 // px between bar edges
-    const cell = pxPerDay;               // px per day cell
-    const EPS = 2;                       // rounding tolerance
+    const gap = tx - sx;                 
+    const cell = pxPerDay;              
+    const EPS = 2;                       
     const dir = ty >= sy ? 1 : -1;
 
-    // helper: smooth cubic connector
     const cubic = (strength = 0.45) => {
       const dx = Math.max(gap, 0);
       const lead = Math.max(8, Math.min(cell / 2, dx * strength));
@@ -311,7 +268,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   }, [tasks]);
 
   const minStartAllowed = (task: Task) => {
-    if (!task.dependencies.length) return null; // No dependencies, no minimum start
+    if (!task.dependencies.length) return null;
     const latestPredEnd = new Date(Math.max(...task.dependencies
       .map(id => tasks.find(t => t.id === id))
       .filter((t): t is Task => !!t && !!t.end)!.map(t => startOfDay((t as Task).end!).getTime())));
@@ -443,7 +400,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
       const pos = taskPositions.get(task.id);
       if (!pos) continue;
       const cx = pos.x;
-      const cy = pos.y + BAR_TOP_MARGIN + BAR_HEIGHT/2;
+      const cy = pos.y + (ROW_HEIGHT - BAR_HEIGHT) / 2 + BAR_HEIGHT/2;
       const dx = x - cx, dy = y - cy;
       if ((dx*dx + dy*dy) <= R*R) return { taskId: task.id, cx, cy };
     }
@@ -576,8 +533,8 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     const task = tasks.find(t => t.id === id);
     const isCategory = task?.type === 'category';
 
-    const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
-    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) / 2 : BAR_TOP_MARGIN;
+    const barHeight = isCategory ? 14 : BAR_HEIGHT;
+    const topMargin = isCategory ? (ROW_HEIGHT - 14) / 2 : (ROW_HEIGHT - BAR_HEIGHT) / 2;
     const cy = p.y + topMargin + barHeight / 2;
 
     return { left, right: left + width, cy };
@@ -606,36 +563,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
         scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id]);
-  
-    const handlePanStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!timelineRef.current) return;
-    if ((e.target as HTMLElement).closest('[data-task-bar="true"]')) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    document.body.style.cursor = 'grabbing';
-    setPanState({
-      isPanning: true,
-      startX: e.clientX,
-      startScrollLeft: timelineRef.current.scrollLeft,
-    });
-  };
-
-  const handlePanMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!panState.isPanning || !timelineRef.current) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const x = e.clientX;
-    const walk = (x - panState.startX);
-    timelineRef.current.scrollLeft = panState.startScrollLeft - walk;
-  };
-
-  const handlePanEnd = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!panState.isPanning) return;
-    document.body.style.cursor = 'default';
-    setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
-  };
+  }, [project.id, dateToX, dayWidth, totalDays]);
   
   const toggleCategory = (categoryId: string) => {
     setTasks(tasks.map(t => 
@@ -670,355 +598,43 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
-            <div className="col-span-4 border-r overflow-y-auto shadow-md z-20">
-              <div
-                style={{ height: `${HEADER_HEIGHT}px` }}
-                className="sticky top-0 bg-background z-40 flex flex-col border-b"
-              >
-                <div style={{ height: `${MONTH_ROW_HEIGHT}px` }} className="flex items-center justify-between p-4 border-b">
-                  <span className="font-semibold text-sm">Tasks</span>
-                   <div className="flex items-center gap-1">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAddTaskClick}>
-                            <CirclePlus className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>New Task</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAddCategoryClick}>
-                            <FolderPlus className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>New Category</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}}>
-                            <DiamondPlus className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>New Milestone</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-                <div style={{ height: `${DAY_ROW_HEIGHT}px`}} className="grid grid-cols-5 items-center text-xs font-medium text-muted-foreground">
-                    <div className="col-span-1 text-center border-r h-full flex items-center justify-center">ID</div>
-                    <div className="col-span-4 text-center h-full flex items-center justify-center">Name</div>
-                </div>
-              </div>
-              <div className='relative'>
-                {displayTasks.map((task) => {
-                  const level = parseInt(task.milestone || '0', 10);
-                  const isCategory = task.type === 'category';
-                  let taskIndex = -1;
-                  if (!isCategory) {
-                      taskIndex = justTasks.findIndex(t => t.id === task.id);
-                  }
-                  return (
-                    <div 
-                      key={task.id} 
-                      style={{height: `${ROW_HEIGHT}px`}} 
-                      className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center border-b"
-                    >
-                      <div 
-                        className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
-                        onClick={(e) => {
-                            if(isCategory) {
-                                e.stopPropagation();
-                                toggleCategory(task.id);
-                            }
-                        }}
-                      >
-                          {isCategory ? (
-                            <div className="p-1">
-                                {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </div>
-                          ) : (
-                            taskIndex > -1 ? taskIndex + 1 : ''
-                          )}
-                      </div>
-                      <div 
-                        className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
-                        style={{ paddingLeft: `${(level * 1.5) + 0.5}rem`}}
-                        onClick={() => onTaskClick(task)}
-                      >
-                        {isCategory ? (
-                            <span 
-                                className="px-2 py-0.5 rounded-md font-semibold"
-                                style={{
-                                    color: task.color || 'hsl(var(--foreground))',
-                                    backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
-                                }}
-                            >
-                                {task.name}
-                            </span>
-                        ) : (
-                           <>
-                              <CornerDownRight className="h-4 w-4" style={{ color: getTaskColor(task) }} />
-                              <span className="truncate flex-1">{task.name}</span>
-                           </>
-                        )}
-
-                        <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div ref={timelineRef} className="col-span-8 overflow-auto">
-              <div 
-                  className={cn(
-                    "relative",
-                    panState.isPanning && "cursor-grabbing"
-                  )}
-                  onPointerDown={handlePanStart}
-                  onPointerMove={handlePanMove}
-                  onPointerUp={handlePanEnd}
-                  onPointerLeave={handlePanEnd}
-                  onPointerCancel={handlePanEnd}
-              >
-                 <div
-                  style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
-                  className="sticky top-0 bg-background z-40 border-b"
-                >
-                  <div className="border-b">
-                    <div className="flex border-b" style={{ height: `${MONTH_ROW_HEIGHT}px` }}>
-                        {headerGroups.map((group, index) => (
-                            <div key={index} className="text-center font-semibold text-sm flex items-center justify-center border-r" style={{ width: `${group.days * dayWidth}px`}}>
-                                <span className="truncate px-2">{group.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="grid" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`, height: `${DAY_ROW_HEIGHT}px` }}>
-                        {timeline.map(day => {
-                            const weekend = isWeekend(day);
-                            const today = isToday(day);
-                            return (
-                              <div key={day.toString()} className={cn(
-                                "text-center text-xs border-r relative flex flex-col justify-center",
-                                weekend && "bg-zinc-100 dark:bg-zinc-900/40",
-                                today && "bg-primary text-primary-foreground font-bold"
-                              )}>
-                                <div>{format(day, 'dd')}</div>
-                                <div className={cn(today ? "text-primary-foreground" : "text-muted-foreground")}>{format(day, 'E')}</div>
-                              </div>
-                            );
-                        })}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ width: `${totalDays * dayWidth}px`, height: `${displayTasks.length * ROW_HEIGHT}px` }} className="relative">
-                  <div className="absolute top-0 left-0 w-full h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)` }}>
-                    {timeline.map((day, i) => (
-                      <div key={`bg-${i}`} className={cn("border-r h-full", isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40")}></div>
-                    ))}
-                  </div>
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    {displayTasks.map((_task, i) => (
-                      <div key={`row-bg-${i}`} className="border-b" style={{ height: `${ROW_HEIGHT}px` }}></div>
-                    ))}
-                  </div>
-                  
-                  <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-black dark:bg-slate-500 z-30"
-                      style={{ left: `${dateToX(new Date()) + dayWidth / 2}px` }}
-                  />
-
-                  <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-                    {tasks.map((task) => {
-                      if (task.type === 'category' || !task.start) return null;
-                      const toV = getVisualPos(task.id);
-                      if (!toV) return null;
-
-                      const deps = Array.from(new Set(task.dependencies.filter(d => d !== task.id)));
-
-                      return deps.map(depId => {
-                        const fromV = getVisualPos(depId);
-                        if (!fromV) return null;
-
-                        const sx = fromV.right;
-                        const sy = fromV.cy;
-                        const tx = toV.left;
-                        const ty = toV.cy;
-
-                        const d = routeFS(sx, sy, tx, ty);
-
-                        return (
-                          <g key={`${depId}-${task.id}`}>
-                            <path
-                              d={d}
-                              stroke="hsl(var(--muted-foreground))"
-                              strokeWidth="2"
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              vectorEffect="non-scaling-stroke"
-                              opacity="0.9"
-                            />
-                            <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
-                            <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
-                          </g>
-                        );
-                      });
-                    })}
-
-                    {linkDraft.fromTaskId && (() => {
-                      const fromPos = taskPositions.get(linkDraft.fromTaskId);
-                      if (!fromPos) return null;
-                      const fromV = getVisualPos(linkDraft.fromTaskId);
-                      if (!fromV) return null;
-                      const d = routeFS(fromV.right, fromV.cy, linkDraft.toX, linkDraft.toY);
-                      return (
-                        <g>
-                          <path d={d} stroke="hsl(var(--muted-foreground))" strokeWidth="2" fill="none"
-                            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity="0.6" />
-                          <circle cx={fromV.right} cy={fromV.cy} r={3.5} fill="hsl(var(--foreground))" />
-                        </g>
-                      );
-                    })()}
-                  </svg>
-                  
-                  {displayTasks.map((task, index) => {
-                    const pos = taskPositions.get(task.id);
-                    if(!pos) return null;
-
-                    const isDraggingThis = dragState.id === task.id && !resizeState.edge;
-                    const isResizingThis = resizeState.id === task.id;
-                    const vPos = getVisualPos(task.id);
-                    if(!vPos) return null;
-                    
-                    const isCategory = task.type === 'category';
-                    const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
-                    const topMargin = isCategory ? (ROW_HEIGHT - barHeight) / 2 : BAR_TOP_MARGIN;
-
-                    return (
-                        <TooltipProvider key={task.id} delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                data-task-bar="true"
-                                onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
-                                onPointerMove={(e) => {
-                                isResizingThis ? onResizeMove(e, task) : onBarPointerMove(e, task)
-                                }}
-                                onPointerUp={(e) => {
-                                isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
-                                }}
-                                onPointerCancel={(e) => {
-                                isResizingThis ? onResizeUp(e, task) : onBarPointerUp(e, task)
-                                }}
-                                onMouseEnter={() => setHoverTaskId(task.id)}
-                                onMouseLeave={() => setHoverTaskId(cur => cur === task.id ? null : cur)}
-                                onClick={() => handleBarClick(task)}
-                                className={cn(
-                                "absolute rounded-md hover:brightness-110 transition-all flex items-center px-2 overflow-hidden shadow z-20",
-                                isCategory ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-                                isDraggingThis && "opacity-90"
-                                )}
-                                style={{
-                                top: `${pos.y + topMargin}px`,
-                                left: `${vPos.left}px`,
-                                width: `${vPos.right - vPos.left}px`,
-                                height: `${barHeight}px`,
-                                willChange: "transform,width,left",
-                                backgroundColor: getTaskColor(task),
-                                }}
-                              >
-                               <div
-                                  className={cn(
-                                      "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
-                                      isCategory ? "bg-secondary-foreground" : "bg-primary-foreground"
-                                  )}
-                                />
-                                <span className={cn(
-                                  "relative text-xs font-medium truncate z-10",
-                                  isCategory ? "text-secondary-foreground" : "text-primary-foreground"
-                                )}>{task.name}</span>
-                                <div
-                                  className={cn(
-                                      "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
-                                      isCategory ? "bg-secondary-foreground" : "bg-primary-foreground"
-                                  )}
-                                />
-                                
-                                <div
-                                  className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
-                                  onPointerDown={(e)=>onLeftHandleDown(e, task)}
-                                />
-                                <div
-                                  className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
-                                  onPointerDown={(e)=>onRightHandleDown(e, task)}
-                                />
-
-                                  {!isCategory && (
-                                    <>
-                                      <div
-                                        className={cn("absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                      >
-                                        <div className="relative w-3 h-3">
-                                          <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
-                                        </div>
-                                      </div>
-                                      <div
-                                        className={cn("absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity", hoverTaskId === task.id ? "opacity-100" : "opacity-0")}
-                                        onMouseDown={(e) => {
-                                          e.stopPropagation();
-                                          const fromV = getVisualPos(task.id);
-                                          if (!fromV) return;
-                                          const sx = fromV.right;
-                                          const sy = fromV.cy;
-                                          const svg = (timelineRef.current!.querySelector('svg') as SVGSVGElement);
-                                          const rect = svg.getBoundingClientRect();
-                                          setLinkDraft({
-                                            fromTaskId: task.id,
-                                            fromX: sx,
-                                            fromY: sy,
-                                            toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
-                                            toY: e.clientY - rect.top
-                                          });
-
-                                        }}
-                                      >
-                                        <div className="relative w-3 h-3 cursor-crosshair">
-                                          <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
-                                        </div>
-                                      </div>
-                                    </>
-                                  )}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-card border">
-                              <p className="font-bold">{task.name}</p>
-                              {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
-                              {pos.s && pos.e && (
-                                <>
-                                  <p>Start: {format(pos.s, 'MMM d, yyyy')}</p>
-                                  <p>End: {format(pos.e, 'MMM d, yyyy')}</p>
-                                  <p>Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)</p>
-                                </>
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <TimelineTaskList 
+                displayTasks={displayTasks}
+                justTasks={justTasks}
+                onAddTaskClick={onAddTaskClick}
+                onAddCategoryClick={onAddCategoryClick}
+                toggleCategory={toggleCategory}
+                onTaskClick={onTaskClick}
+                getTaskColor={getTaskColor}
+            />
+            <TimelineCalendarView 
+                timeline={timeline}
+                totalDays={totalDays}
+                dayWidth={dayWidth}
+                headerGroups={headerGroups}
+                displayTasks={displayTasks}
+                tasks={tasks}
+                taskPositions={taskPositions}
+                linkDraft={linkDraft}
+                onBarPointerDown={onBarPointerDown}
+                onBarPointerMove={onBarPointerMove}
+                onBarPointerUp={onBarPointerUp}
+                onResizeMove={onResizeMove}
+                onResizeUp={onResizeUp}
+                handleBarClick={handleBarClick}
+                onLeftHandleDown={onLeftHandleDown}
+                onRightHandleDown={onRightHandleDown}
+                setHoverTaskId={setHoverTaskId}
+                getVisualPos={getVisualPos}
+                getTaskColor={getTaskColor}
+                dateToX={dateToX}
+                routeFS={routeFS}
+                setLinkDraft={setLinkDraft}
+                hoverTaskId={hoverTaskId}
+                isResizingThis={(task: Task) => resizeState.id === task.id}
+                isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                timelineRef={timelineRef}
+            />
           </div>
         ) : (
           <ListView tasks={tasks} onTaskClick={onTaskClick} />
@@ -1027,7 +643,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
-
-    
 
     
