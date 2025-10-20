@@ -122,11 +122,11 @@ export function TimelineTaskList({
             <div
               key={task.id}
               style={{ height: `${ROW_HEIGHT}px` }}
-              className="group w-full text-sm hover:bg-secondary flex items-center border-b"
+              className="group w-full text-sm flex items-center border-b"
             >
               <div
                 style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
-                className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
+                className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer hover:bg-secondary"
                 onClick={(e) => {
                   if (isCategory) {
                     e.stopPropagation();
@@ -150,7 +150,7 @@ export function TimelineTaskList({
               </div>
               <div
                 className={cn(
-                  "flex-grow h-full cursor-pointer pr-2",
+                  "flex-grow h-full cursor-pointer pr-2 group-hover:bg-secondary",
                   isCategory ? "pl-2" : "pl-0"
                 )}
                 onClick={() => onTaskClick(task)}
