@@ -13,7 +13,7 @@ export const isWeekend = (d: Date) => {
 
 export const ROW_HEIGHT = 40; // height of a task row in pixels
 export const BAR_HEIGHT = 28; // height of a task bar
-export const CATEGORY_BAR_HEIGHT = 14;
+export const CATEGORY_BAR_HEIGHT = 28;
 export const BAR_TOP_MARGIN = (ROW_HEIGHT - BAR_HEIGHT) / 2;
 export const MONTH_ROW_HEIGHT = 48;
 export const DAY_ROW_HEIGHT = 48;

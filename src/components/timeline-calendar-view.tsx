@@ -15,6 +15,7 @@ import {
   BAR_HEIGHT,
   BAR_TOP_MARGIN,
   CATEGORY_BAR_HEIGHT,
+  hexToRgba,
 } from "@/lib/utils";
 import { Task } from "@/types";
 import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
@@ -307,6 +308,15 @@ export function TimelineCalendarView({
             const topMargin = isCategory
               ? (ROW_HEIGHT - barHeight) / 2
               : BAR_TOP_MARGIN;
+            
+            const categoryStyle = isCategory && task.color ? {
+                backgroundColor: hexToRgba(task.color, 0.15),
+                color: task.color,
+            } : {
+                backgroundColor: getTaskColor(task),
+                color: isCategory ? 'hsl(var(--secondary-foreground))' : 'hsl(var(--primary-foreground))'
+            };
+
 
             return (
               <TooltipProvider key={task.id} delayDuration={100}>
@@ -348,35 +358,29 @@ export function TimelineCalendarView({
                         width: `${vPos.right - vPos.left}px`,
                         height: `${barHeight}px`,
                         willChange: "transform,width,left",
-                        backgroundColor: getTaskColor(task),
+                        ...categoryStyle,
                       }}
                     >
-                      <div
+                      {!isCategory && <div
                         className={cn(
                           "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
-                          isCategory
-                            ? "bg-secondary-foreground"
-                            : "bg-primary-foreground"
+                          "bg-primary-foreground"
                         )}
-                      />
+                      />}
                       <span
                         className={cn(
-                          "relative text-xs font-medium truncate z-10",
-                          isCategory
-                            ? "text-secondary-foreground"
-                            : "text-primary-foreground"
+                          "relative text-xs font-semibold truncate z-10",
+                          isCategory && 'font-semibold'
                         )}
                       >
                         {task.name}
                       </span>
-                      <div
+                      {!isCategory && <div
                         className={cn(
                           "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
-                          isCategory
-                            ? "bg-secondary-foreground"
-                            : "bg-primary-foreground"
+                          "bg-primary-foreground"
                         )}
-                      />
+                      />}
 
                       <div
                         className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
