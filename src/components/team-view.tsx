@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { TeamMember, Task } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserPlus, Edit, Trash2, Check } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Check, Search } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
 import { cn } from '@/lib/utils';
@@ -19,26 +19,33 @@ interface TeamViewProps {
 }
 
 export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamViewProps) {
-  const [newMemberName, setNewMemberName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(teamMembers[0] || null);
 
+  const filteredTeamMembers = useMemo(() => 
+    teamMembers.filter(member => 
+      member.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ), [teamMembers, searchTerm]);
+
   const handleAddMember = () => {
-    if (newMemberName.trim() === '') return;
+    if (searchTerm.trim() === '') return;
     const newMember: TeamMember = {
       id: `member-${Date.now()}`,
-      name: newMemberName.trim(),
+      name: searchTerm.trim(),
       photoURL: `https://i.pravatar.cc/150?u=${Date.now()}`
     };
     setTeamMembers([...teamMembers, newMember]);
-    setNewMemberName('');
+    setSearchTerm('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddMember();
+      if (filteredTeamMembers.length === 0 && searchTerm.trim() !== '') {
+        handleAddMember();
+      }
     }
   }
 
@@ -96,22 +103,26 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
     <div className="flex w-full h-full">
       <div className="w-[300px] border-r flex flex-col">
         <div className="p-4 border-b">
-            <div className="flex w-full items-center space-x-2">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
                     type="text" 
-                    placeholder="Add member by name..."
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="Search or add member..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    className="pl-8"
                 />
-                <Button type="button" onClick={handleAddMember} size="sm">
-                    <UserPlus className="h-4 w-4 mr-2" /> Add
-                </Button>
             </div>
+            {filteredTeamMembers.length === 0 && searchTerm.trim() !== '' && (
+              <Button type="button" onClick={handleAddMember} size="sm" className="w-full mt-2">
+                  <UserPlus className="h-4 w-4 mr-2" /> Add "{searchTerm}"
+              </Button>
+            )}
         </div>
         <ScrollArea className="flex-grow">
           <div className="space-y-1 p-2">
-            {teamMembers.map(member => (
+            {filteredTeamMembers.map(member => (
               <div 
                   key={member.id} 
                   className={cn("flex items-center justify-between p-2 rounded-md hover:bg-muted group cursor-pointer",
