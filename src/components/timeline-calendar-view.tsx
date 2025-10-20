@@ -170,18 +170,18 @@ isResizingThis,
           style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
           className="sticky top-0 bg-background z-40"
         >
+          <Button
+              data-today-button
+              onClick={onTodayClick}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 py-1 h-auto"
+              style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px)`}}
+          >
+            Today
+          </Button>
           <div className="relative h-full" ref={monthLabelsContainerRef}>
-             <Button
-                data-today-button
-                onClick={onTodayClick}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 py-1 h-auto"
-                style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px)`}}
-            >
-              Today
-            </Button>
             <div
               className="flex relative border-b"
-              style={{ height: `${MONTH_ROW_HEIGHT}px` }}
+              style={{ height: `${MONTH_ROW_HEIGHT}px`, paddingLeft: "100px" }}
             >
               {headerGroups.map((group, index) => {
                 const groupStartX = dateToX(group.startDay);
@@ -205,7 +205,7 @@ isResizingThis,
               })}
             </div>
             <div
-              className="grid"
+              className="grid border-b"
               style={{
                 gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`,
                 height: `${DAY_ROW_HEIGHT}px`,
@@ -218,7 +218,7 @@ isResizingThis,
                   <div
                     key={day.toString()}
                     className={cn(
-                      "text-center text-xs border-r border-b relative flex flex-col justify-center",
+                      "text-center text-xs border-r relative flex flex-col justify-center",
                       weekend && "bg-zinc-100 dark:bg-zinc-900/40",
                       today && "bg-primary text-primary-foreground font-bold"
                     )}
@@ -527,17 +527,3 @@ isResizingThis,
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-    
