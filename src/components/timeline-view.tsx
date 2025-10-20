@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, CornerDownRight, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, CornerDownRight, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart, GanttChartSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -750,7 +750,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       </div>
                       <div 
                         className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
-                        style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}
+                        style={{ paddingLeft: `${(level * 1.5) + (isCategory ? 0.5 : 0)}rem`}}
                         onClick={() => onTaskClick(task)}
                       >
                         {isCategory ? (
