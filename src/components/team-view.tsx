@@ -10,6 +10,7 @@ import { UserPlus, Edit, Trash2, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent } from './ui/dialog';
 
 interface TeamViewProps {
   teamMembers: TeamMember[];
@@ -73,7 +74,8 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
     e.stopPropagation();
     setTeamMembers(teamMembers.filter(m => m.id !== memberId));
     if (selectedMember?.id === memberId) {
-      setSelectedMember(teamMembers[0] || null);
+      const newSelectedMember = teamMembers.filter(m => m.id !== memberId)[0] || null;
+      setSelectedMember(newSelectedMember);
     }
   }
 

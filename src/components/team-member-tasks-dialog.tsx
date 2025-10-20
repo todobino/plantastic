@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 type TeamMemberTasksDialogProps = {
   member: TeamMember;
@@ -26,11 +27,11 @@ export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasks
   }
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{member.name}'s Tasks</DialogTitle>
-      </DialogHeader>
-      <DialogBody>
+    <Card>
+      <CardHeader>
+        <CardTitle>{member.name}'s Tasks</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="border rounded-md">
           <Table>
             <TableHeader>
@@ -64,7 +65,7 @@ export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasks
             </TableBody>
           </Table>
         </div>
-      </DialogBody>
-    </>
+      </CardContent>
+    </Card>
   );
 }
