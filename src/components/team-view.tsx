@@ -77,8 +77,10 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
     }
   }
   
-  const handleDeleteMember = (e: React.MouseEvent, memberId: string) => {
+  const handleDeleteMember = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!selectedMember) return;
+    const memberId = selectedMember.id;
     setTeamMembers(teamMembers.filter(m => m.id !== memberId));
     if (selectedMember?.id === memberId) {
       const newSelectedMember = teamMembers.filter(m => m.id !== memberId)[0] || null;
@@ -161,9 +163,6 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
                           </Button>
 
                      )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => handleDeleteMember(e, member.id)}>
-                          <Trash2 className="h-4 w-4" />
-                      </Button>
                   </div>
               </div>
             ))}
@@ -175,6 +174,7 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
           <TeamMemberTasksDialog 
             member={selectedMember} 
             tasks={tasks.filter(t => t.assigneeId === selectedMember.id)}
+            onDelete={handleDeleteMember}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

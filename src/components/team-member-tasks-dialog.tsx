@@ -2,6 +2,7 @@
 'use client';
 
 import type { TeamMember, Task } from '@/types';
+import { Button } from './ui/button';
 import { DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +10,15 @@ import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Trash2 } from 'lucide-react';
 
 type TeamMemberTasksDialogProps = {
   member: TeamMember;
   tasks: Task[];
+  onDelete: (e: React.MouseEvent) => void;
 };
 
-export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasksDialogProps) {
+export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamMemberTasksDialogProps) {
 
   const getPriorityBadgeVariant = (priority: Task['priority']) => {
     switch (priority) {
@@ -28,8 +31,12 @@ export default function TeamMemberTasksDialog({ member, tasks }: TeamMemberTasks
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{member.name}'s Tasks</CardTitle>
+        <Button variant="destructive" size="sm" onClick={onDelete}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Member
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="border rounded-md">
