@@ -55,7 +55,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
         <div className="border rounded-md">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-[40%] border-r">Task</TableHead>
                 <TableHead className="border-r">Due Date</TableHead>
                 <TableHead className="border-r">Priority</TableHead>
