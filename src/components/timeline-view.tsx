@@ -750,7 +750,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       </div>
                       <div 
                         className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
-                        style={{ paddingLeft: `${(level * 1) + (isCategory ? 0.5 : 2)}rem`}}
+                        style={{ paddingLeft: `${(level * 1.5) + 0.5}rem`}}
                         onClick={() => onTaskClick(task)}
                       >
                         {isCategory ? (
