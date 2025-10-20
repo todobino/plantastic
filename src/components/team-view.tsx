@@ -186,6 +186,7 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks, onTaskUpd
           <TeamMemberTasksDialog 
             member={selectedMember} 
             tasks={tasks.filter(t => t.assigneeId === selectedMember.id)}
+            allTasks={tasks}
             onDelete={handleDeleteMember}
             teamMembers={teamMembers}
             onTaskUpdate={onTaskUpdate}
