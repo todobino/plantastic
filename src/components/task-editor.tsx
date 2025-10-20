@@ -248,6 +248,48 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </div>
 
                 <div className="space-y-4 md:col-span-1">
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="start"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col gap-2">
+                            <FormLabel>Start Date</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={(date) => date && handleStartDateChange(date)} initialFocus />
+                                </PopoverContent>
+                                </Popover>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormItem className="flex flex-col gap-2">
+                            <FormLabel>Duration (days)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                type="number" 
+                                min="1" 
+                                value={duration}
+                                onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
+                                />
+                            </FormControl>
+                        </FormItem>
+                    </div>
                     <FormField
                         control={form.control}
                         name="assigneeId"
@@ -296,53 +338,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             </FormItem>
                         )}
                         />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                        control={form.control}
-                        name="start"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col gap-2">
-                            <FormLabel>Start Date</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                        "w-full pl-3 text-left font-normal",
-                                        !field.value && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {field.value ? format(field.value, "MMM d, yyyy") : <span>Pick a date</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={(date) => date && handleStartDateChange(date)} initialFocus />
-                                </PopoverContent>
-                                </Popover>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormItem className="flex flex-col gap-2">
-                            <FormLabel>Duration (days)</FormLabel>
-                            <FormControl>
-                                <Input 
-                                type="number" 
-                                min="1" 
-                                value={duration}
-                                onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
-                                />
-                            </FormControl>
-                        </FormItem>
-                    </div>
-
-                </div>
-
-                <div className="md:col-span-2 space-y-4">
                      <FormField
                         control={form.control}
                         name="parentId"
@@ -370,7 +365,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             </FormItem>
                         )}
                         />
+                </div>
 
+                <div className="md:col-span-2 space-y-4">
                     <FormField
                         control={form.control}
                         name="progress"
@@ -408,5 +405,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
+    
 
     
