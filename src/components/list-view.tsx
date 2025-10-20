@@ -46,7 +46,6 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
           <TableRow>
             <TableHead className="w-[50px] border-r">#</TableHead>
             <TableHead className="w-[40%] border-r">Task Name</TableHead>
-            <TableHead className="border-r">Category</TableHead>
             <TableHead className="border-r">Start Date</TableHead>
             <TableHead className="border-r">End Date</TableHead>
             <TableHead className="border-r">Duration</TableHead>
@@ -58,17 +57,15 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
             <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
               <TableCell className="border-r">{index + 1}</TableCell>
               <TableCell className="font-medium border-r">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                   <span>{task.name}</span>
+                  {task.category && (
+                      <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                          <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
+                          {task.category.name}
+                      </div>
+                  )}
                 </div>
-              </TableCell>
-              <TableCell className="border-r">
-                {task.category && (
-                    <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
-                        {task.category.name}
-                    </div>
-                )}
               </TableCell>
               <TableCell className="border-r">{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
               <TableCell className="border-r">{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
@@ -99,3 +96,4 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
 }
 
     
+
