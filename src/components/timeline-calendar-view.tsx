@@ -58,7 +58,6 @@ type TimelineCalendarViewProps = {
   isResizingThis: (task: Task) => boolean;
   isDraggingThis: (task: Task) => boolean;
   timelineRef: React.RefObject<HTMLDivElement>;
-  onTodayClick: () => void;
 };
 
 export function TimelineCalendarView({
@@ -88,7 +87,6 @@ export function TimelineCalendarView({
   isResizingThis,
   isDraggingThis,
   timelineRef,
-  onTodayClick,
 }: TimelineCalendarViewProps) {
   const [panState, setPanState] = useState<{
     isPanning: boolean;
@@ -140,9 +138,6 @@ export function TimelineCalendarView({
           className="sticky top-0 bg-background z-40 border-b"
         >
           <div className="border-b relative">
-             <Button variant="secondary" onClick={onTodayClick} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-8">
-              Today
-            </Button>
             <div
               className="flex border-b"
               style={{ height: `${MONTH_ROW_HEIGHT}px` }}

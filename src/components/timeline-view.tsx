@@ -8,6 +8,8 @@ import AppHeader from "./app-header";
 import { TimelineTaskList } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
 import { ListView } from './list-view';
+import { Button } from './ui/button';
+import { MONTH_ROW_HEIGHT } from '@/lib/utils';
 
 
 const ROW_HEIGHT = 40; 
@@ -594,48 +596,57 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         onTeamClick={onTeamClick}
         onNewProjectClick={onNewProjectClick}
       />
-      <div className="flex-grow flex overflow-hidden">
+      <div className="flex-grow flex overflow-hidden relative">
         {view === 'timeline' ? (
-          <div className="grid grid-cols-12 w-full h-full">
-            <TimelineTaskList 
-                displayTasks={displayTasks}
-                justTasks={justTasks}
-                onAddTaskClick={onAddTaskClick}
-                onAddCategoryClick={onAddCategoryClick}
-                toggleCategory={toggleCategory}
-                onTaskClick={onTaskClick}
-                getTaskColor={getTaskColor}
-            />
-            <TimelineCalendarView 
-                timeline={timeline}
-                totalDays={totalDays}
-                dayWidth={dayWidth}
-                headerGroups={headerGroups}
-                displayTasks={displayTasks}
-                tasks={tasks}
-                taskPositions={taskPositions}
-                linkDraft={linkDraft}
-                onBarPointerDown={onBarPointerDown}
-                onBarPointerMove={onBarPointerMove}
-                onBarPointerUp={onBarPointerUp}
-                onResizeMove={onResizeMove}
-                onResizeUp={onResizeUp}
-                handleBarClick={handleBarClick}
-                onLeftHandleDown={onLeftHandleDown}
-                onRightHandleDown={onRightHandleDown}
-                setHoverTaskId={setHoverTaskId}
-                getVisualPos={getVisualPos}
-                getTaskColor={getTaskColor}
-                dateToX={dateToX}
-                routeFS={routeFS}
-                setLinkDraft={setLinkDraft}
-                hoverTaskId={hoverTaskId}
-                isResizingThis={(task: Task) => resizeState.id === task.id}
-                isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
-                timelineRef={timelineRef}
-                onTodayClick={handleTodayClick}
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-12 w-full h-full">
+                <TimelineTaskList 
+                    displayTasks={displayTasks}
+                    justTasks={justTasks}
+                    onAddTaskClick={onAddTaskClick}
+                    onAddCategoryClick={onAddCategoryClick}
+                    toggleCategory={toggleCategory}
+                    onTaskClick={onTaskClick}
+                    getTaskColor={getTaskColor}
+                />
+                <TimelineCalendarView 
+                    timeline={timeline}
+                    totalDays={totalDays}
+                    dayWidth={dayWidth}
+                    headerGroups={headerGroups}
+                    displayTasks={displayTasks}
+                    tasks={tasks}
+                    taskPositions={taskPositions}
+                    linkDraft={linkDraft}
+                    onBarPointerDown={onBarPointerDown}
+                    onBarPointerMove={onBarPointerMove}
+                    onBarPointerUp={onBarPointerUp}
+                    onResizeMove={onResizeMove}
+                    onResizeUp={onResizeUp}
+                    handleBarClick={handleBarClick}
+                    onLeftHandleDown={onLeftHandleDown}
+                    onRightHandleDown={onRightHandleDown}
+                    setHoverTaskId={setHoverTaskId}
+                    getVisualPos={getVisualPos}
+                    getTaskColor={getTaskColor}
+                    dateToX={dateToX}
+                    routeFS={routeFS}
+                    setLinkDraft={setLinkDraft}
+                    hoverTaskId={hoverTaskId}
+                    isResizingThis={(task: Task) => resizeState.id === task.id}
+                    isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                    timelineRef={timelineRef}
+                />
+            </div>
+            <Button
+                variant="secondary"
+                onClick={handleTodayClick}
+                className="absolute left-[calc(25%+1rem)] top-2.5 z-50"
+                style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 1rem)`}}
+            >
+              Today
+            </Button>
+          </>
         ) : (
           <ListView tasks={tasks} onTaskClick={onTaskClick} />
         )}
@@ -643,5 +654,3 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
-
-    
