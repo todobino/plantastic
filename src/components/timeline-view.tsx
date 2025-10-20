@@ -38,6 +38,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
+  const wasResizedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list' | 'team'>('timeline');
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
@@ -202,14 +203,12 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         let currentMonth = -1;
 
         timeline.forEach((day, i) => {
-            const month = day.getMonth();
-            if (month !== currentMonth) {
-                currentMonth = month;
+            if (day.getMonth() !== currentMonth) {
+                currentMonth = day.getMonth();
                 const monthStart = startOfMonth(day);
                 
-                // Find the actual end of this month in the timeline
                 let monthEndInTimeline = endOfMonth(day);
-                if (endOfMonth(day) > viewEndDate) {
+                if (monthEndInTimeline > viewEndDate) {
                     monthEndInTimeline = viewEndDate;
                 }
 
@@ -323,6 +322,12 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
   
   const onBarPointerUp = (e: React.PointerEvent<HTMLDivElement>, task: Task) => {
+    const isResizing = !!resizeState.id;
+    if (isResizing) {
+      onResizeUp(e, task);
+      return;
+    }
+    
     if (dragState.id !== task.id) return;
     (e.target as Element).releasePointerCapture(e.pointerId);
     document.body.style.userSelect = '';
@@ -346,15 +351,17 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
   
   const handleBarClick = (task: Task) => {
-    if (!wasDraggedRef.current) {
+    if (!wasDraggedRef.current && !wasResizedRef.current) {
         if(task.id === 'placeholder') return;
         onTaskClick(task);
     }
+    wasResizedRef.current = false;
   }
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
     if(task.type === 'category' || task.id === 'placeholder') return;
+    wasResizedRef.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'left', startX: e.clientX });
@@ -363,6 +370,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const onRightHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
     if(task.type === 'category' || task.id === 'placeholder') return;
+    wasResizedRef.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'right', startX: e.clientX });
@@ -403,6 +411,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
     setResizeState({ id: null, edge: null, startX: 0 });
     setDragState(s => ({ s, previewDeltaPx: 0 }));
+    setTimeout(() => { wasResizedRef.current = false; }, 0);
   };
 
   const previewOffsets = useMemo(() => {
