@@ -2,7 +2,7 @@
 'use client';
 
 import type { Task } from '@/types';
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -14,8 +14,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CornerDownRight } from 'lucide-react';
-
 
 type ListViewProps = {
   tasks: Task[];
@@ -46,26 +44,25 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]">#</TableHead>
-            <TableHead className="w-[40%]">Task Name</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Start Date</TableHead>
-            <TableHead>End Date</TableHead>
-            <TableHead>Duration</TableHead>
+            <TableHead className="w-[50px] border-r">#</TableHead>
+            <TableHead className="w-[40%] border-r">Task Name</TableHead>
+            <TableHead className="border-r">Category</TableHead>
+            <TableHead className="border-r">Start Date</TableHead>
+            <TableHead className="border-r">End Date</TableHead>
+            <TableHead className="border-r">Duration</TableHead>
             <TableHead>Dependencies</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {listedTasks.map((task, index) => (
             <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
-              <TableCell>{index + 1}</TableCell>
-              <TableCell className="font-medium">
+              <TableCell className="border-r">{index + 1}</TableCell>
+              <TableCell className="font-medium border-r">
                 <div className="flex items-center gap-2">
-                  <CornerDownRight className="h-4 w-4" style={{ color: task.category?.color || 'hsl(var(--primary))' }} />
                   <span>{task.name}</span>
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="border-r">
                 {task.category && (
                     <div className="flex items-center gap-2">
                         <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
@@ -73,9 +70,9 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
                     </div>
                 )}
               </TableCell>
-              <TableCell>{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell>
+              <TableCell className="border-r">{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r">{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r">
                 {task.start && task.end 
                   ? `${differenceInDays(task.end, task.start) + 1} day(s)`
                   : '-'
