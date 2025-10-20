@@ -347,7 +347,6 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <Select 
                                 onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
                                 value={field.value || 'none'}
-                                defaultValue={field.value || 'none'}
                                 >
                                 <FormControl>
                                 <SelectTrigger>
