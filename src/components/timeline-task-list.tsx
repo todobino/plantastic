@@ -100,12 +100,12 @@ export function TimelineTaskList({
         </div>
         <div
           style={{ height: `${DAY_ROW_HEIGHT}px` }}
-          className="grid grid-cols-5 items-center text-xs font-medium text-muted-foreground"
+          className="flex items-center text-xs font-medium text-muted-foreground"
         >
-          <div className="col-span-1 text-center border-r h-full flex items-center justify-center">
+          <div style={{width: `${ROW_HEIGHT}px`, height: `${DAY_ROW_HEIGHT}px`}} className="flex-shrink-0 text-center border-r h-full flex items-center justify-center">
             ID
           </div>
-          <div className="col-span-4 text-center h-full flex items-center justify-center">
+          <div className="flex-grow text-center h-full flex items-center justify-center">
             Name
           </div>
         </div>
@@ -122,10 +122,11 @@ export function TimelineTaskList({
             <div
               key={task.id}
               style={{ height: `${ROW_HEIGHT}px` }}
-              className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center border-b"
+              className="group w-full text-sm hover:bg-secondary flex items-center border-b"
             >
               <div
-                className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
+                style={{width: `${ROW_HEIGHT}px`}}
+                className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
                 onClick={(e) => {
                   if (isCategory) {
                     e.stopPropagation();
@@ -148,7 +149,7 @@ export function TimelineTaskList({
                 )}
               </div>
               <div
-                className="col-span-4 flex items-center gap-2 cursor-pointer h-full"
+                className="flex-grow flex items-center gap-2 cursor-pointer h-full"
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
                 onClick={() => onTaskClick(task)}
               >
@@ -183,3 +184,4 @@ export function TimelineTaskList({
     </div>
   );
 }
+
