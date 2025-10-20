@@ -201,17 +201,24 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
         let currentMonth = -1;
 
-        timeline.forEach((day) => {
+        timeline.forEach((day, i) => {
             const month = day.getMonth();
             if (month !== currentMonth) {
                 currentMonth = month;
                 const monthStart = startOfMonth(day);
-                const monthEnd = endOfMonth(day);
-                const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+                
+                // Find the actual end of this month in the timeline
+                let monthEndInTimeline = endOfMonth(day);
+                if (endOfMonth(day) > viewEndDate) {
+                    monthEndInTimeline = viewEndDate;
+                }
+
+                const daysInGroup = differenceInDays(monthEndInTimeline, day) + 1;
+                
                 groups.push({
                     label: format(day, 'MMMM yyyy'),
-                    days: daysInMonth,
-                    startDay: monthStart
+                    days: daysInGroup,
+                    startDay: day
                 });
             }
         });
@@ -521,7 +528,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
         scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id, dateToX, dayWidth, totalDays]);
+  }, [project.id]);
   
   const toggleCategory = (categoryId: string) => {
     setTasks(tasks.map(t => 
