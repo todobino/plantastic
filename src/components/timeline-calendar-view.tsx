@@ -51,6 +51,8 @@ type TimelineCalendarViewProps = {
   onTodayClick: () => void;
   hoveredTaskId: string | null;
   setHoveredTaskId: (id: string | null) => void;
+  currentMonthLabel: string;
+  onScroll: (scrollLeft: number) => void;
 };
 
 export function TimelineCalendarView({
@@ -78,6 +80,8 @@ export function TimelineCalendarView({
   onTodayClick,
   hoveredTaskId,
   setHoveredTaskId,
+  currentMonthLabel,
+  onScroll,
 }: TimelineCalendarViewProps) {
   const [panState, setPanState] = useState<{
     isPanning: boolean;
@@ -85,61 +89,25 @@ export function TimelineCalendarView({
     startScrollLeft: number;
   }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
-  const monthLabelsContainerRef = useRef<HTMLDivElement>(null);
-  const scrollLeftRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
-  const monthLabelRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const [labelWidths, setLabelWidths] = useState<number[]>([]);
-
-  const CONTROL_RAIL = 112; // width of the left sticky rail (Today button + gutter)
-  const LABEL_GAP = 8; // small gap between rail and month label
   const dateToX = useCallback((d: Date) => {
-    // This function needs to be defined to be used in useEffect, if it's from props, ensure it's passed or defined here.
-    // For now, let's assume a placeholder definition if it's not passed as a prop
     const projectStart = new Date(Math.min(...tasks.map(t => t.start?.getTime() || Infinity)));
     return differenceInDays(startOfDay(d), startOfDay(projectStart)) * dayWidth;
   }, [tasks, dayWidth]);
-
-
-  useEffect(() => {
-    setLabelWidths(
-      headerGroups.map((_, i) => monthLabelRefs.current[i]?.offsetWidth ?? 80)
-    );
-  }, [headerGroups]);
 
   useEffect(() => {
     const scroller = timelineRef.current;
     if (!scroller) return;
 
-    const onScroll = () => {
-      scrollLeftRef.current = scroller.scrollLeft;
-      if (rafRef.current == null) {
-        rafRef.current = requestAnimationFrame(() => {
-          rafRef.current = null;
-          headerGroups.forEach((group, i) => {
-            const cellLeft = dateToX(group.startDay);
-            const cellWidth = group.days * dayWidth;
-            const labelEl = monthLabelRefs.current[i];
-            if (!labelEl) return;
-            const labelW = labelEl.offsetWidth || 80;
-            const raw = scrollLeftRef.current - cellLeft + CONTROL_RAIL + LABEL_GAP;
-            const clamped = Math.max(0, Math.min(raw, Math.max(0, cellWidth - labelW - LABEL_GAP)));
-            labelEl.style.transform = `translate3d(${clamped}px, -50%, 0)`; // -50% keeps vertical centering
-          });
-        });
-      }
+    const handleScroll = () => {
+      onScroll(scroller.scrollLeft);
     };
 
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    onScroll(); // initial call
+    scroller.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => {
-      scroller.removeEventListener("scroll", onScroll);
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      scroller.removeEventListener("scroll", handleScroll);
     };
-  }, [timelineRef, headerGroups, dayWidth, dateToX]);
-
+  }, [timelineRef, onScroll]);
 
   const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
@@ -183,7 +151,6 @@ export function TimelineCalendarView({
     return count;
   };
 
-
   return (
     <div ref={timelineRef} className="col-span-9 overflow-auto relative">
       <div
@@ -200,23 +167,25 @@ export function TimelineCalendarView({
             className="sticky top-0 bg-background z-40"
         >
             <div
-                className="sticky left-0 z-50"
-                style={{ width: CONTROL_RAIL, height: MONTH_ROW_HEIGHT }}
+                className="sticky left-0 top-0 z-50 flex items-center gap-2 px-4 bg-background"
+                style={{ width: 'fit-content', height: MONTH_ROW_HEIGHT }}
             >
                 <Button
                     data-today-button
                     onClick={onTodayClick}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 py-1 h-auto"
+                    className="py-1 h-auto"
                 >
                     Today
                 </Button>
+                <Button variant="secondary" className="py-1 h-auto font-semibold pointer-events-none">
+                    {currentMonthLabel}
+                </Button>
             </div>
 
-            <div className="relative h-full" style={{ paddingLeft: CONTROL_RAIL, marginTop: -MONTH_ROW_HEIGHT }}>
+            <div className="relative h-full" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
               <div
                 className="relative border-b"
                 style={{ height: `${MONTH_ROW_HEIGHT}px` }}
-                ref={monthLabelsContainerRef}
               >
               {headerGroups.map((group, index) => {
                   const groupStartX = dateToX(group.startDay);
@@ -230,20 +199,7 @@ export function TimelineCalendarView({
                           left: `${groupStartX}px`,
                           width: `${cellWidth}px`,
                       }}
-                    >
-                      <span
-                        ref={(el) => (monthLabelRefs.current[index] = el)}
-                        className="absolute top-1/2 truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm"
-                        style={{
-                          transform: 'translate3d(0,-50%,0)',
-                          willChange: 'transform',
-                          maxWidth: `${cellWidth - LABEL_GAP * 2}px`,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {group.label}
-                      </span>
-                    </div>
+                    />
                   )
               })}
             </div>

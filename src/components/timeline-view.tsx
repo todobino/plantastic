@@ -42,6 +42,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+  const [currentMonthLabel, setCurrentMonthLabel] = useState('');
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -579,6 +580,19 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     onQuickAddTask(categoryId, taskName, duration);
   };
 
+  const handleTimelineScroll = useCallback((scrollLeft: number) => {
+    const scroller = timelineRef.current;
+    if (!scroller) return;
+
+    const centerViewportX = scrollLeft + scroller.clientWidth / 2;
+    const centerDate = addDays(projectStart, centerViewportX / dayWidth);
+    const newLabel = format(centerDate, 'MMMM yyyy');
+
+    if (newLabel !== currentMonthLabel) {
+      setCurrentMonthLabel(newLabel);
+    }
+  }, [projectStart, dayWidth, currentMonthLabel]);
+
   const renderCurrentView = () => {
     switch (view) {
         case 'timeline':
@@ -622,6 +636,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             onTodayClick={handleTodayClick}
                             hoveredTaskId={hoveredTaskId}
                             setHoveredTaskId={setHoveredTaskId}
+                            currentMonthLabel={currentMonthLabel}
+                            onScroll={handleTimelineScroll}
                         />
                     </div>
                 </div>
