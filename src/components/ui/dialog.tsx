@@ -65,7 +65,7 @@ const DialogHeader = ({
     )}
     {...props}
   >
-    <div className="flex flex-col gap-y-1.5 text-center sm:text-left">
+    <div className="flex flex-col gap-y-1.5">
       {children}
     </div>
     <DialogPrimitive.Close className="rounded-md p-2 bg-muted text-muted-foreground hover:bg-muted/90 hover:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
