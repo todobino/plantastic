@@ -670,7 +670,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
       <div className="flex-grow flex overflow-hidden">
         {view === 'timeline' ? (
           <div className="grid grid-cols-12 w-full h-full">
-            <div className="col-span-3 border-r overflow-y-auto shadow-md z-20">
+            <div className="col-span-4 border-r overflow-y-auto shadow-md z-20">
               <div
                 style={{ height: `${HEADER_HEIGHT}px` }}
                 className="sticky top-0 bg-background z-40 flex flex-col border-b"
@@ -750,7 +750,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       </div>
                       <div 
                         className="col-span-4 flex items-center gap-2 cursor-pointer h-full" 
-                        style={{ paddingLeft: `${(level * 1.5) + (isCategory ? 0.5 : 0)}rem`}}
+                        style={{ paddingLeft: `${(level * 1) + (isCategory ? 0.5 : 2)}rem`}}
                         onClick={() => onTaskClick(task)}
                       >
                         {isCategory ? (
@@ -778,7 +778,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
               </div>
             </div>
 
-            <div ref={timelineRef} className="col-span-9 overflow-auto">
+            <div ref={timelineRef} className="col-span-8 overflow-auto">
               <div 
                   className={cn(
                     "relative",
@@ -1027,5 +1027,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
 
     
