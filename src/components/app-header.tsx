@@ -28,7 +28,7 @@ export default function AppHeader({
       <div className="flex items-center gap-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="group text-lg font-semibold font-headline">
+            <Button className="group text-lg font-semibold font-headline">
               {project.name}
             </Button>
           </SheetTrigger>
