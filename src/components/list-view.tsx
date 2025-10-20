@@ -73,16 +73,14 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick }: L
             <TableRow key={task.id} >
               <TableCell className="border-r" onClick={() => onTaskClick(task)}>{index + 1}</TableCell>
               <TableCell className="font-medium border-r align-top" onClick={() => onTaskClick(task)}>
-                <div>
-                  <div className="flex items-center gap-4">
-                    <span>{task.name}</span>
-                    {task.category && (
-                        <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-                            <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
-                            {task.category.name}
-                        </div>
-                    )}
-                  </div>
+                <div className="flex flex-col gap-1">
+                  {task.category && (
+                      <div className="flex items-center gap-2 text-xs font-normal text-muted-foreground">
+                          <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
+                          {task.category.name}
+                      </div>
+                  )}
+                  <span>{task.name}</span>
                   {task.description && (
                     <p className="text-xs text-muted-foreground truncate mt-1">
                       {task.description}
