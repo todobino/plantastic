@@ -263,7 +263,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
                 <DialogTrigger asChild>
                     <Button variant="secondary" className="w-full justify-start">
                     <UserCircle className="mr-2"/>
-                    Login
+                    Login/Sign Up
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
