@@ -168,9 +168,9 @@ isResizingThis,
       >
         <div
           style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
-          className="sticky top-0 bg-background z-40 border-b"
+          className="sticky top-0 bg-background z-40"
         >
-          <div className="border-b relative" ref={monthLabelsContainerRef}>
+          <div className="relative h-full" ref={monthLabelsContainerRef}>
              <Button
                 data-today-button
                 onClick={onTodayClick}
@@ -180,7 +180,7 @@ isResizingThis,
               Today
             </Button>
             <div
-              className="flex relative"
+              className="flex relative border-r"
               style={{ height: `${MONTH_ROW_HEIGHT}px` }}
             >
               {headerGroups.map((group, index) => {
@@ -197,7 +197,7 @@ isResizingThis,
                 return (
                   <div
                     key={index}
-                    className="font-semibold text-sm flex items-center justify-center absolute top-0 h-full border-r"
+                    className="font-semibold text-sm flex items-center h-full absolute top-0"
                     style={{
                         left: `${groupStartX}px`,
                         width: `${group.days * dayWidth}px`,
@@ -217,7 +217,7 @@ isResizingThis,
               })}
             </div>
             <div
-              className="grid"
+              className="grid border-t"
               style={{
                 gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`,
                 height: `${DAY_ROW_HEIGHT}px`,
@@ -543,6 +543,7 @@ isResizingThis,
     
 
     
+
 
 
 
