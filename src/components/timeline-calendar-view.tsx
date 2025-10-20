@@ -317,6 +317,8 @@ export function TimelineCalendarView({
 
             const vPos = getVisualPos(task.id);
             if (!vPos) return null;
+            
+            const isPlaceholder = task.id === 'placeholder';
 
             const isCategory = task.type === "category";
             const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
@@ -366,7 +368,8 @@ export function TimelineCalendarView({
                         isCategory
                           ? "cursor-default"
                           : "cursor-grab active:cursor-grabbing",
-                        isDraggingThis(task) && "opacity-90"
+                        isDraggingThis(task) && "opacity-90",
+                        isPlaceholder && "opacity-50 border-dashed border-2 border-muted-foreground bg-transparent"
                       )}
                       style={{
                         top: `${pos.y + topMargin}px`,
@@ -374,10 +377,10 @@ export function TimelineCalendarView({
                         width: `${vPos.right - vPos.left}px`,
                         height: `${barHeight}px`,
                         willChange: "transform,width,left",
-                        ...categoryStyle,
+                        ...(!isPlaceholder && categoryStyle),
                       }}
                     >
-                      {!isCategory && <div
+                      {!isCategory && !isPlaceholder && <div
                         className={cn(
                           "absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-bl-full rounded-tl-full",
                           "bg-primary-foreground"
@@ -386,28 +389,29 @@ export function TimelineCalendarView({
                       <span
                         className={cn(
                           "relative text-xs font-semibold truncate z-10",
-                          isCategory && 'font-semibold'
+                          isCategory && 'font-semibold',
+                          isPlaceholder && "text-muted-foreground"
                         )}
                       >
                         {task.name}
                       </span>
-                      {!isCategory && <div
+                      {!isCategory && !isPlaceholder && <div
                         className={cn(
                           "absolute -right-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-br-full rounded-tr-full",
                           "bg-primary-foreground"
                         )}
                       />}
 
-                      <div
+                      {!isPlaceholder && <div
                         className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
                         onPointerDown={(e) => onLeftHandleDown(e, task)}
-                      />
-                      <div
+                      />}
+                      {!isPlaceholder && <div
                         className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
                         onPointerDown={(e) => onRightHandleDown(e, task)}
-                      />
+                      />}
 
-                      {!isCategory && (
+                      {!isCategory && !isPlaceholder && (
                         <>
                           <div
                             className={cn(
@@ -485,5 +489,7 @@ export function TimelineCalendarView({
     </div>
   );
 }
+
+    
 
     

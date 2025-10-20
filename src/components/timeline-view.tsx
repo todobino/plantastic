@@ -4,7 +4,6 @@
 import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { ArrowDown } from 'lucide-react';
 import AppHeader from "./app-header";
 import { TimelineTaskList } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
@@ -38,6 +37,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   const wasDraggedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list'>('timeline');
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
+  const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -66,9 +66,10 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
 
   const displayTasks = useMemo(() => {
     const flatList: Task[] = [];
-    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const allTasks = placeholderTask ? [...tasks, placeholderTask] : tasks;
+    const taskMap = new Map(allTasks.map(t => [t.id, t]));
 
-    const sortedTasks = [...tasks].sort((a, b) => {
+    const sortedTasks = [...allTasks].sort((a, b) => {
         if (a.type === 'category' && b.type !== 'category') return -1;
         if (a.type !== 'category' && b.type === 'category') return 1;
         return (a.start?.getTime() || 0) - (b.start?.getTime() || 0);
@@ -96,7 +97,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
 
     topLevelTasks.forEach(task => addTaskRecursive(task, 0));
     return flatList;
-  }, [tasks]);
+  }, [tasks, placeholderTask]);
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -281,7 +282,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   };
     
   const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => {
-    if(task.type === 'category') return;
+    if(task.type === 'category' || task.id === 'placeholder') return;
     wasDraggedRef.current = false;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
@@ -342,13 +343,14 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   
   const handleBarClick = (task: Task) => {
     if (!wasDraggedRef.current) {
+        if(task.id === 'placeholder') return;
         onTaskClick(task);
     }
   }
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
-    if(task.type === 'category') return;
+    if(task.type === 'category' || task.id === 'placeholder') return;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'left', startX: e.clientX });
@@ -356,7 +358,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
 
   const onRightHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
-    if(task.type === 'category') return;
+    if(task.type === 'category' || task.id === 'placeholder') return;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
     setResizeState({ id: task.id, edge: 'right', startX: e.clientX });
@@ -535,7 +537,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
       }
     }
     
-    const task = tasks.find(t => t.id === id);
+    const task = displayTasks.find(t => t.id === id);
     const isCategory = task?.type === 'category';
 
     const barHeight = isCategory ? 14 : BAR_HEIGHT;
@@ -577,6 +579,9 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   }
   
   const getTaskColor = useCallback((task: Task) => {
+    if (task.id === 'placeholder') {
+        return 'hsl(var(--muted-foreground))';
+    }
     if (task.type === 'category') {
         return task.color || 'hsl(var(--secondary))';
     }
@@ -588,6 +593,36 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
   }, [tasks]);
 
   const justTasks = useMemo(() => displayTasks.filter(t => t.type === 'task'), [displayTasks]);
+  
+  const handleSetOpenQuickAddId = (id: string | null) => {
+    if (id) {
+        const categoryTasks = tasks.filter(t => t.parentId === id && t.type === 'task' && t.end);
+        const lastTask = categoryTasks.sort((a, b) => b.end!.getTime() - a.end!.getTime())[0];
+        
+        const startDate = lastTask ? addDays(startOfDay(lastTask.end!), 1) : startOfDay(new Date());
+        const endDate = addDays(startDate, 0);
+
+        setPlaceholderTask({
+            id: 'placeholder',
+            name: 'New Task',
+            start: startDate,
+            end: endDate,
+            dependencies: [],
+            type: 'task',
+            parentId: id,
+        });
+
+    } else {
+        setPlaceholderTask(null);
+    }
+    setOpenQuickAddId(id);
+  }
+  
+  const handleQuickAddTask = (categoryId: string, taskName: string, duration: number) => {
+    setPlaceholderTask(null);
+    onQuickAddTask(categoryId, taskName, duration);
+  };
+
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -611,9 +646,9 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                     toggleCategory={toggleCategory}
                     onTaskClick={onTaskClick}
                     getTaskColor={getTaskColor}
-                    onQuickAddTask={onQuickAddTask}
+                    onQuickAddTask={handleQuickAddTask}
                     openQuickAddId={openQuickAddId}
-                    setOpenQuickAddId={setOpenQuickAddId}
+                    setOpenQuickAddId={handleSetOpenQuickAddId}
                 />
                 <TimelineCalendarView 
                     timeline={timeline}
@@ -660,5 +695,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
 
     
