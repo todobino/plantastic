@@ -10,6 +10,7 @@ import { TimelineCalendarView } from './timeline-calendar-view';
 import { ListView } from './list-view';
 import { Button } from './ui/button';
 import { MONTH_ROW_HEIGHT } from '@/lib/utils';
+import TeamView from './team-view';
 
 
 const ROW_HEIGHT = 40; 
@@ -20,6 +21,7 @@ type TimelineViewProps = {
     setTasks: (tasks: Task[]) => void;
     project: Project;
     teamMembers: TeamMember[];
+    setTeamMembers: (teamMembers: TeamMember[]) => void;
     onTaskClick: (task: Task) => void;
     onAddTaskClick: () => void;
     onAddCategoryClick: () => void;
@@ -27,17 +29,16 @@ type TimelineViewProps = {
     onReorderTasks: (reorderedTasks: Task[]) => void;
     onTaskUpdate: (task: Task) => void;
     onNewProjectClick: () => void;
-    onTeamClick: () => void;
     onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
     onAssigneeClick: (member: TeamMember) => void;
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, teamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
-  const [view, setView] = useState<'timeline' | 'list'>('timeline');
+  const [view, setView] = useState<'timeline' | 'list' | 'team'>('timeline');
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
 
@@ -625,6 +626,71 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, on
     onQuickAddTask(categoryId, taskName, duration);
   };
 
+  const renderCurrentView = () => {
+    switch (view) {
+        case 'timeline':
+            return (
+                <div className="relative w-full h-full">
+                    <div className="grid grid-cols-12 w-full h-full">
+                        <TimelineTaskList 
+                            displayTasks={displayTasks}
+                            justTasks={justTasks}
+                            onAddTaskClick={onAddTaskClick}
+                            onAddCategoryClick={onAddCategoryClick}
+                            toggleCategory={toggleCategory}
+                            onTaskClick={onTaskClick}
+                            getTaskColor={getTaskColor}
+                            onQuickAddTask={handleQuickAddTask}
+                            openQuickAddId={openQuickAddId}
+                            setOpenQuickAddId={handleSetOpenQuickAddId}
+                        />
+                        <TimelineCalendarView 
+                            timeline={timeline}
+                            totalDays={totalDays}
+                            dayWidth={dayWidth}
+                            headerGroups={headerGroups}
+                            displayTasks={displayTasks}
+                            tasks={tasks}
+                            taskPositions={taskPositions}
+                            linkDraft={linkDraft}
+                            onBarPointerDown={onBarPointerDown}
+                            onBarPointerMove={onBarPointerMove}
+                            onBarPointerUp={onBarPointerUp}
+                            onResizeMove={onResizeMove}
+                            onResizeUp={onResizeUp}
+                            handleBarClick={handleBarClick}
+                            onLeftHandleDown={onLeftHandleDown}
+                            onRightHandleDown={onRightHandleDown}
+                            setHoverTaskId={setHoverTaskId}
+                            getVisualPos={getVisualPos}
+                            getTaskColor={getTaskColor}
+                            dateToX={dateToX}
+                            routeFS={routeFS}
+                            setLinkDraft={setLinkDraft}
+                            hoverTaskId={hoverTaskId}
+                            isResizingThis={(task: Task) => resizeState.id === task.id}
+                            isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                            timelineRef={timelineRef}
+                        />
+                    </div>
+                    <Button
+                        onClick={handleTodayClick}
+                        className="absolute left-[calc(25%+1rem)] top-2.5 z-50 py-1 h-auto"
+                        style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
+                    >
+                      Today
+                    </Button>
+                </div>
+            );
+        case 'list':
+            return <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} />;
+        case 'team':
+            return <TeamView teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} />;
+        default:
+            return null;
+    }
+  }
+
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -633,65 +699,10 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, on
         onProjectUpdate={onProjectUpdate}
         view={view}
         onViewChange={setView}
-        onTeamClick={onTeamClick}
         onNewProjectClick={onNewProjectClick}
       />
       <div className="flex-grow flex overflow-hidden relative">
-        {view === 'timeline' ? (
-          <div className="relative w-full h-full">
-            <div className="grid grid-cols-12 w-full h-full">
-                <TimelineTaskList 
-                    displayTasks={displayTasks}
-                    justTasks={justTasks}
-                    onAddTaskClick={onAddTaskClick}
-                    onAddCategoryClick={onAddCategoryClick}
-                    toggleCategory={toggleCategory}
-                    onTaskClick={onTaskClick}
-                    getTaskColor={getTaskColor}
-                    onQuickAddTask={handleQuickAddTask}
-                    openQuickAddId={openQuickAddId}
-                    setOpenQuickAddId={handleSetOpenQuickAddId}
-                />
-                <TimelineCalendarView 
-                    timeline={timeline}
-                    totalDays={totalDays}
-                    dayWidth={dayWidth}
-                    headerGroups={headerGroups}
-                    displayTasks={displayTasks}
-                    tasks={tasks}
-                    taskPositions={taskPositions}
-                    linkDraft={linkDraft}
-                    onBarPointerDown={onBarPointerDown}
-                    onBarPointerMove={onBarPointerMove}
-                    onBarPointerUp={onBarPointerUp}
-                    onResizeMove={onResizeMove}
-                    onResizeUp={onResizeUp}
-                    handleBarClick={handleBarClick}
-                    onLeftHandleDown={onLeftHandleDown}
-                    onRightHandleDown={onRightHandleDown}
-                    setHoverTaskId={setHoverTaskId}
-                    getVisualPos={getVisualPos}
-                    getTaskColor={getTaskColor}
-                    dateToX={dateToX}
-                    routeFS={routeFS}
-                    setLinkDraft={setLinkDraft}
-                    hoverTaskId={hoverTaskId}
-                    isResizingThis={(task: Task) => resizeState.id === task.id}
-                    isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
-                    timelineRef={timelineRef}
-                />
-            </div>
-            <Button
-                onClick={handleTodayClick}
-                className="absolute left-[calc(25%+1rem)] top-2.5 z-50 py-1 h-auto"
-                style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
-            >
-              Today
-            </Button>
-          </div>
-        ) : (
-          <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} />
-        )}
+        {renderCurrentView()}
       </div>
     </div>
   );

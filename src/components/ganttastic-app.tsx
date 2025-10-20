@@ -54,7 +54,6 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
   const [isTaskEditorOpen, setTaskEditorOpen] = useState(false);
   const [isCategoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isTeamManagerOpen, setTeamManagerOpen] = useState(false);
   const [viewingMemberTasks, setViewingMemberTasks] = useState<TeamMember | null>(null);
 
   useEffect(() => {
@@ -281,6 +280,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           setTasks={setTasks}
           project={project}
           teamMembers={teamMembers}
+          setTeamMembers={setTeamMembers}
           onTaskClick={openEditor}
           onAddTaskClick={openNewTaskEditor}
           onAddCategoryClick={openNewCategoryEditor}
@@ -288,9 +288,8 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           onReorderTasks={handleReorderTasks}
           onTaskUpdate={handleUpdateTask}
           onNewProjectClick={() => setImporterOpen(true)}
-          onTeamClick={() => setTeamManagerOpen(true)}
-          onQuickAddTask={handleQuickAddTask}
           onAssigneeClick={setViewingMemberTasks}
+          onQuickAddTask={handleQuickAddTask}
         />
       </div>
       
@@ -342,12 +341,6 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
               />
           </DialogContent>
       </Dialog>
-
-      <Sheet open={isTeamManagerOpen} onOpenChange={setTeamManagerOpen}>
-        <SheetContent side="left" className="max-w-md p-0">
-          <TeamManager teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} />
-        </SheetContent>
-      </Sheet>
       
       {viewingMemberTasks && (
         <Dialog open={!!viewingMemberTasks} onOpenChange={(isOpen) => !isOpen && setViewingMemberTasks(null)}>

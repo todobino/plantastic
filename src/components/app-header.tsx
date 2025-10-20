@@ -11,9 +11,8 @@ import type { Project } from '@/types';
 type AppHeaderProps = {
   project: Project;
   onProjectUpdate: (project: Project) => void;
-  view: 'timeline' | 'list';
-  onViewChange: (view: 'timeline' | 'list') => void;
-  onTeamClick: () => void;
+  view: 'timeline' | 'list' | 'team';
+  onViewChange: (view: 'timeline' | 'list' | 'team') => void;
   onNewProjectClick: () => void;
 };
 
@@ -22,7 +21,6 @@ export default function AppHeader({
   onProjectUpdate,
   view,
   onViewChange,
-  onTeamClick,
   onNewProjectClick,
 }: AppHeaderProps) {
   return (
@@ -38,11 +36,7 @@ export default function AppHeader({
             <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
           </SheetContent>
         </Sheet>
-         <Button variant="outline" onClick={onTeamClick}>
-          <Users className="h-4 w-4 mr-2" />
-          Team
-        </Button>
-        <Tabs value={view} onValueChange={(v) => onViewChange(v as 'timeline' | 'list')}>
+        <Tabs value={view} onValueChange={(v) => onViewChange(v as 'timeline' | 'list' | 'team')}>
           <TabsList>
             <TabsTrigger value="timeline">
               <GanttChart className="h-4 w-4 mr-2" />
@@ -51,6 +45,10 @@ export default function AppHeader({
             <TabsTrigger value="list">
               <List className="h-4 w-4 mr-2" />
               List
+            </TabsTrigger>
+            <TabsTrigger value="team">
+              <Users className="h-4 w-4 mr-2" />
+              Team
             </TabsTrigger>
           </TabsList>
         </Tabs>
