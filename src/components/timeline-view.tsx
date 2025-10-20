@@ -646,7 +646,6 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                 style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
             >
               Today
-              <ArrowDown className="h-4 w-4 ml-1" />
             </Button>
           </div>
         ) : (
