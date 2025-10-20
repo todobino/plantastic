@@ -197,14 +197,19 @@ isResizingThis,
                 return (
                   <div
                     key={index}
-                    className="font-semibold text-sm flex items-center justify-start absolute top-0 h-full"
+                    className="font-semibold text-sm flex items-center justify-center absolute top-0 h-full border-r"
                     style={{
-                        left: `${left}px`,
+                        left: `${groupStartX}px`,
                         width: `${group.days * dayWidth}px`,
-                        pointerEvents: 'none'
                     }}
                   >
-                    <span className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1">
+                    <span 
+                      className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 absolute"
+                      style={{
+                        left: `${left - groupStartX}px`,
+                        pointerEvents: 'none'
+                      }}
+                    >
                       {group.label}
                     </span>
                   </div>
@@ -538,6 +543,7 @@ isResizingThis,
     
 
     
+
 
 
 
