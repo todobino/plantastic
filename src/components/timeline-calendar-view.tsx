@@ -20,6 +20,7 @@ import {
 import { Task } from "@/types";
 import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Button } from "./ui/button";
 
 type TimelineCalendarViewProps = {
   timeline: Date[];
@@ -57,6 +58,7 @@ type TimelineCalendarViewProps = {
   isResizingThis: (task: Task) => boolean;
   isDraggingThis: (task: Task) => boolean;
   timelineRef: React.RefObject<HTMLDivElement>;
+  onTodayClick: () => void;
 };
 
 export function TimelineCalendarView({
@@ -86,6 +88,7 @@ export function TimelineCalendarView({
   isResizingThis,
   isDraggingThis,
   timelineRef,
+  onTodayClick,
 }: TimelineCalendarViewProps) {
   const [panState, setPanState] = useState<{
     isPanning: boolean;
@@ -123,7 +126,7 @@ export function TimelineCalendarView({
   };
 
   return (
-    <div ref={timelineRef} className="col-span-9 overflow-auto">
+    <div ref={timelineRef} className="col-span-9 overflow-auto relative">
       <div
         className={cn("relative", panState.isPanning && "cursor-grabbing")}
         onPointerDown={handlePanStart}
@@ -136,7 +139,10 @@ export function TimelineCalendarView({
           style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
           className="sticky top-0 bg-background z-40 border-b"
         >
-          <div className="border-b">
+          <div className="border-b relative">
+             <Button variant="secondary" onClick={onTodayClick} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-8">
+              Today
+            </Button>
             <div
               className="flex border-b"
               style={{ height: `${MONTH_ROW_HEIGHT}px` }}

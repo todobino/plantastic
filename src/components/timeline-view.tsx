@@ -591,7 +591,6 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
         onProjectUpdate={onProjectUpdate}
         view={view}
         onViewChange={setView}
-        onTodayClick={handleTodayClick}
         onTeamClick={onTeamClick}
         onNewProjectClick={onNewProjectClick}
       />
@@ -634,6 +633,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                 isResizingThis={(task: Task) => resizeState.id === task.id}
                 isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
                 timelineRef={timelineRef}
+                onTodayClick={handleTodayClick}
             />
           </div>
         ) : (

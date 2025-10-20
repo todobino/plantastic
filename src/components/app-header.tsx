@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Briefcase, GanttChart, List, Pencil, Users, Download } from 'lucide-react';
+import { GanttChart, List, Users, Download } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 
@@ -13,7 +13,6 @@ type AppHeaderProps = {
   onProjectUpdate: (project: Project) => void;
   view: 'timeline' | 'list';
   onViewChange: (view: 'timeline' | 'list') => void;
-  onTodayClick: () => void;
   onTeamClick: () => void;
   onNewProjectClick: () => void;
 };
@@ -23,7 +22,6 @@ export default function AppHeader({
   onProjectUpdate,
   view,
   onViewChange,
-  onTodayClick,
   onTeamClick,
   onNewProjectClick,
 }: AppHeaderProps) {
@@ -56,11 +54,6 @@ export default function AppHeader({
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        {view === 'timeline' && (
-          <Button variant="secondary" onClick={onTodayClick}>
-            Today
-          </Button>
-        )}
       </div>
       <div className="flex items-center gap-2">
         <Button variant="outline" onClick={onNewProjectClick}>
