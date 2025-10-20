@@ -18,9 +18,10 @@ interface TeamViewProps {
   teamMembers: TeamMember[];
   setTeamMembers: (teamMembers: TeamMember[]) => void;
   tasks: Task[];
+  onTaskUpdate: (task: Task) => void;
 }
 
-export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamViewProps) {
+export default function TeamView({ teamMembers, setTeamMembers, tasks, onTaskUpdate }: TeamViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -186,6 +187,8 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
             member={selectedMember} 
             tasks={tasks.filter(t => t.assigneeId === selectedMember.id)}
             onDelete={handleDeleteMember}
+            teamMembers={teamMembers}
+            onTaskUpdate={onTaskUpdate}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

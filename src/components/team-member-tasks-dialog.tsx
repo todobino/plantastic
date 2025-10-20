@@ -6,19 +6,20 @@ import { Button } from './ui/button';
 import { DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 type TeamMemberTasksDialogProps = {
   member: TeamMember;
   tasks: Task[];
   onDelete: (e: React.MouseEvent) => void;
+  teamMembers: TeamMember[];
+  onTaskUpdate: (task: Task) => void;
 };
 
-export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamMemberTasksDialogProps) {
+export default function TeamMemberTasksDialog({ member, tasks, onDelete, teamMembers, onTaskUpdate }: TeamMemberTasksDialogProps) {
 
   const getPriorityBadgeVariant = (priority: Task['priority']) => {
     switch (priority) {
@@ -28,6 +29,12 @@ export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamM
         default: return 'secondary';
     }
   }
+
+  const handleReassign = (task: Task, newAssigneeId: string) => {
+    onTaskUpdate({ ...task, assigneeId: newAssigneeId });
+  };
+  
+  const sortedTeamMembers = [...teamMembers].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Card>
@@ -42,10 +49,10 @@ export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamM
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50%] border-r">Task</TableHead>
+                <TableHead className="w-[40%] border-r">Task</TableHead>
                 <TableHead className="border-r">Due Date</TableHead>
                 <TableHead className="border-r">Priority</TableHead>
-                <TableHead>Progress</TableHead>
+                <TableHead>Reassign</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -57,10 +64,29 @@ export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamM
                       <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell>
-                      <div className="flex items-center gap-2">
-                          <Progress value={task.progress || 0} className="w-[60%]" />
-                          <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
-                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                           <Button variant="outline" className="w-[150px] justify-between">
+                                Reassign
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                           </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[200px] p-0">
+                            <div className="flex flex-col">
+                                {sortedTeamMembers.map(tm => (
+                                    <Button
+                                        key={tm.id}
+                                        variant="ghost"
+                                        className="justify-start"
+                                        onClick={() => handleReassign(task, tm.id)}
+                                        disabled={tm.id === member.id}
+                                    >
+                                        {tm.name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                      </Popover>
                   </TableCell>
                 </TableRow>
               )) : (

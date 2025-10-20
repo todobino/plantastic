@@ -348,6 +348,9 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
                 <TeamMemberTasksDialog 
                     member={viewingMemberTasks} 
                     tasks={tasks.filter(t => t.assigneeId === viewingMemberTasks.id)}
+                    onDelete={() => {}}
+                    teamMembers={teamMembers}
+                    onTaskUpdate={handleUpdateTask}
                 />
             </DialogContent>
         </Dialog>
