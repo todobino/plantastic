@@ -159,7 +159,7 @@ export function TimelineCalendarView({
               {headerGroups.map((group, index) => (
                 <div
                   key={index}
-                  className="text-center font-semibold text-sm flex items-center justify-center border-r"
+                  className="font-semibold text-sm flex items-center justify-start border-r"
                   style={{ width: `${group.days * dayWidth}px` }}
                 >
                   <span className="truncate px-2">{group.label}</span>
