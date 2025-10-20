@@ -4,6 +4,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { ChevronDown } from 'lucide-react';
 import AppHeader from "./app-header";
 import { TimelineTaskList } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
@@ -645,6 +646,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                 style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
             >
               Today
+              <ChevronDown className="h-4 w-4 ml-1" />
             </Button>
           </div>
         ) : (
@@ -654,3 +656,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
