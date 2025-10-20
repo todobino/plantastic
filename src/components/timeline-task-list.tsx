@@ -7,6 +7,7 @@ import {
   DiamondPlus,
   FolderPlus,
   Pencil,
+  Plus,
 } from "lucide-react";
 import {
   Tooltip,
@@ -181,8 +182,21 @@ export function TimelineTaskList({
                   ) : (
                     <span className="truncate flex-1">{task.name}</span>
                   )}
-
-                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
+                  {isCategory ? (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          onAddTaskClick();
+                      }}
+                    >
+                        <Plus className="h-4 w-4"/>
+                    </Button>
+                  ) : (
+                    <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
+                  )}
                 </div>
               </div>
             </div>
