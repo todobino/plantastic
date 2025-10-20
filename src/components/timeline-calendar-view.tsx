@@ -34,13 +34,6 @@ type TimelineCalendarViewProps = {
     string,
     { x: number; y: number; width: number; s: Date; e: Date }
   >;
-  linkDraft: {
-    fromTaskId: string | null;
-    fromX: number;
-    fromY: number;
-    toX: number;
-    toY: number;
-  };
   onBarPointerDown: (e: ReactPointerEvent<HTMLDivElement>, task: Task, currentLeftPx: number) => void;
   onBarPointerMove: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
   onBarPointerUp: (e: ReactPointerEvent<HTMLDivElement>, task: Task) => void;
@@ -49,13 +42,10 @@ type TimelineCalendarViewProps = {
   handleBarClick: (task: Task) => void;
   onLeftHandleDown: (e: ReactPointerEvent, task: Task) => void;
   onRightHandleDown: (e: ReactPointerEvent, task: Task) => void;
-  setHoverTaskId: (id: string | null) => void;
   getVisualPos: (id: string) => { left: number; right: number; cy: number } | null;
   getTaskColor: (task: Task) => string;
   dateToX: (d: Date) => number;
   routeFS: (sx: number, sy: number, tx: number, ty: number) => string;
-  setLinkDraft: (draft: any) => void;
-  hoverTaskId: string | null;
   isResizingThis: (task: Task) => boolean;
   isDraggingThis: (task: Task) => boolean;
   timelineRef: React.RefObject<HTMLDivElement>;
@@ -70,7 +60,6 @@ export function TimelineCalendarView({
   displayTasks,
   tasks,
   taskPositions,
-  linkDraft,
   onBarPointerDown,
   onBarPointerMove,
   onBarPointerUp,
@@ -79,13 +68,10 @@ export function TimelineCalendarView({
   handleBarClick,
   onLeftHandleDown,
   onRightHandleDown,
-  setHoverTaskId,
   getVisualPos,
   getTaskColor,
   dateToX,
   routeFS,
-  setLinkDraft,
-  hoverTaskId,
 isResizingThis,
   isDraggingThis,
   timelineRef,
@@ -313,40 +299,6 @@ isResizingThis,
                 );
               });
             })}
-
-            {linkDraft.fromTaskId &&
-              (() => {
-                const fromPos = taskPositions.get(linkDraft.fromTaskId);
-                if (!fromPos) return null;
-                const fromV = getVisualPos(linkDraft.fromTaskId);
-                if (!fromV) return null;
-                const d = routeFS(
-                  fromV.right,
-                  fromV.cy,
-                  linkDraft.toX,
-                  linkDraft.toY
-                );
-                return (
-                  <g>
-                    <path
-                      d={d}
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      vectorEffect="non-scaling-stroke"
-                      opacity="0.6"
-                    />
-                    <circle
-                      cx={fromV.right}
-                      cy={fromV.cy}
-                      r={3.5}
-                      fill="hsl(var(--foreground))"
-                    />
-                  </g>
-                );
-              })()}
           </svg>
 
           {displayTasks.map((task) => {
@@ -396,10 +348,6 @@ isResizingThis,
                           ? onResizeUp(e, task)
                           : onBarPointerUp(e, task);
                       }}
-                      onMouseEnter={() => setHoverTaskId(task.id)}
-                      onMouseLeave={() =>
-                        setHoverTaskId(cur => (cur === task.id ? null : cur))
-                      }
                       onClick={() => handleBarClick(task)}
                       className={cn(
                         "absolute rounded-md hover:brightness-110 transition-all flex items-center px-2 overflow-hidden shadow z-20",
@@ -449,53 +397,6 @@ isResizingThis,
                         onPointerDown={(e) => onRightHandleDown(e, task)}
                       />}
 
-                      {!isCategory && !isPlaceholder && (
-                        <>
-                          <div
-                            className={cn(
-                              "absolute -left-1.5 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity",
-                              hoverTaskId === task.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          >
-                            <div className="relative w-3 h-3">
-                              <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 transition-transform"></span>
-                            </div>
-                          </div>
-                          <div
-                            className={cn(
-                              "absolute -right-1.5 top-1/2 -translate-y-1/2 transition-opacity",
-                              hoverTaskId === task.id ? "opacity-100" : "opacity-0"
-                            )}
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              const fromV = getVisualPos(task.id);
-                              if (!fromV) return;
-                              const sx = fromV.right;
-                              const sy = fromV.cy;
-                              const svg = timelineRef.current!.querySelector(
-                                "svg"
-                              ) as SVGSVGElement;
-                              const rect = svg.getBoundingClientRect();
-                              setLinkDraft({
-                                fromTaskId: task.id,
-                                fromX: sx,
-                                fromY: sy,
-                                toX:
-                                  e.clientX -
-                                  rect.left +
-                                  timelineRef.current!.scrollLeft,
-                                toY: e.clientY - rect.top,
-                              });
-                            }}
-                          >
-                            <div className="relative w-3 h-3 cursor-crosshair">
-                              <span className="absolute inset-0 rounded-full bg-foreground/90 scale-100 hover:scale-110 transition-transform"></span>
-                            </div>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="bg-card border">

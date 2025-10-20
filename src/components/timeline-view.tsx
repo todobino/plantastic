@@ -55,16 +55,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     startX: number;
   }>({ id: null, edge: null, startX: 0 });
   
-  const [hoverTaskId, setHoverTaskId] = useState<string | null>(null);
-
-  const [linkDraft, setLinkDraft] = useState<{
-    fromTaskId: string | null;
-    fromX: number;
-    fromY: number;
-    toX: number;
-    toY: number;
-  }>({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
-
   const dragging = dragState.id !== null;
 
   const displayTasks = useMemo(() => {
@@ -412,52 +402,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     setDragState(s => ({ s, previewDeltaPx: 0 }));
   };
 
-  const hitStartDot = (x:number, y:number) => {
-    const R = 10;
-    for (const task of tasks) {
-      const pos = taskPositions.get(task.id);
-      if (!pos) continue;
-      const cx = pos.x;
-      const cy = pos.y + (ROW_HEIGHT - BAR_HEIGHT) / 2 + BAR_HEIGHT/2;
-      const dx = x - cx, dy = y - cy;
-      if ((dx*dx + dy*dy) <= R*R) return { taskId: task.id, cx, cy };
-    }
-    return null;
-  };
-  
-  useEffect(() => {
-    if (!linkDraft.fromTaskId) return;
-
-    const onMove = (e: MouseEvent) => {
-      if (!timelineRef.current) return;
-      const svg = timelineRef.current.querySelector('svg') as SVGSVGElement;
-      if (!svg) return;
-      const rect = svg.getBoundingClientRect();
-      setLinkDraft(ld => ({ ...ld,
-        toX: e.clientX - rect.left + timelineRef.current!.scrollLeft,
-        toY: e.clientY - rect.top
-      }));
-    };
-
-    const onUp = () => {
-      const hit = hitStartDot(linkDraft.toX, linkDraft.toY);
-      if (hit && hit.taskId !== linkDraft.fromTaskId) {
-        const target = tasks.find(t => t.id === hit.taskId)!;
-        if (!target.dependencies.includes(linkDraft.fromTaskId!)) {
-          onTaskUpdate({ ...target, dependencies: [...target.dependencies, linkDraft.fromTaskId!] });
-        }
-      }
-      setLinkDraft({ fromTaskId: null, fromX: 0, fromY: 0, toX: 0, toY: 0 });
-    };
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    return () => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-  }, [linkDraft.fromTaskId, linkDraft.toX, linkDraft.toY, tasks, onTaskUpdate]);
-
   const previewOffsets = useMemo(() => {
     const m = new Map<string, number>();
     if (!dragging && !resizeState.id) return m;
@@ -660,7 +604,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             displayTasks={displayTasks}
                             tasks={tasks}
                             taskPositions={taskPositions}
-                            linkDraft={linkDraft}
                             onBarPointerDown={onBarPointerDown}
                             onBarPointerMove={onBarPointerMove}
                             onBarPointerUp={onBarPointerUp}
@@ -669,13 +612,10 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             handleBarClick={handleBarClick}
                             onLeftHandleDown={onLeftHandleDown}
                             onRightHandleDown={onRightHandleDown}
-                            setHoverTaskId={setHoverTaskId}
                             getVisualPos={getVisualPos}
                             getTaskColor={getTaskColor}
                             dateToX={dateToX}
                             routeFS={routeFS}
-                            setLinkDraft={setLinkDraft}
-                            hoverTaskId={hoverTaskId}
                             isResizingThis={(task: Task) => resizeState.id === task.id}
                             isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
                             timelineRef={timelineRef}
@@ -709,5 +649,3 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
-
-    
