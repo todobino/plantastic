@@ -18,6 +18,8 @@ import {
 import { Button } from "./ui/button";
 import { hexToRgba, cn, HEADER_HEIGHT, MONTH_ROW_HEIGHT, DAY_ROW_HEIGHT, ROW_HEIGHT } from "@/lib/utils";
 import { Task } from "@/types";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import QuickTaskForm from "./quick-task-form";
 
 type TimelineTaskListProps = {
   displayTasks: (Task & { milestone?: string })[];
@@ -27,6 +29,9 @@ type TimelineTaskListProps = {
   toggleCategory: (id: string) => void;
   onTaskClick: (task: Task) => void;
   getTaskColor: (task: Task) => string;
+  onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
+  openQuickAddId: string | null;
+  setOpenQuickAddId: (id: string | null) => void;
 };
 
 export function TimelineTaskList({
@@ -37,6 +42,9 @@ export function TimelineTaskList({
   toggleCategory,
   onTaskClick,
   getTaskColor,
+  onQuickAddTask,
+  openQuickAddId,
+  setOpenQuickAddId,
 }: TimelineTaskListProps) {
   return (
     <div className="col-span-3 border-r overflow-y-auto shadow-md z-20">
@@ -160,7 +168,7 @@ export function TimelineTaskList({
                   className="flex items-center gap-2 h-full"
                   style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
                 >
-                  {!isCategory && (
+                  {!isCategory && level > 0 && (
                     <CornerDownRight
                       className="h-4 w-4 flex-shrink-0"
                       style={{ color: getTaskColor(task) }}
@@ -182,18 +190,28 @@ export function TimelineTaskList({
                   ) : (
                     <span className="truncate flex-1">{task.name}</span>
                   )}
-                  {isCategory ? (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          onAddTaskClick();
-                      }}
-                    >
-                        <Plus className="h-4 w-4"/>
-                    </Button>
+                   {isCategory ? (
+                     <Popover open={openQuickAddId === task.id} onOpenChange={(isOpen) => setOpenQuickAddId(isOpen ? task.id : null)}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent side="right" align="start" className="w-80" onClick={(e) => e.stopPropagation()}>
+                            <QuickTaskForm 
+                                categoryId={task.id}
+                                onAddTask={onQuickAddTask} 
+                                onClose={() => setOpenQuickAddId(null)}
+                            />
+                        </PopoverContent>
+                    </Popover>
                   ) : (
                     <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
                   )}

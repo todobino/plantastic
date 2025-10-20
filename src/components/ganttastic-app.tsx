@@ -158,6 +158,27 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
     setTasks(prev => [...prev, newTask]);
     setTaskEditorOpen(false);
   };
+
+  const handleQuickAddTask = (categoryId: string, taskName: string, duration: number) => {
+    const categoryTasks = tasks.filter(t => t.parentId === categoryId && t.type === 'task' && t.end);
+    const lastTask = categoryTasks.sort((a, b) => b.end!.getTime() - a.end!.getTime())[0];
+    
+    const startDate = lastTask ? addDays(startOfDay(lastTask.end!), 1) : startOfDay(new Date());
+    const endDate = addDays(startDate, Math.max(0, duration - 1));
+
+    const newTask: Task = {
+        id: `task-${Date.now()}`,
+        name: taskName,
+        start: startDate,
+        end: endDate,
+        dependencies: lastTask ? [lastTask.id] : [],
+        type: 'task',
+        parentId: categoryId,
+        progress: 0,
+        priority: 'medium',
+    };
+    setTasks(prev => [...prev, newTask]);
+  }
   
   const handleAddCategory = (category: Omit<Task, 'id' | 'type'>) => {
     const newId = `cat-${Date.now()}`;
@@ -265,6 +286,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           onTaskUpdate={handleUpdateTask}
           onNewProjectClick={() => setImporterOpen(true)}
           onTeamClick={() => setTeamManagerOpen(true)}
+          onQuickAddTask={handleQuickAddTask}
         />
       </div>
       

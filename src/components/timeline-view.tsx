@@ -28,14 +28,16 @@ type TimelineViewProps = {
     onTaskUpdate: (task: Task) => void;
     onNewProjectClick: () => void;
     onTeamClick: () => void;
+    onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list'>('timeline');
+  const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -609,6 +611,9 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                     toggleCategory={toggleCategory}
                     onTaskClick={onTaskClick}
                     getTaskColor={getTaskColor}
+                    onQuickAddTask={onQuickAddTask}
+                    openQuickAddId={openQuickAddId}
+                    setOpenQuickAddId={setOpenQuickAddId}
                 />
                 <TimelineCalendarView 
                     timeline={timeline}
