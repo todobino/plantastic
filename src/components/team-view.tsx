@@ -11,6 +11,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from './ui/dialog';
+import { DeleteTeamMemberDialog } from './delete-team-member-dialog';
+
 
 interface TeamViewProps {
   teamMembers: TeamMember[];
@@ -23,6 +25,7 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(teamMembers[0] || null);
+  const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null);
 
   const filteredTeamMembers = useMemo(() => 
     teamMembers.filter(member => 
@@ -80,13 +83,20 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
   const handleDeleteMember = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!selectedMember) return;
-    const memberId = selectedMember.id;
+    setDeletingMember(selectedMember);
+  }
+
+  const confirmDeleteMember = () => {
+    if (!deletingMember) return;
+    const memberId = deletingMember.id;
     setTeamMembers(teamMembers.filter(m => m.id !== memberId));
+    
     if (selectedMember?.id === memberId) {
       const newSelectedMember = teamMembers.filter(m => m.id !== memberId)[0] || null;
       setSelectedMember(newSelectedMember);
     }
-  }
+    setDeletingMember(null);
+  };
 
   const handleMemberClick = (member: TeamMember) => {
     setSelectedMember(member);
@@ -102,6 +112,7 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
   };
   
   return (
+    <>
     <div className="flex w-full h-full">
       <div className="w-[300px] border-r flex flex-col">
         <div className="p-4 border-b">
@@ -183,5 +194,14 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
         )}
       </div>
     </div>
+    {deletingMember && (
+        <DeleteTeamMemberDialog
+            member={deletingMember}
+            open={!!deletingMember}
+            onOpenChange={(isOpen) => !isOpen && setDeletingMember(null)}
+            onDelete={confirmDeleteMember}
+        />
+      )}
+    </>
   );
 }
