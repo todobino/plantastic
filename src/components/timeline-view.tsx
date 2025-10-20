@@ -732,7 +732,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                       className="group w-full text-sm hover:bg-secondary grid grid-cols-5 items-center border-b"
                     >
                       <div 
-                        className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center"
+                        className="col-span-1 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
                         onClick={(e) => {
                             if(isCategory) {
                                 e.stopPropagation();
@@ -741,7 +741,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                         }}
                       >
                           {isCategory ? (
-                            <div className="p-1 cursor-pointer">
+                            <div className="p-1">
                                 {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </div>
                           ) : (
@@ -753,19 +753,16 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                         style={{ paddingLeft: `${level * 1.5 + 0.5}rem`}}
                         onClick={() => onTaskClick(task)}
                       >
-                        {task.type === 'category' ? (
-                            <>
-                                <Folder className="h-4 w-4" style={{ color: task.color }}/>
-                                <span 
-                                    className="px-2 py-0.5 rounded-md font-semibold"
-                                    style={{
-                                        color: task.color || 'hsl(var(--foreground))',
-                                        backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
-                                    }}
-                                >
-                                    {task.name}
-                                </span>
-                            </>
+                        {isCategory ? (
+                            <span 
+                                className="px-2 py-0.5 rounded-md font-semibold"
+                                style={{
+                                    color: task.color || 'hsl(var(--foreground))',
+                                    backgroundColor: task.color ? hexToRgba(task.color, 0.15) : 'transparent',
+                                }}
+                            >
+                                {task.name}
+                            </span>
                         ) : (
                            <>
                               <GanttChartSquare className="h-4 w-4" style={{ color: getTaskColor(task) }} />
