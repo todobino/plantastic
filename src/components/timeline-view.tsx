@@ -197,30 +197,24 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
     const getHeaderGroups = () => {
         const groups: { label: string, days: number, startDay: Date }[] = [];
+        if (timeline.length === 0) return groups;
+
         let currentMonth = -1;
 
-        timeline.forEach(day => {
-            if (day.getMonth() !== currentMonth) {
-                currentMonth = day.getMonth();
+        timeline.forEach((day) => {
+            const month = day.getMonth();
+            if (month !== currentMonth) {
+                currentMonth = month;
                 const monthStart = startOfMonth(day);
-                const effectiveMonthStart = day < monthStart ? monthStart : day;
                 const monthEnd = endOfMonth(day);
-                const daysInMonth = differenceInDays(monthEnd, effectiveMonthStart) + 1;
-                
-                groups.push({ 
-                    label: format(day, 'MMMM yyyy'), 
+                const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+                groups.push({
+                    label: format(day, 'MMMM yyyy'),
                     days: daysInMonth,
-                    startDay: effectiveMonthStart 
+                    startDay: monthStart
                 });
             }
         });
-
-        if (groups.length > 0) {
-            const totalGroupedDays = groups.reduce((acc, g) => acc + g.days, 0);
-            if (totalGroupedDays > totalDays) {
-                groups[groups.length - 1].days -= (totalGroupedDays - totalDays);
-            }
-        }
         return groups;
     }
 
