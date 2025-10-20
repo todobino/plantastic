@@ -682,7 +682,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, on
                 />
             </div>
             <Button
-                variant="secondary"
                 onClick={handleTodayClick}
                 className="absolute left-[calc(25%+1rem)] top-2.5 z-50 py-1 h-auto"
                 style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
