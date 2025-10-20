@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   PointerEvent as ReactPointerEvent,
+  useEffect,
 } from "react";
 import {
   cn,
@@ -26,7 +27,7 @@ type TimelineCalendarViewProps = {
   timeline: Date[];
   totalDays: number;
   dayWidth: number;
-  headerGroups: { label: string; days: number }[];
+  headerGroups: { label: string; days: number, startDay: Date }[];
   displayTasks: (Task & { milestone?: string })[];
   tasks: Task[];
   taskPositions: Map<
@@ -58,6 +59,7 @@ type TimelineCalendarViewProps = {
   isResizingThis: (task: Task) => boolean;
   isDraggingThis: (task: Task) => boolean;
   timelineRef: React.RefObject<HTMLDivElement>;
+  onTodayClick: () => void;
 };
 
 export function TimelineCalendarView({
@@ -84,9 +86,10 @@ export function TimelineCalendarView({
   routeFS,
   setLinkDraft,
   hoverTaskId,
-  isResizingThis,
+isResizingThis,
   isDraggingThis,
   timelineRef,
+  onTodayClick
 }: TimelineCalendarViewProps) {
   const [panState, setPanState] = useState<{
     isPanning: boolean;
@@ -94,9 +97,25 @@ export function TimelineCalendarView({
     startScrollLeft: number;
   }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
+  const monthLabelsContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  useEffect(() => {
+    const scroller = timelineRef.current;
+    if (!scroller) return;
+
+    const handleScroll = () => {
+      setScrollLeft(scroller.scrollLeft);
+    };
+
+    scroller.addEventListener('scroll', handleScroll);
+    return () => scroller.removeEventListener('scroll', handleScroll);
+  }, [timelineRef]);
+
+
   const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
-    if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]")) return;
+    if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]") || (e.target as HTMLElement).closest("[data-today-button]")) return;
 
     e.preventDefault();
     e.stopPropagation();
@@ -151,20 +170,46 @@ export function TimelineCalendarView({
           style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
           className="sticky top-0 bg-background z-40 border-b"
         >
-          <div className="border-b relative">
+          <div className="border-b relative" ref={monthLabelsContainerRef}>
+             <Button
+                data-today-button
+                onClick={onTodayClick}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 py-1 h-auto"
+                style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px)`}}
+            >
+              Today
+            </Button>
             <div
-              className="flex border-b"
+              className="flex relative"
               style={{ height: `${MONTH_ROW_HEIGHT}px` }}
             >
-              {headerGroups.map((group, index) => (
-                <div
-                  key={index}
-                  className="font-semibold text-sm flex items-center justify-center px-2 border-r"
-                  style={{ width: `${group.days * dayWidth}px` }}
-                >
-                  <span className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1">{group.label}</span>
-                </div>
-              ))}
+              {headerGroups.map((group, index) => {
+                const groupStartX = dateToX(group.startDay);
+                const todayButtonWidth = 80;
+                const stickyStart = scrollLeft + todayButtonWidth;
+                const groupEndX = groupStartX + group.days * dayWidth;
+
+                const left = Math.max(
+                    groupStartX,
+                    Math.min(stickyStart, groupEndX - 150)
+                );
+                
+                return (
+                  <div
+                    key={index}
+                    className="font-semibold text-sm flex items-center justify-start absolute top-0 h-full"
+                    style={{
+                        left: `${left}px`,
+                        width: `${group.days * dayWidth}px`,
+                        pointerEvents: 'none'
+                    }}
+                  >
+                    <span className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1">
+                      {group.label}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
             <div
               className="grid"
@@ -493,6 +538,7 @@ export function TimelineCalendarView({
     
 
     
+
 
 
 

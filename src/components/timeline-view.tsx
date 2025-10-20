@@ -204,16 +204,22 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     });
 
     const getHeaderGroups = () => {
-        const groups: { label: string, days: number }[] = [];
+        const groups: { label: string, days: number, startDay: Date }[] = [];
         let currentMonth = -1;
 
         timeline.forEach(day => {
             if (day.getMonth() !== currentMonth) {
                 currentMonth = day.getMonth();
                 const monthStart = startOfMonth(day);
+                const effectiveMonthStart = day < monthStart ? monthStart : day;
                 const monthEnd = endOfMonth(day);
-                const daysInMonth = differenceInDays(monthEnd, day < monthStart ? monthStart : day) + 1;
-                groups.push({ label: format(day, 'MMMM yyyy'), days: daysInMonth });
+                const daysInMonth = differenceInDays(monthEnd, effectiveMonthStart) + 1;
+                
+                groups.push({ 
+                    label: format(day, 'MMMM yyyy'), 
+                    days: daysInMonth,
+                    startDay: effectiveMonthStart 
+                });
             }
         });
 
@@ -673,15 +679,9 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             isResizingThis={(task: Task) => resizeState.id === task.id}
                             isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
                             timelineRef={timelineRef}
+                            onTodayClick={handleTodayClick}
                         />
                     </div>
-                    <Button
-                        onClick={handleTodayClick}
-                        className="absolute left-[calc(25%+1rem)] top-2.5 z-50 py-1 h-auto"
-                        style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px - 0.875rem)`}}
-                    >
-                      Today
-                    </Button>
                 </div>
             );
         case 'list':
