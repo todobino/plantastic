@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { Button } from "./ui/button";
-import { hexToRgba, HEADER_HEIGHT, MONTH_ROW_HEIGHT, DAY_ROW_HEIGHT, ROW_HEIGHT } from "@/lib/utils";
+import { hexToRgba, cn, HEADER_HEIGHT, MONTH_ROW_HEIGHT, DAY_ROW_HEIGHT, ROW_HEIGHT } from "@/lib/utils";
 import { Task } from "@/types";
 
 type TimelineTaskListProps = {
@@ -149,7 +149,7 @@ export function TimelineTaskList({
                 )}
               </div>
               <div
-                className="flex-grow flex items-center gap-2 cursor-pointer h-full"
+                className={cn("flex-grow flex items-center gap-2 cursor-pointer h-full pr-2", isCategory ? "pl-2" : "pl-2")}
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
                 onClick={() => onTaskClick(task)}
               >
@@ -168,14 +168,14 @@ export function TimelineTaskList({
                 ) : (
                   <>
                     <CornerDownRight
-                      className="h-4 w-4"
+                      className="h-4 w-4 flex-shrink-0"
                       style={{ color: getTaskColor(task) }}
                     />
                     <span className="truncate flex-1">{task.name}</span>
                   </>
                 )}
 
-                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 mr-4" />
+                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
               </div>
             </div>
           );
