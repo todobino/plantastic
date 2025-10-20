@@ -14,7 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Folder, GanttChartSquare } from 'lucide-react';
+import { CornerDownRight } from 'lucide-react';
 
 
 type ListViewProps = {
@@ -61,7 +61,7 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
               <TableCell>{index + 1}</TableCell>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
-                  <GanttChartSquare className="h-4 w-4" style={{ color: task.category?.color || 'hsl(var(--primary))' }} />
+                  <CornerDownRight className="h-4 w-4" style={{ color: task.category?.color || 'hsl(var(--primary))' }} />
                   <span>{task.name}</span>
                 </div>
               </TableCell>
@@ -100,3 +100,5 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
     </div>
   );
 }
+
+    

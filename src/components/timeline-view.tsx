@@ -6,7 +6,7 @@ import type { Task, Milestone, Project } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, Folder, FolderOpen, GanttChartSquare, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart } from 'lucide-react';
+import { Pencil, Plus, GripVertical, Download, ChevronDown, ChevronRight, CornerDownRight, FolderPlus, DiamondPlus, CirclePlus, ChevronsUpDown, List, GanttChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -765,7 +765,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
                             </span>
                         ) : (
                            <>
-                              <GanttChartSquare className="h-4 w-4" style={{ color: getTaskColor(task) }} />
+                              <CornerDownRight className="h-4 w-4" style={{ color: getTaskColor(task) }} />
                               <span className="truncate flex-1">{task.name}</span>
                            </>
                         )}
@@ -1027,3 +1027,5 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
     </div>
   );
 }
+
+    
