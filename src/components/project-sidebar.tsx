@@ -29,7 +29,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Ganttastic Plan' },
+  { id: 'proj-1', name: 'Plandalf Plan' },
   { id: 'proj-2', name: 'Marketing Campaign' },
   { id: 'proj-3', name: 'Website Redesign' },
   { id: 'proj-4', name: 'New Feature Launch' },
