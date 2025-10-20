@@ -21,7 +21,6 @@ import {
 import { Task } from "@/types";
 import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { Button } from "./ui/button";
 
 type TimelineCalendarViewProps = {
   timeline: Date[];
@@ -44,12 +43,13 @@ type TimelineCalendarViewProps = {
   onRightHandleDown: (e: ReactPointerEvent, task: Task) => void;
   getVisualPos: (id: string) => { left: number; right: number; cy: number } | null;
   getTaskColor: (task: Task) => string;
-  dateToX: (d: Date) => number;
   routeFS: (sx: number, sy: number, tx: number, ty: number) => string;
   isResizingThis: (task: Task) => boolean;
   isDraggingThis: (task: Task) => boolean;
   timelineRef: React.RefObject<HTMLDivElement>;
   onTodayClick: () => void;
+  hoveredTaskId: string | null;
+  setHoveredTaskId: (id: string | null) => void;
 };
 
 export function TimelineCalendarView({
@@ -70,12 +70,13 @@ export function TimelineCalendarView({
   onRightHandleDown,
   getVisualPos,
   getTaskColor,
-  dateToX,
   routeFS,
-isResizingThis,
+  isResizingThis,
   isDraggingThis,
   timelineRef,
-  onTodayClick
+  onTodayClick,
+  hoveredTaskId,
+  setHoveredTaskId,
 }: TimelineCalendarViewProps) {
   const [panState, setPanState] = useState<{
     isPanning: boolean;
@@ -84,19 +85,60 @@ isResizingThis,
   }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
   const monthLabelsContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const scrollLeftRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const monthLabelRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [labelWidths, setLabelWidths] = useState<number[]>([]);
+
+  const CONTROL_RAIL = 112; // width of the left sticky rail (Today button + gutter)
+  const LABEL_GAP = 8; // small gap between rail and month label
+  const dateToX = useCallback((d: Date) => {
+    // This function needs to be defined to be used in useEffect, if it's from props, ensure it's passed or defined here
+    // Assuming it's defined in the parent and passed down, or defined here.
+    // For now, let's assume a placeholder definition if it's not passed as a prop
+    const projectStart = new Date(Math.min(...tasks.map(t => t.start?.getTime() || Infinity)));
+    return differenceInDays(startOfDay(d), startOfDay(projectStart)) * dayWidth;
+  }, [tasks, dayWidth]);
+
+
+  useEffect(() => {
+    setLabelWidths(
+      headerGroups.map((_, i) => monthLabelRefs.current[i]?.offsetWidth ?? 80)
+    );
+  }, [headerGroups]);
 
   useEffect(() => {
     const scroller = timelineRef.current;
     if (!scroller) return;
 
-    const handleScroll = () => {
-      setScrollLeft(scroller.scrollLeft);
+    const onScroll = () => {
+      scrollLeftRef.current = scroller.scrollLeft;
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null;
+          headerGroups.forEach((group, i) => {
+            const cellLeft = dateToX(group.startDay);
+            const cellWidth = group.days * dayWidth;
+            const labelEl = monthLabelRefs.current[i];
+            if (!labelEl) return;
+            const labelW = labelEl.offsetWidth || 80;
+            const raw = scrollLeftRef.current - cellLeft + CONTROL_RAIL + LABEL_GAP;
+            const clamped = Math.max(0, Math.min(raw, Math.max(0, cellWidth - labelW - LABEL_GAP)));
+            labelEl.style.transform = `translate3d(${clamped}px, -50%, 0)`; // -50% keeps vertical centering
+          });
+        });
+      }
     };
 
-    scroller.addEventListener('scroll', handleScroll);
-    return () => scroller.removeEventListener('scroll', handleScroll);
-  }, [timelineRef]);
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // initial call
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [timelineRef, headerGroups, dayWidth, dateToX]);
 
 
   const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -146,6 +188,7 @@ isResizingThis,
     <div ref={timelineRef} className="col-span-9 overflow-auto relative">
       <div
         className={cn("relative", panState.isPanning && "cursor-grabbing")}
+        style={{ width: `${totalDays * dayWidth}px` }}
         onPointerDown={handlePanStart}
         onPointerMove={handlePanMove}
         onPointerUp={handlePanEnd}
@@ -153,41 +196,55 @@ isResizingThis,
         onPointerCancel={handlePanEnd}
       >
         <div
-          style={{ width: `${totalDays * dayWidth}px`, height: `${HEADER_HEIGHT}px` }}
-          className="sticky top-0 bg-background z-40"
+            style={{ height: `${HEADER_HEIGHT}px` }}
+            className="sticky top-0 bg-background z-40"
         >
-          <Button
-              data-today-button
-              onClick={onTodayClick}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 py-1 h-auto"
-              style={{top: `calc(${MONTH_ROW_HEIGHT / 2}px)`}}
-          >
-            Today
-          </Button>
-          <div className="relative h-full" ref={monthLabelsContainerRef}>
             <div
-              className="flex relative border-b"
-              style={{ height: `${MONTH_ROW_HEIGHT}px`, paddingLeft: "100px" }}
+                className="sticky left-0 z-50"
+                style={{ width: CONTROL_RAIL, height: MONTH_ROW_HEIGHT }}
             >
+                <Button
+                    data-today-button
+                    onClick={onTodayClick}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 py-1 h-auto"
+                >
+                    Today
+                </Button>
+            </div>
+
+            <div className="relative h-full" style={{ paddingLeft: CONTROL_RAIL, marginTop: -MONTH_ROW_HEIGHT }}>
+              <div
+                className="relative border-b"
+                style={{ height: `${MONTH_ROW_HEIGHT}px` }}
+                ref={monthLabelsContainerRef}
+              >
               {headerGroups.map((group, index) => {
-                const groupStartX = dateToX(group.startDay);
-                
-                return (
-                  <div
-                    key={index}
-                    className="font-semibold text-sm flex items-center justify-center h-full absolute top-0 border-r"
-                    style={{
-                        left: `${groupStartX}px`,
-                        width: `${group.days * dayWidth}px`,
-                    }}
-                  >
-                    <span 
-                      className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1"
+                  const groupStartX = dateToX(group.startDay);
+                  const cellWidth = group.days * dayWidth;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="absolute top-0 h-full border-r"
+                      style={{
+                          left: `${groupStartX}px`,
+                          width: `${cellWidth}px`,
+                      }}
                     >
-                      {group.label}
-                    </span>
-                  </div>
-                )
+                      <span
+                        ref={(el) => (monthLabelRefs.current[index] = el)}
+                        className="absolute top-1/2 truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm"
+                        style={{
+                          transform: 'translate3d(0,-50%,0)',
+                          willChange: 'transform',
+                          maxWidth: `${cellWidth - LABEL_GAP * 2}px`,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {group.label}
+                      </span>
+                    </div>
+                  )
               })}
             </div>
             <div
@@ -263,6 +320,10 @@ isResizingThis,
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
             {tasks.map((task) => {
               if (task.type === "category" || !task.start) return null;
+              if (hoveredTaskId !== task.id && !(task.dependencies || []).includes(hoveredTaskId || '')) {
+                return null;
+              }
+
               const toV = getVisualPos(task.id);
               if (!toV) return null;
 
@@ -271,6 +332,9 @@ isResizingThis,
               );
 
               return deps.map((depId) => {
+                 if (hoveredTaskId !== task.id && hoveredTaskId !== depId) {
+                    return null;
+                 }
                 const fromV = getVisualPos(depId);
                 if (!fromV) return null;
 
@@ -349,6 +413,8 @@ isResizingThis,
                           : onBarPointerUp(e, task);
                       }}
                       onClick={() => handleBarClick(task)}
+                      onPointerEnter={() => setHoveredTaskId(task.id)}
+                      onPointerLeave={() => setHoveredTaskId(null)}
                       className={cn(
                         "absolute rounded-md hover:brightness-110 transition-all flex items-center px-2 overflow-hidden shadow z-20",
                         isCategory
@@ -376,11 +442,11 @@ isResizingThis,
                         {task.name}
                       </span>
                       
-                      {!isPlaceholder && <div
+                      {!isCategory && !isPlaceholder && <div
                         className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
                         onPointerDown={(e) => onLeftHandleDown(e, task)}
                       />}
-                      {!isPlaceholder && <div
+                      {!isCategory && !isPlaceholder && <div
                         className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
                         onPointerDown={(e) => onRightHandleDown(e, task)}
                       />}

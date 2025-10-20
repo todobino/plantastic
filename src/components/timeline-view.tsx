@@ -41,6 +41,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [view, setView] = useState<'timeline' | 'list' | 'team'>('timeline');
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -614,12 +615,13 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             onRightHandleDown={onRightHandleDown}
                             getVisualPos={getVisualPos}
                             getTaskColor={getTaskColor}
-                            dateToX={dateToX}
                             routeFS={routeFS}
                             isResizingThis={(task: Task) => resizeState.id === task.id}
                             isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
                             timelineRef={timelineRef}
                             onTodayClick={handleTodayClick}
+                            hoveredTaskId={hoveredTaskId}
+                            setHoveredTaskId={setHoveredTaskId}
                         />
                     </div>
                 </div>
