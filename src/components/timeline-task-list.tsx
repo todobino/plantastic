@@ -149,37 +149,41 @@ export function TimelineTaskList({
                 )}
               </div>
               <div
-                className="flex-grow flex items-center gap-2 cursor-pointer h-full pr-2 pl-2"
+                className={cn(
+                  "flex-grow h-full cursor-pointer pr-2",
+                  isCategory ? "pl-2" : "pl-0"
+                )}
                 onClick={() => onTaskClick(task)}
               >
-                {!isCategory && (
-                  <CornerDownRight
-                    className="h-4 w-4 flex-shrink-0"
-                    // indent ONLY the icon for nested tasks
-                    style={{
-                      color: getTaskColor(task),
-                      marginLeft: level ? `${level * 1.5}rem` : 0
-                    }}
-                  />
-                )}
-              
-                {isCategory ? (
-                  <span
-                    className="px-2 py-0.5 rounded-md font-semibold"
-                    style={{
-                      color: task.color || "hsl(var(--foreground))",
-                      backgroundColor: task.color
-                        ? hexToRgba(task.color, 0.15)
-                        : "transparent",
-                    }}
-                  >
-                    {task.name}
-                  </span>
-                ) : (
-                  <span className="truncate flex-1">{task.name}</span>
-                )}
-              
-                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
+                <div
+                  className="flex items-center gap-2 h-full"
+                  style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
+                >
+                  {!isCategory && (
+                    <CornerDownRight
+                      className="h-4 w-4 flex-shrink-0"
+                      style={{ color: getTaskColor(task) }}
+                    />
+                  )}
+
+                  {isCategory ? (
+                    <span
+                      className="px-2 py-0.5 rounded-md font-semibold"
+                      style={{
+                        color: task.color || "hsl(var(--foreground))",
+                        backgroundColor: task.color
+                          ? hexToRgba(task.color, 0.15)
+                          : "transparent",
+                      }}
+                    >
+                      {task.name}
+                    </span>
+                  ) : (
+                    <span className="truncate flex-1">{task.name}</span>
+                  )}
+
+                  <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
+                </div>
               </div>
             </div>
           );
