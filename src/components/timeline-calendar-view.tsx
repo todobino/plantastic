@@ -164,25 +164,25 @@ export function TimelineCalendarView({
       >
         <div
             style={{ height: `${HEADER_HEIGHT}px` }}
-            className="sticky top-0 bg-background z-40"
+            className="sticky top-0 z-40"
         >
             <div
-                className="sticky left-0 top-0 z-50 flex items-center gap-2 px-4 bg-background"
+                className="sticky left-0 top-0 z-50 flex items-center gap-2 px-4"
                 style={{ width: 'fit-content', height: MONTH_ROW_HEIGHT }}
             >
                 <Button
                     data-today-button
                     onClick={onTodayClick}
-                    className="py-1 h-auto"
+                    className="py-1 h-auto drop-shadow-md"
                 >
                     Today
                 </Button>
-                <Button variant="secondary" className="py-1 h-auto font-semibold pointer-events-none">
+                <Button variant="secondary" className="py-1 h-auto font-semibold pointer-events-none drop-shadow-md">
                     {currentMonthLabel}
                 </Button>
             </div>
 
-            <div className="relative h-full" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
+            <div className="relative h-full bg-background" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
               <div
                 className="relative border-b"
                 style={{ height: `${MONTH_ROW_HEIGHT}px` }}
@@ -199,7 +199,11 @@ export function TimelineCalendarView({
                           left: `${groupStartX}px`,
                           width: `${cellWidth}px`,
                       }}
-                    />
+                    >
+                      <span className="absolute top-1/2 left-2 -translate-y-1/2 truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm">
+                        {group.label}
+                      </span>
+                    </div>
                   )
               })}
             </div>
