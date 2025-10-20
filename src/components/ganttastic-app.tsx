@@ -9,6 +9,7 @@ import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Sheet, SheetContent } from './ui/sheet';
 import TeamManager from './team-manager';
+import TeamMemberTasksDialog from './team-member-tasks-dialog';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
@@ -54,6 +55,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
   const [isCategoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTeamManagerOpen, setTeamManagerOpen] = useState(false);
+  const [viewingMemberTasks, setViewingMemberTasks] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -288,6 +290,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           onNewProjectClick={() => setImporterOpen(true)}
           onTeamClick={() => setTeamManagerOpen(true)}
           onQuickAddTask={handleQuickAddTask}
+          onAssigneeClick={setViewingMemberTasks}
         />
       </div>
       
@@ -345,6 +348,17 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           <TeamManager teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} />
         </SheetContent>
       </Sheet>
+      
+      {viewingMemberTasks && (
+        <Dialog open={!!viewingMemberTasks} onOpenChange={(isOpen) => !isOpen && setViewingMemberTasks(null)}>
+            <DialogContent className="max-w-4xl">
+                <TeamMemberTasksDialog 
+                    member={viewingMemberTasks} 
+                    tasks={tasks.filter(t => t.assigneeId === viewingMemberTasks.id)}
+                />
+            </DialogContent>
+        </Dialog>
+      )}
 
     </div>
   );

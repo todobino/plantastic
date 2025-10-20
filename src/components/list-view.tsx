@@ -20,6 +20,7 @@ type ListViewProps = {
   tasks: Task[];
   teamMembers: TeamMember[];
   onTaskClick: (task: Task) => void;
+  onAssigneeClick: (member: TeamMember) => void;
 };
 
 type ListedTask = Task & {
@@ -27,7 +28,7 @@ type ListedTask = Task & {
   assignee?: TeamMember;
 };
 
-export function ListView({ tasks, teamMembers, onTaskClick }: ListViewProps) {
+export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick }: ListViewProps) {
   const listedTasks = useMemo(() => {
     const categories = new Map(tasks.filter(t => t.type === 'category').map(c => [c.id, c]));
     const members = new Map(teamMembers.map(m => [m.id, m]));
@@ -69,9 +70,9 @@ export function ListView({ tasks, teamMembers, onTaskClick }: ListViewProps) {
         </TableHeader>
         <TableBody>
           {listedTasks.map((task, index) => (
-            <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
-              <TableCell className="border-r">{index + 1}</TableCell>
-              <TableCell className="font-medium border-r align-top">
+            <TableRow key={task.id} >
+              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{index + 1}</TableCell>
+              <TableCell className="font-medium border-r align-top" onClick={() => onTaskClick(task)}>
                 <div>
                   <div className="flex items-center gap-4">
                     <span>{task.name}</span>
@@ -89,26 +90,23 @@ export function ListView({ tasks, teamMembers, onTaskClick }: ListViewProps) {
                   )}
                 </div>
               </TableCell>
-              <TableCell className="border-r">{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell className="border-r">{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell className="border-r">
+              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r" onClick={() => onTaskClick(task)}>
                 {task.start && task.end 
                   ? `${differenceInDays(task.end, task.start) + 1} day(s)`
                   : '-'
                 }
               </TableCell>
-              <TableCell className="border-r">
+              <TableCell 
+                className="border-r cursor-pointer" 
+                onClick={() => task.assignee && onAssigneeClick(task.assignee)}
+              >
                   {task.assignee ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={task.assignee.photoURL} />
-                        <AvatarFallback>{getAssigneeInitials(task.assignee.name)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{task.assignee.name}</span>
-                    </div>
+                    <span className="text-sm">{task.assignee.name}</span>
                   ) : <span className="text-muted-foreground">-</span>}
               </TableCell>
-              <TableCell>
+              <TableCell onClick={() => onTaskClick(task)}>
                 <div className="flex flex-wrap gap-1">
                   {task.dependencies.map(depId => {
                     const depTask = getTaskById(depId);

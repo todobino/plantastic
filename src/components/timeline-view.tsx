@@ -29,10 +29,11 @@ type TimelineViewProps = {
     onNewProjectClick: () => void;
     onTeamClick: () => void;
     onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
+    onAssigneeClick: (member: TeamMember) => void;
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, teamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, teamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -690,13 +691,9 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, on
             </Button>
           </div>
         ) : (
-          <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} />
+          <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} />
         )}
       </div>
     </div>
   );
 }
-
-    
-
-    
