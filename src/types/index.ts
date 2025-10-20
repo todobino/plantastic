@@ -4,6 +4,7 @@ import { z } from 'zod';
 export interface TeamMember {
     id: string;
     name: string;
+    photoURL?: string;
 }
 
 export interface Task {

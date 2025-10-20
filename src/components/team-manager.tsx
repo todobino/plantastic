@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from './ui/scroll-area';
-import { SheetHeader, SheetTitle, SheetFooter } from './ui/sheet';
+import { SheetHeader, SheetTitle, SheetFooter, SheetClose } from './ui/sheet';
 import { Edit, Trash2, UserPlus, Check } from 'lucide-react';
 import type { TeamMember, Task } from '@/types';
 import { Dialog, DialogContent } from './ui/dialog';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 interface TeamManagerProps {
     teamMembers: TeamMember[];
@@ -29,6 +30,7 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
     const newMember: TeamMember = {
       id: `member-${Date.now()}`,
       name: newMemberName.trim(),
+      photoURL: `https://i.pravatar.cc/150?u=${Date.now()}`
     };
     setTeamMembers([...teamMembers, newMember]);
     setNewMemberName('');
@@ -75,6 +77,15 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
     setTaskDialogOpen(true);
   }
 
+  const getAssigneeInitials = (name?: string) => {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <>
       <SheetHeader>
@@ -114,7 +125,13 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
                                 onClick={(e) => e.stopPropagation()}
                             />
                         ) : (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={member.photoURL} alt={member.name} />
+                                <AvatarFallback>{getAssigneeInitials(member.name)}</AvatarFallback>
+                            </Avatar>
                             <p className="font-medium">{member.name}</p>
+                          </div>
                         )}
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                            {editingMemberId === member.id ? (
@@ -137,7 +154,9 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
         </div>
       </ScrollArea>
        <SheetFooter>
-        <Button variant="outline">Close</Button>
+        <SheetClose asChild>
+            <Button variant="outline">Close</Button>
+        </SheetClose>
       </SheetFooter>
       
       {selectedMember && (

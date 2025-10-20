@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as ReactPointerEvent } from 'react';
-import type { Task, Milestone, Project } from '@/types';
+import type { Task, Milestone, Project, TeamMember } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import AppHeader from "./app-header";
 import { TimelineTaskList } from './timeline-task-list';
@@ -19,6 +19,7 @@ type TimelineViewProps = {
     tasks: Task[];
     setTasks: (tasks: Task[]) => void;
     project: Project;
+    teamMembers: TeamMember[];
     onTaskClick: (task: Task) => void;
     onAddTaskClick: () => void;
     onAddCategoryClick: () => void;
@@ -31,7 +32,7 @@ type TimelineViewProps = {
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, teamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onTeamClick, onQuickAddTask }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -689,7 +690,7 @@ export default function TimelineView({ tasks, setTasks, project, onTaskClick, on
             </Button>
           </div>
         ) : (
-          <ListView tasks={tasks} onTaskClick={onTaskClick} />
+          <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} />
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Task } from '@/types';
+import type { Task, TeamMember } from '@/types';
 import { useMemo } from 'react';
 import {
   Table,
@@ -13,31 +13,45 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { UserCircle } from 'lucide-react';
 
 type ListViewProps = {
   tasks: Task[];
+  teamMembers: TeamMember[];
   onTaskClick: (task: Task) => void;
 };
 
 type ListedTask = Task & {
   category?: Task;
+  assignee?: TeamMember;
 };
 
-export function ListView({ tasks, onTaskClick }: ListViewProps) {
+export function ListView({ tasks, teamMembers, onTaskClick }: ListViewProps) {
   const listedTasks = useMemo(() => {
     const categories = new Map(tasks.filter(t => t.type === 'category').map(c => [c.id, c]));
+    const members = new Map(teamMembers.map(m => [m.id, m]));
     const justTasks = tasks
         .filter(t => t.type === 'task')
         .sort((a,b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0));
 
     return justTasks.map(task => ({
         ...task,
-        category: task.parentId ? categories.get(task.parentId) : undefined
+        category: task.parentId ? categories.get(task.parentId) : undefined,
+        assignee: task.assigneeId ? members.get(task.assigneeId) : undefined,
     }));
-  }, [tasks]);
+  }, [tasks, teamMembers]);
 
   const getTaskById = (id: string) => tasks.find(t => t.id === id);
+
+  const getAssigneeInitials = (name?: string) => {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="w-full overflow-auto">
@@ -49,6 +63,7 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
             <TableHead className="border-r">Start Date</TableHead>
             <TableHead className="border-r">End Date</TableHead>
             <TableHead className="border-r">Duration</TableHead>
+            <TableHead className="border-r">Assignee</TableHead>
             <TableHead>Dependencies</TableHead>
           </TableRow>
         </TableHeader>
@@ -82,6 +97,17 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
                   : '-'
                 }
               </TableCell>
+              <TableCell className="border-r">
+                  {task.assignee ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={task.assignee.photoURL} />
+                        <AvatarFallback>{getAssigneeInitials(task.assignee.name)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{task.assignee.name}</span>
+                    </div>
+                  ) : <span className="text-muted-foreground">-</span>}
+              </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {task.dependencies.map(depId => {
@@ -103,5 +129,3 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
 }
 
     
-
-
