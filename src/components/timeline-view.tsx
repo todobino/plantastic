@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, Milestone, Project, TeamMember } from '@/types';
-import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import AppHeader from "./app-header";
 import { TimelineTaskList } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
@@ -104,9 +104,9 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
   const { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups } = useMemo(() => {
     const today = startOfDay(new Date());
-    let projectStart: Date;
-    let projectEnd: Date;
-    
+    let viewStartDate: Date;
+    let viewEndDate: Date;
+
     const taskMap = new Map(tasks.map(t => [t.id, t]));
     const taskToChildren = new Map<string, Task[]>();
     tasks.forEach(task => {
@@ -148,7 +148,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         return { start: minStart, end: maxEnd };
     };
 
-    const allTasks = displayTasks.map(t => {
+    const allTasksWithDates = displayTasks.map(t => {
       if (t.type === 'category') {
         const { start, end } = getCategoryDates(t.id);
         return { ...t, start, end };
@@ -156,23 +156,25 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       return t;
     }).filter(t => t.start && t.end);
 
+    let effectiveProjectStart = project.startDate;
+    let effectiveProjectEnd = project.endDate;
 
-    if (allTasks.length === 0) {
-        projectStart = startOfWeek(startOfMonth(today));
-        projectEnd = endOfWeek(endOfMonth(today));
-    } else {
-        const startDates = allTasks.map(t => startOfDay(t.start!));
-        const endDates = allTasks.map(t => startOfDay(t.end!));
-        projectStart = new Date(Math.min(...startDates.map(d => d.getTime())));
-        projectEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
+    if (!effectiveProjectStart || !effectiveProjectEnd) {
+      if (allTasksWithDates.length > 0) {
+        effectiveProjectStart = new Date(Math.min(...allTasksWithDates.map(t => t.start!.getTime())));
+        effectiveProjectEnd = new Date(Math.max(...allTasksWithDates.map(t => t.end!.getTime())));
+      } else {
+        effectiveProjectStart = startOfMonth(today);
+        effectiveProjectEnd = endOfMonth(today);
+      }
     }
     
-    projectStart = addDays(projectStart, -365 * 2);
-    projectEnd = addDays(projectEnd, 365 * 2);
+    viewStartDate = subDays(effectiveProjectStart, 7);
+    viewEndDate = addDays(effectiveProjectEnd, 7);
 
     const dayWidth = 40;
 
-    const timeline = eachDayOfInterval({ start: projectStart, end: projectEnd });
+    const timeline = eachDayOfInterval({ start: viewStartDate, end: viewEndDate });
     const totalDays = timeline.length;
 
     const taskPositions = new Map<string, { x: number; y: number; width: number; s: Date; e: Date }>();
@@ -189,7 +191,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         if (s && e) {
             const startOfDay_s = startOfDay(s);
             const startOfDay_e = startOfDay(e);
-            const offset = differenceInDays(startOfDay_s, projectStart);
+            const offset = differenceInDays(startOfDay_s, viewStartDate);
             const durationCalendar = differenceInDays(startOfDay_e, startOfDay_s);
             taskPositions.set(task.id, {
                 x: offset * dayWidth,
@@ -224,8 +226,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         return groups;
     }
 
-    return { dayWidth, projectStart, projectEnd, totalDays, timeline, taskPositions, getHeaderGroups };
-  }, [displayTasks, tasks]);
+    return { dayWidth, projectStart: viewStartDate, projectEnd: viewEndDate, totalDays, timeline, taskPositions, getHeaderGroups };
+  }, [displayTasks, tasks, project.startDate, project.endDate]);
 
   const headerGroups = getHeaderGroups();
 
@@ -707,3 +709,5 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
+
+    
