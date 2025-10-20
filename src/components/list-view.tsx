@@ -56,14 +56,21 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
           {listedTasks.map((task, index) => (
             <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
               <TableCell className="border-r">{index + 1}</TableCell>
-              <TableCell className="font-medium border-r">
-                <div className="flex items-center gap-4">
-                  <span>{task.name}</span>
-                  {task.category && (
-                      <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-                          <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
-                          {task.category.name}
-                      </div>
+              <TableCell className="font-medium border-r align-top">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <span>{task.name}</span>
+                    {task.category && (
+                        <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                            <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: task.category.color}} />
+                            {task.category.name}
+                        </div>
+                    )}
+                  </div>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {task.description}
+                    </p>
                   )}
                 </div>
               </TableCell>
@@ -96,4 +103,5 @@ export function ListView({ tasks, onTaskClick }: ListViewProps) {
 }
 
     
+
 
