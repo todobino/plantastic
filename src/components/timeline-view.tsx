@@ -685,7 +685,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         case 'list':
             return <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} />;
         case 'team':
-            return <TeamView teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} onTaskUpdate={onTaskUpdate} />;
+            return <TeamView teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} onTaskUpdate={onTaskUpdate} onTaskClick={onTaskClick} />;
         default:
             return null;
     }

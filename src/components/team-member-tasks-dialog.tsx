@@ -18,9 +18,10 @@ type TeamMemberTasksDialogProps = {
   onDelete: (e: React.MouseEvent) => void;
   teamMembers: TeamMember[];
   onTaskUpdate: (task: Task) => void;
+  onTaskClick: (task: Task) => void;
 };
 
-export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelete, teamMembers, onTaskUpdate }: TeamMemberTasksDialogProps) {
+export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelete, teamMembers, onTaskUpdate, onTaskClick }: TeamMemberTasksDialogProps) {
 
   const getPriorityBadgeVariant = (priority: Task['priority']) => {
     switch (priority) {
@@ -65,7 +66,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
               {tasks.length > 0 ? tasks.map(task => {
                 const category = getCategoryForTask(task);
                 return (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
                         <TableCell className="font-medium border-r align-top">
                             <div className="flex flex-col gap-1">
                                 {category && (
@@ -81,7 +82,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
                         <TableCell className="border-r">
                             <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority || 'N/A'}</Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                             <Popover>
                                 <PopoverTrigger asChild>
                                 <Button variant="outline" className="w-[150px] justify-between">
