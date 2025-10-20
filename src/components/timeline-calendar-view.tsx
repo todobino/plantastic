@@ -122,6 +122,20 @@ export function TimelineCalendarView({
     document.body.style.cursor = "default";
     setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
   };
+  
+  const countTasksInCategory = (categoryId: string, allTasks: Task[]): number => {
+    let count = 0;
+    const children = allTasks.filter(t => t.parentId === categoryId);
+    for (const child of children) {
+      if (child.type === 'task') {
+        count++;
+      } else if (child.type === 'category') {
+        count += countTasksInCategory(child.id, allTasks);
+      }
+    }
+    return count;
+  };
+
 
   return (
     <div ref={timelineRef} className="col-span-9 overflow-auto relative">
@@ -457,6 +471,9 @@ export function TimelineCalendarView({
                           Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)
                         </p>
                       </>
+                    )}
+                    {task.type === 'category' && (
+                        <p>Tasks: {countTasksInCategory(task.id, tasks)}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
