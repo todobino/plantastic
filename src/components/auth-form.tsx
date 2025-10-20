@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { GanttChartSquare } from 'lucide-react';
-import { DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter } from './ui/dialog';
+import { DialogHeader, DialogTitle, DialogDescription, DialogBody } from './ui/dialog';
+import { useAuth } from '@/firebase/provider';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -30,8 +32,10 @@ const signupSchema = z.object({
 type LoginSchema = z.infer<typeof loginSchema>;
 type SignupSchema = z.infer<typeof signupSchema>;
 
-export function AuthForm() {
+export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isPending, setIsPending] = useState(false);
+  const { toast } = useToast();
+  const auth = useAuth();
 
   const loginForm = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -43,22 +47,32 @@ export function AuthForm() {
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
 
-  const onLoginSubmit = (data: LoginSchema) => {
+  const onLoginSubmit = async (data: LoginSchema) => {
+    if (!auth) return;
     setIsPending(true);
-    console.log('Login data:', data);
-    setTimeout(() => {
-        console.log('Login Successful');
-        setIsPending(false);
-    }, 1000)
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      toast({ title: 'Login Successful', description: "You've been successfully logged in." });
+      onSuccess?.();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Login Failed', description: error.message });
+    } finally {
+      setIsPending(false);
+    }
   };
 
-  const onSignupSubmit = (data: SignupSchema) => {
+  const onSignupSubmit = async (data: SignupSchema) => {
+    if (!auth) return;
     setIsPending(true);
-    console.log('Signup data:', data);
-     setTimeout(() => {
-        console.log('Signup Successful');
-        setIsPending(false);
-    }, 1000)
+    try {
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      toast({ title: 'Signup Successful', description: "Your account has been created." });
+      onSuccess?.();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Signup Failed', description: error.message });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
