@@ -21,6 +21,7 @@ import {
 import { Task } from "@/types";
 import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Button } from "./ui/button";
 
 type TimelineCalendarViewProps = {
   timeline: Date[];
@@ -93,8 +94,7 @@ export function TimelineCalendarView({
   const CONTROL_RAIL = 112; // width of the left sticky rail (Today button + gutter)
   const LABEL_GAP = 8; // small gap between rail and month label
   const dateToX = useCallback((d: Date) => {
-    // This function needs to be defined to be used in useEffect, if it's from props, ensure it's passed or defined here
-    // Assuming it's defined in the parent and passed down, or defined here.
+    // This function needs to be defined to be used in useEffect, if it's from props, ensure it's passed or defined here.
     // For now, let's assume a placeholder definition if it's not passed as a prop
     const projectStart = new Date(Math.min(...tasks.map(t => t.start?.getTime() || Infinity)));
     return differenceInDays(startOfDay(d), startOfDay(projectStart)) * dayWidth;
