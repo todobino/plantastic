@@ -180,35 +180,23 @@ isResizingThis,
               Today
             </Button>
             <div
-              className="flex relative border-r"
+              className="flex relative border-b"
               style={{ height: `${MONTH_ROW_HEIGHT}px` }}
             >
               {headerGroups.map((group, index) => {
                 const groupStartX = dateToX(group.startDay);
-                const todayButtonWidth = 80;
-                const stickyStart = scrollLeft + todayButtonWidth;
-                const groupEndX = groupStartX + group.days * dayWidth;
-
-                const left = Math.max(
-                    groupStartX,
-                    Math.min(stickyStart, groupEndX - 150)
-                );
                 
                 return (
                   <div
                     key={index}
-                    className="font-semibold text-sm flex items-center h-full absolute top-0"
+                    className="font-semibold text-sm flex items-center justify-center h-full absolute top-0 border-r"
                     style={{
                         left: `${groupStartX}px`,
                         width: `${group.days * dayWidth}px`,
                     }}
                   >
                     <span 
-                      className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 absolute"
-                      style={{
-                        left: `${left - groupStartX}px`,
-                        pointerEvents: 'none'
-                      }}
+                      className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1"
                     >
                       {group.label}
                     </span>
@@ -217,7 +205,7 @@ isResizingThis,
               })}
             </div>
             <div
-              className="grid border-t"
+              className="grid"
               style={{
                 gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`,
                 height: `${DAY_ROW_HEIGHT}px`,
@@ -230,7 +218,7 @@ isResizingThis,
                   <div
                     key={day.toString()}
                     className={cn(
-                      "text-center text-xs border-r relative flex flex-col justify-center",
+                      "text-center text-xs border-r border-b relative flex flex-col justify-center",
                       weekend && "bg-zinc-100 dark:bg-zinc-900/40",
                       today && "bg-primary text-primary-foreground font-bold"
                     )}
@@ -543,6 +531,7 @@ isResizingThis,
     
 
     
+
 
 
 
