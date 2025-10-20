@@ -42,7 +42,7 @@ export default function AppHeader({
             <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
           </SheetContent>
         </Sheet>
-         <Button size="sm" variant="outline" onClick={onTeamClick}>
+         <Button variant="outline" onClick={onTeamClick}>
           <Users className="h-4 w-4 mr-2" />
           Team
         </Button>
@@ -59,13 +59,13 @@ export default function AppHeader({
           </TabsList>
         </Tabs>
         {view === 'timeline' && (
-          <Button variant="secondary" size="sm" onClick={onTodayClick}>
+          <Button variant="secondary" onClick={onTodayClick}>
             Today
           </Button>
         )}
       </div>
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline" onClick={onNewProjectClick}>
+        <Button variant="outline" onClick={onNewProjectClick}>
             <Download className="h-4 w-4 mr-2" />
             Import/Export
         </Button>
