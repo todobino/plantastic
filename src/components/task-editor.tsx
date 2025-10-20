@@ -365,29 +365,27 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             </FormItem>
                         )}
                         />
+                    
                 </div>
             </div>
         </DialogBody>
 
         <DialogFooter>
           <div className="flex justify-between items-center w-full">
-            <Button type="submit">
-                {selectedTask ? 'Save Changes' : 'Add Task'}
-            </Button>
             {selectedTask && (
-                <Button type="button" variant="destructive" size="icon" onClick={() => onDeleteTask(selectedTask.id)}>
-                <Trash2 className="h-4 w-4" />
+                <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => onDeleteTask(selectedTask.id)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
                 </Button>
             )}
+            <div className="ml-auto">
+                <Button type="submit">
+                    {selectedTask ? 'Save Changes' : 'Add Task'}
+                </Button>
+            </div>
           </div>
         </DialogFooter>
       </form>
     </Form>
   );
 }
-
-    
-
-    
-
-    
