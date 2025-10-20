@@ -133,37 +133,37 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks }: TeamVie
                   onClick={() => handleMemberClick(member)}
               >
                   {editingMemberId === member.id ? (
-                      <Input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => handleEditKeyDown(e, member.id)}
-                          onBlur={(e) => handleSaveEdit(e, member.id)}
-                          autoFocus
-                          className="h-8"
-                          onClick={(e) => e.stopPropagation()}
-                      />
+                      <div className="flex items-center gap-2 w-full">
+                        <Input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={(e) => handleEditKeyDown(e, member.id)}
+                            onBlur={(e) => handleSaveEdit(e, member.id)}
+                            autoFocus
+                            className="h-8"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleSaveEdit(e, member.id)}>
+                            <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
                   ) : (
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.photoURL} alt={member.name} />
-                          <AvatarFallback>{getAssigneeInitials(member.name)}</AvatarFallback>
-                      </Avatar>
-                      <p className="font-medium text-sm">{member.name}</p>
-                    </div>
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.photoURL} alt={member.name} />
+                            <AvatarFallback>{getAssigneeInitials(member.name)}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-medium text-sm">{member.name}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleEditClick(e, member)}>
+                                <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
                   )}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                     {editingMemberId === member.id ? (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleSaveEdit(e, member.id)}>
-                              <Check className="h-4 w-4" />
-                          </Button>
-                     ) : (
-                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleEditClick(e, member)}>
-                              <Edit className="h-4 w-4" />
-                          </Button>
-
-                     )}
-                  </div>
               </div>
             ))}
           </div>
