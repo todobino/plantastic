@@ -33,9 +33,8 @@ export default function TeamMemberTasksDialog({ member, tasks, onDelete }: TeamM
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{member.name}'s Tasks</CardTitle>
-        <Button variant="destructive" size="sm" onClick={onDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Member
+        <Button variant="destructive" size="icon" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
         </Button>
       </CardHeader>
       <CardContent>
