@@ -122,7 +122,7 @@ export function TimelineCalendarView({
   };
 
   return (
-    <div ref={timelineRef} className="col-span-8 overflow-auto">
+    <div ref={timelineRef} className="col-span-9 overflow-auto">
       <div
         className={cn("relative", panState.isPanning && "cursor-grabbing")}
         onPointerDown={handlePanStart}

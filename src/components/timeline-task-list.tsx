@@ -38,7 +38,7 @@ export function TimelineTaskList({
   getTaskColor,
 }: TimelineTaskListProps) {
   return (
-    <div className="col-span-4 border-r overflow-y-auto shadow-md z-20">
+    <div className="col-span-3 border-r overflow-y-auto shadow-md z-20">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
         className="sticky top-0 bg-background z-40 flex flex-col border-b"
@@ -102,7 +102,7 @@ export function TimelineTaskList({
           style={{ height: `${DAY_ROW_HEIGHT}px` }}
           className="flex items-center text-xs font-medium text-muted-foreground"
         >
-          <div style={{width: `${ROW_HEIGHT}px`, height: `${DAY_ROW_HEIGHT}px`}} className="flex-shrink-0 text-center border-r h-full flex items-center justify-center">
+          <div style={{width: `${DAY_ROW_HEIGHT}px`, height: `${DAY_ROW_HEIGHT}px`}} className="flex-shrink-0 text-center border-r h-full flex items-center justify-center">
             ID
           </div>
           <div className="flex-grow text-center h-full flex items-center justify-center">
@@ -125,7 +125,7 @@ export function TimelineTaskList({
               className="group w-full text-sm hover:bg-secondary flex items-center border-b"
             >
               <div
-                style={{width: `${ROW_HEIGHT}px`}}
+                style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
                 className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer"
                 onClick={(e) => {
                   if (isCategory) {
@@ -184,4 +184,3 @@ export function TimelineTaskList({
     </div>
   );
 }
-
