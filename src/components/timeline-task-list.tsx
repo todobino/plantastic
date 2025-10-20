@@ -149,10 +149,20 @@ export function TimelineTaskList({
                 )}
               </div>
               <div
-                className={cn("flex-grow flex items-center gap-2 cursor-pointer h-full pr-2", isCategory ? "pl-2" : "pl-2")}
-                style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
+                className="flex-grow flex items-center gap-2 cursor-pointer h-full pr-2 pl-2"
                 onClick={() => onTaskClick(task)}
               >
+                {!isCategory && (
+                  <CornerDownRight
+                    className="h-4 w-4 flex-shrink-0"
+                    // indent ONLY the icon for nested tasks
+                    style={{
+                      color: getTaskColor(task),
+                      marginLeft: level ? `${level * 1.5}rem` : 0
+                    }}
+                  />
+                )}
+              
                 {isCategory ? (
                   <span
                     className="px-2 py-0.5 rounded-md font-semibold"
@@ -166,15 +176,9 @@ export function TimelineTaskList({
                     {task.name}
                   </span>
                 ) : (
-                  <>
-                    <CornerDownRight
-                      className="h-4 w-4 flex-shrink-0"
-                      style={{ color: getTaskColor(task) }}
-                    />
-                    <span className="truncate flex-1">{task.name}</span>
-                  </>
+                  <span className="truncate flex-1">{task.name}</span>
                 )}
-
+              
                 <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
               </div>
             </div>
