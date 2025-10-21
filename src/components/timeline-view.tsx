@@ -630,37 +630,114 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     setActiveTask(null);
     setActiveTaskIndex(-1);
     const { active, over } = event;
-
+  
     if (!over || active.id === over.id) {
       return;
     }
-    
-    const activeTask = tasks.find(t => t.id === active.id);
-    const overTask = tasks.find(t => t.id === over.id);
-
-    if (!activeTask) return;
-
-    const oldIndex = displayTasks.findIndex(t => t.id === active.id);
-    let newIndex = displayTasks.findIndex(t => t.id === over.id);
-
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    let newTasks = [...tasks];
-    const [movedTask] = newTasks.splice(tasks.findIndex(t => t.id === active.id), 1);
-    
-    let targetParentId = overTask?.type === 'category' ? over.id : overTask?.parentId || null;
-    
-    const overIndexInNewTasks = newTasks.findIndex(t => t.id === over.id);
-    
-    movedTask.parentId = targetParentId;
-    
-    if (overTask?.type === 'category') {
-        newTasks.splice(overIndexInNewTasks + 1, 0, movedTask);
+  
+    const oldIndexInDisplay = displayTasks.findIndex(t => t.id === active.id);
+    const newIndexInDisplay = displayTasks.findIndex(t => t.id === over.id);
+  
+    if (oldIndexInDisplay === -1 || newIndexInDisplay === -1) return;
+  
+    const movedTaskInDisplay = displayTasks[oldIndexInDisplay];
+    const overTaskInDisplay = displayTasks[newIndexInDisplay];
+  
+    // Find the actual task objects from the source `tasks` array
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const movedTask = taskMap.get(active.id);
+    if (!movedTask) return;
+  
+    let newTasksArray = [...tasks];
+  
+    // Determine the new parent
+    let newParentId: string | null = null;
+    if (overTaskInDisplay.type === 'category') {
+      newParentId = overTaskInDisplay.id;
     } else {
-        newTasks.splice(overIndexInNewTasks, 0, movedTask);
+      newParentId = overTaskInDisplay.parentId || null;
     }
+  
+    // Update parentId
+    movedTask.parentId = newParentId;
+  
+    // Create a new display order based on the drop
+    const newDisplayOrder = arrayMove(displayTasks, oldIndexInDisplay, newIndexInDisplay);
+  
+    // Create a map for quick parent lookup from the new display order
+    const displayParentMap = new Map<string, string | null>();
+    let currentParent: string | null = null;
+    newDisplayOrder.forEach(t => {
+      if (t.type === 'category') {
+        currentParent = t.id;
+        displayParentMap.set(t.id, null); // Categories don't have parents in this logic
+      } else {
+        if (t.id === movedTask.id) {
+           // special handling for the moved task
+          const overIsCategory = overTaskInDisplay.type === 'category';
+          t.parentId = overIsCategory ? overTaskInDisplay.id : overTaskInDisplay.parentId;
+          displayParentMap.set(t.id, t.parentId);
+        } else {
+          // This part needs to be smarter, for now, we find the preceding category
+          let parentCandidate: Task | undefined;
+          const currentTaskIndex = newDisplayOrder.findIndex(item => item.id === t.id);
+          for(let i = currentTaskIndex - 1; i >=0; i--) {
+            if(newDisplayOrder[i].type === 'category') {
+              parentCandidate = newDisplayOrder[i];
+              break;
+            }
+          }
+          t.parentId = parentCandidate?.id || null;
+          displayParentMap.set(t.id, t.parentId);
+        }
+      }
+    });
+
     
-    onReorderTasks(newTasks);
+    // Rebuild the tasks array based on the new display order and parent relationships
+    const finalTasks: Task[] = [];
+    const processedIds = new Set<string>();
+
+    const allOriginalTasks = new Map(tasks.map(t => [t.id, t]));
+    
+    // Create a new flat list based on display order but with updated parent IDs
+    const remappedDisplayTasks = newDisplayOrder.map(dt => {
+        const originalTask = allOriginalTasks.get(dt.id)!;
+        let newParentId = dt.parentId;
+
+        if (dt.id === movedTask.id) {
+            newParentId = overTaskInDisplay.type === 'category' ? overTaskInDisplay.id : overTaskInDisplay.parentId;
+        } else {
+            let parentCandidate: Task | undefined;
+            const currentTaskIndex = newDisplayOrder.findIndex(item => item.id === dt.id);
+            for(let i = currentTaskIndex - 1; i >=0; i--) {
+                const potentialParent = newDisplayOrder[i];
+                if(potentialParent.type === 'category') {
+                    // Check if the original task was a child of this category
+                     const originalParent = tasks.find(t => t.id === potentialParent.id);
+                     if (originalParent) {
+                         parentCandidate = potentialParent;
+                         break;
+                     }
+                }
+            }
+             newParentId = parentCandidate ? parentCandidate.id : dt.parentId;
+             
+             // find the new parent from the newDisplayOrder
+             let foundParent: string | null = null;
+             for (let i = newDisplayOrder.findIndex(t => t.id === dt.id); i >= 0; i--) {
+                if (newDisplayOrder[i].type === 'category' && parseInt(newDisplayOrder[i].milestone || '0') < parseInt(dt.milestone || '0')) {
+                    foundParent = newDisplayOrder[i].id;
+                    break;
+                }
+             }
+             newParentId = foundParent;
+        }
+        
+        return { ...originalTask, parentId: newParentId };
+    });
+
+    onReorderTasks(arrayMove(tasks, tasks.findIndex(t => t.id === active.id), tasks.findIndex(t => t.id === over.id)));
   };
 
 
@@ -760,3 +837,4 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
+
