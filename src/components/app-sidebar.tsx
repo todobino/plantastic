@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle, LogOut } from 'lucide-react';
+import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle, LogOut, Briefcase } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
@@ -62,8 +62,9 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
                 isOverlay && "shadow-xl ring-1 ring-border cursor-grabbing"
             )}
         >
-            <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab py-1", isOverlay && "cursor-grabbing")}>
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
+            <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab py-1 group/handle", isOverlay && "cursor-grabbing")}>
+                <Briefcase className="h-5 w-5 text-muted-foreground group-hover/handle:hidden" />
+                <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
             {!isOverlay && onEdit && onDelete && (
