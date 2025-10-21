@@ -90,9 +90,9 @@ export function TimelineCalendarView({
   }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
 
   const dateToX = useCallback((d: Date) => {
-    const projectStart = new Date(Math.min(...tasks.map(t => t.start?.getTime() || Infinity)));
-    return differenceInDays(startOfDay(d), startOfDay(projectStart)) * dayWidth;
-  }, [tasks, dayWidth]);
+    if (!timeline || timeline.length === 0) return 0;
+    return differenceInDays(startOfDay(d), startOfDay(timeline[0])) * dayWidth;
+  }, [timeline, dayWidth]);
 
   useEffect(() => {
     const scroller = timelineRef.current;
@@ -150,6 +150,8 @@ export function TimelineCalendarView({
     }
     return count;
   };
+  
+  const todayX = dateToX(new Date());
 
   return (
     <div
@@ -226,13 +228,13 @@ export function TimelineCalendarView({
                     className={cn(
                       "text-center text-xs border-r relative flex flex-col justify-center",
                       weekend && "bg-zinc-100 dark:bg-zinc-900/40",
-                      today && "bg-primary text-primary-foreground font-bold border-l-2 border-l-black dark:border-l-slate-200"
                     )}
                   >
-                    <div>{format(day, "dd")}</div>
+                    <div className={cn(today && "bg-primary text-primary-foreground font-bold rounded-full w-6 h-6 flex items-center justify-center mx-auto")}>{format(day, "dd")}</div>
                     <div
                       className={cn(
-                        today ? "text-primary-foreground" : "text-muted-foreground"
+                        "text-muted-foreground",
+                         today && "text-primary font-bold"
                       )}
                     >
                       {format(day, "E")}
@@ -260,12 +262,17 @@ export function TimelineCalendarView({
                 key={`bg-${i}`}
                 className={cn(
                   "border-r h-full",
-                  isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40",
-                  isToday(day) && "border-l-2 border-l-black dark:border-l-slate-200"
+                  isWeekend(day) && "bg-zinc-100 dark:bg-zinc-900/40"
                 )}
               ></div>
             ))}
           </div>
+
+          <div
+            className="absolute top-0 left-0 h-full w-0.5 bg-primary z-10 pointer-events-none"
+            style={{ left: `${todayX + dayWidth / 2}px` }}
+          />
+
           <div className="absolute top-0 left-0 w-full h-full">
             {displayTasks.map((_task, i) => (
               <div
