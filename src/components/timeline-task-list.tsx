@@ -37,8 +37,9 @@ type TimelineTaskListProps = {
   isOverlay?: boolean;
 };
 
-export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
+export function DraggableTaskRow({ task, index, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
     task: Task;
+    index: number;
     onTaskClick: (task: Task) => void;
     toggleCategory: (id: string) => void;
     getTaskColor: (task: Task) => string;
@@ -56,6 +57,7 @@ export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskCol
         <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
             <TaskRow 
               task={task} 
+              index={index}
               onTaskClick={onTaskClick}
               toggleCategory={toggleCategory}
               getTaskColor={getTaskColor}
@@ -70,6 +72,7 @@ export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskCol
 
 export function TaskRow({
   task,
+  index,
   onTaskClick,
   toggleCategory,
   getTaskColor,
@@ -81,6 +84,7 @@ export function TaskRow({
   dragListeners,
 }: {
   task: Task & { milestone?: string };
+  index: number;
   onTaskClick: (task: Task) => void;
   toggleCategory: (id: string) => void;
   getTaskColor: (task: Task) => string;
@@ -103,16 +107,17 @@ export function TaskRow({
             )}
         >
             <div
-            style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
-            className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer hover:bg-secondary"
+                style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
+                className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center group/handle"
             >
                 {isCategory ? (
-                    <div className="p-1" onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }}>
+                    <div className="p-1 cursor-pointer hover:bg-secondary" onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }}>
                         {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </div>
                 ) : (
                     <span {...dragListeners} {...dragAttributes} className={cn("w-full h-full flex items-center justify-center cursor-grab", isOverlay && "cursor-grabbing")}>
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                        <span className="group-hover/handle:hidden">{index + 1}</span>
+                        <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
                     </span>
                 )}
             </div>
@@ -265,10 +270,11 @@ export function TimelineTaskList({
         </div>
       </div>
       <div className="relative">
-        {displayTasks.map((task) => (
+        {displayTasks.map((task, index) => (
             <DraggableTaskRow 
                 key={task.id}
                 task={task}
+                index={index}
                 onTaskClick={onTaskClick}
                 toggleCategory={toggleCategory}
                 getTaskColor={getTaskColor}
