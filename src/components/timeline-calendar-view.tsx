@@ -203,16 +203,16 @@ export function TimelineCalendarView({
                   return (
                     <div
                       key={index}
-                      className={cn(
-                        "h-full border-r flex items-center",
-                        group.label === currentMonthLabel && 'opacity-0'
-                      )}
+                      className="h-full border-r flex items-center"
                       style={{
                           gridColumnStart: startColumn,
                           gridColumnEnd: endColumn,
                       }}
                     >
-                      <span className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm ml-2">
+                      <span className={cn(
+                        "truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm ml-2",
+                        group.label === currentMonthLabel && 'opacity-0'
+                      )}>
                         {group.label}
                       </span>
                     </div>

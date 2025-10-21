@@ -597,7 +597,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const scroller = timelineRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
-    const centerViewportX = scrollLeft + scroller.clientWidth / 2;
+    const centerViewportX = scrollLeft + scroller.clientWidth / 4;
     const centerDate = addDays(timeline[0], centerViewportX / dayWidth);
     const newLabel = format(centerDate, 'MMMM yyyy');
 
@@ -632,33 +632,47 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     if (!over || active.id === over.id) {
       return;
     }
-
-    const oldIndex = tasks.findIndex((t) => t.id === active.id);
-    const newIndex = tasks.findIndex((t) => t.id === over.id);
-
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
+  
+    const activeTask = tasks.find(t => t.id === active.id);
+    const overTask = tasks.find(t => t.id === over.id);
     
-    const activeTask = tasks[oldIndex];
-    const overTask = tasks[newIndex];
-
+    if (!activeTask || !overTask) return;
+  
+    const reorderedFlatTasks = arrayMove(
+      displayTasks,
+      displayTasks.findIndex(t => t.id === active.id),
+      displayTasks.findIndex(t => t.id === over.id)
+    );
+    
+    const overTaskIndexInDisplay = reorderedFlatTasks.findIndex(t => t.id === over.id);
+    let newParentId = overTask.parentId;
+    let targetIndex = -1;
+  
     const overTaskInDisplay = displayTasks.find(t => t.id === over.id);
-
-    let newParentId: string | null = null;
-    if (overTaskInDisplay?.type === 'category') {
+    
+    if (overTaskInDisplay?.type === 'category' && overTaskInDisplay.isExpanded) {
         newParentId = overTaskInDisplay.id;
     } else {
         newParentId = overTaskInDisplay?.parentId || null;
     }
-    
-    const finalTasks = reorderedTasks.map(t => {
-        if (t.id === active.id) {
-            return { ...t, parentId: newParentId };
-        }
-        return t;
-    });
 
+    const tasksInNewParent = reorderedFlatTasks.filter(t => t.parentId === newParentId);
+    const activeTaskInNewContext = tasksInNewParent.find(t => t.id === active.id);
+    
+    const finalTasks = [...tasks];
+    const oldIndex = finalTasks.findIndex(t => t.id === active.id);
+    finalTasks.splice(oldIndex, 1);
+  
+    const overIndex = finalTasks.findIndex(t => t.id === over.id);
+  
+    const updatedActiveTask = { ...activeTask, parentId: newParentId };
+  
+    if (overIndex !== -1) {
+       finalTasks.splice(overIndex, 0, updatedActiveTask);
+    } else {
+        finalTasks.push(updatedActiveTask);
+    }
+    
     onReorderTasks(finalTasks);
   };
 
