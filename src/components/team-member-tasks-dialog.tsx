@@ -3,11 +3,9 @@
 
 import type { TeamMember, Task } from '@/types';
 import { Button } from './ui/button';
-import { DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Trash2, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
@@ -44,15 +42,14 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{member.name}'s Tasks</CardTitle>
+    <div className="flex flex-col h-full w-full">
+      <div className="flex flex-row items-center justify-between pb-4">
+        <h2 className="text-2xl font-bold tracking-tight">{member.name}'s Tasks</h2>
         <Button variant="destructive" size="icon" onClick={onDelete}>
             <Trash2 className="h-4 w-4" />
         </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-md">
+      </div>
+      <div className="flex-grow border rounded-md overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -116,8 +113,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
               )}
             </TableBody>
           </Table>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
