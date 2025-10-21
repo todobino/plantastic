@@ -96,13 +96,12 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow flex flex-col min-h-0">
           <ScrollArea className="flex-grow p-4">
             <div className="space-y-4">
-              <div className="flex gap-4">
+              <div className="flex items-end gap-4">
                   <FormField
                     control={form.control}
                     name="icon"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Icon</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
