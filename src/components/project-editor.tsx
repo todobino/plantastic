@@ -12,7 +12,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { CalendarIcon, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code } from 'lucide-react';
+import { CalendarIcon, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit } from 'lucide-react';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -50,6 +50,11 @@ const icons = [
     { name: 'Plane', component: Plane },
     { name: 'Music', component: Music },
     { name: 'Code', component: Code },
+    { name: 'Utensils', component: Utensils },
+    { name: 'PartyPopper', component: PartyPopper },
+    { name: 'Building', component: Building },
+    { name: 'Rocket', component: Rocket },
+    { name: 'BrainCircuit', component: BrainCircuit },
 ];
 
 export default function ProjectEditor({ project, onProjectUpdate }: ProjectEditorProps) {
