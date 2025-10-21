@@ -114,7 +114,7 @@ export function TimelineTaskList({
           <div style={{width: `${DAY_ROW_HEIGHT}px`, height: `${DAY_ROW_HEIGHT}px`}} className="flex-shrink-0 text-center border-r h-full flex items-center justify-center">
             ID
           </div>
-          <div className="flex-grow text-center h-full flex items-center justify-center">
+          <div className="flex-grow text-left h-full flex items-center justify-start pl-4">
             Name
           </div>
         </div>
@@ -165,7 +165,7 @@ export function TimelineTaskList({
                 onClick={() => onTaskClick(task)}
               >
                 <div
-                  className="flex items-center gap-2 h-full"
+                  className="flex items-center gap-2 h-full pl-4"
                   style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
                 >
                   {!isCategory && level > 0 && (
