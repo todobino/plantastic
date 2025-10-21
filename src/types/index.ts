@@ -32,6 +32,7 @@ export interface Project {
   endDate?: Date;
   budget?: number;
   value?: number;
+  icon?: string;
 }
 
 export interface Milestone {

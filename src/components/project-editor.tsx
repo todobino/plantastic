@@ -12,7 +12,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code } from 'lucide-react';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -25,6 +25,7 @@ const projectSchema = z.object({
   endDate: z.date().optional(),
   budget: z.number().optional(),
   value: z.number().optional(),
+  icon: z.string().optional(),
 }).refine(data => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
   path: ["endDate"],
@@ -38,6 +39,19 @@ type ProjectEditorProps = {
   onProjectUpdate: (project: Project) => void;
 };
 
+const icons = [
+    { name: 'Briefcase', component: Briefcase },
+    { name: 'PawPrint', component: PawPrint },
+    { name: 'Leaf', component: Leaf },
+    { name: 'Gamepad2', component: Gamepad2 },
+    { name: 'Film', component: Film },
+    { name: 'Book', component: Book },
+    { name: 'Home', component: Home },
+    { name: 'Plane', component: Plane },
+    { name: 'Music', component: Music },
+    { name: 'Code', component: Code },
+];
+
 export default function ProjectEditor({ project, onProjectUpdate }: ProjectEditorProps) {
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -47,7 +61,8 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
       startDate: project.startDate,
       endDate: project.endDate,
       budget: project.budget,
-      value: project.value
+      value: project.value,
+      icon: project.icon || 'Briefcase'
     },
   });
   
@@ -58,7 +73,8 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
         startDate: project.startDate,
         endDate: project.endDate,
         budget: project.budget,
-        value: project.value
+        value: project.value,
+        icon: project.icon || 'Briefcase'
     });
   }, [project, form]);
 
@@ -80,19 +96,64 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow flex flex-col min-h-0">
           <ScrollArea className="flex-grow p-4">
             <div className="space-y-4">
-              <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Q3 Marketing Campaign" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="flex gap-4">
+                  <FormField
+                    control={form.control}
+                    name="icon"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Icon</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                <Button
+                                    variant="outline"
+                                    className="w-16 h-16"
+                                >
+                                    {(() => {
+                                        const IconComponent = icons.find(i => i.name === field.value)?.component;
+                                        return IconComponent ? <IconComponent className="h-8 w-8" /> : <Briefcase className="h-8 w-8" />;
+                                    })()}
+                                </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto">
+                                <div className="grid grid-cols-5 gap-2">
+                                    {icons.map(icon => {
+                                        const IconComponent = icon.component;
+                                        return (
+                                            <Button
+                                                key={icon.name}
+                                                variant={field.value === icon.name ? 'default' : 'outline'}
+                                                size="icon"
+                                                onClick={() => field.onChange(icon.name)}
+                                                className="w-12 h-12"
+                                            >
+                                                <IconComponent className="h-6 w-6" />
+                                            </Button>
+                                        )
+                                    })}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Project Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Q3 Marketing Campaign" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+              </div>
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -219,4 +280,3 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
     </>
   );
 }
-

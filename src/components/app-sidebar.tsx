@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle, LogOut, Briefcase } from 'lucide-react';
+import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle, LogOut, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, type LucideIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
@@ -29,12 +29,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Plandalf Plan' },
-  { id: 'proj-2', name: 'Marketing Campaign' },
-  { id: 'proj-3', name: 'Website Redesign' },
-  { id: 'proj-4', name: 'New Feature Launch' },
-  { id: 'proj-5', name: 'Mobile App Development' },
+  { id: 'proj-1', name: 'Plandalf Plan', icon: 'Briefcase' },
+  { id: 'proj-2', name: 'Marketing Campaign', icon: 'Book' },
+  { id: 'proj-3', name: 'Website Redesign', icon: 'Code' },
+  { id: 'proj-4', name: 'New Feature Launch', icon: 'Plane' },
+  { id: 'proj-5', name: 'Mobile App Development', icon: 'Gamepad2' },
 ];
+
+const icons: Record<string, LucideIcon> = {
+    Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code
+};
 
 function DraggableProject({ item, onEdit, onDelete, isActive, onClick }: { item: Project; isActive?: boolean; onClick?: () => void; onEdit: () => void; onDelete: () => void; }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -51,6 +55,7 @@ function DraggableProject({ item, onEdit, onDelete, isActive, onClick }: { item:
 }
 
 function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttributes, dragListeners, onEdit, onDelete }: { item: Project; isActive?: boolean; onClick?: () => void; isOverlay?: boolean; dragAttributes?: any; dragListeners?: any; onEdit?: () => void; onDelete?: () => void; }) {
+    const IconComponent = item.icon ? icons[item.icon] || Briefcase : Briefcase;
     return (
         <div
             onClick={onClick}
@@ -63,7 +68,7 @@ function ProjectItem({ item, isActive, onClick, isOverlay = false, dragAttribute
             )}
         >
             <span {...dragListeners} {...dragAttributes} className={cn("cursor-grab py-1 group/handle", isOverlay && "cursor-grabbing")}>
-                <Briefcase className="h-5 w-5 text-muted-foreground group-hover/handle:hidden" />
+                <IconComponent className="h-5 w-5 text-muted-foreground group-hover/handle:hidden" />
                 <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
             </span>
             <span className="flex-grow ml-1 truncate">{item.name}</span>
