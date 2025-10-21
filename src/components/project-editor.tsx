@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Project } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,8 @@ const icons = [
 ];
 
 export default function ProjectEditor({ project, onProjectUpdate }: ProjectEditorProps) {
+  const [isIconPickerOpen, setIconPickerOpen] = useState(false);
+  
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -102,7 +104,7 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
                     name="icon"
                     render={({ field }) => (
                       <FormItem>
-                        <Popover>
+                        <Popover open={isIconPickerOpen} onOpenChange={setIconPickerOpen}>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button
@@ -125,7 +127,10 @@ export default function ProjectEditor({ project, onProjectUpdate }: ProjectEdito
                                                 key={icon.name}
                                                 variant={field.value === icon.name ? 'default' : 'outline'}
                                                 size="icon"
-                                                onClick={() => field.onChange(icon.name)}
+                                                onClick={() => {
+                                                    field.onChange(icon.name);
+                                                    setIconPickerOpen(false);
+                                                }}
                                                 className="w-12 h-12"
                                             >
                                                 <IconComponent className="h-6 w-6" />
