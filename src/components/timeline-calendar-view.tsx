@@ -156,7 +156,7 @@ export function TimelineCalendarView({
   return (
     <div
       ref={timelineRef}
-      className="overflow-x-auto relative"
+      className="relative overflow-x-auto overflow-y-visible"
       onPointerDown={handlePanStart}
       onPointerMove={handlePanMove}
       onPointerUp={handlePanEnd}
