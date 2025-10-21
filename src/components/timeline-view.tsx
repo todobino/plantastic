@@ -5,12 +5,15 @@ import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as Reac
 import type { Task, Milestone, Project, TeamMember } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import AppHeader from "./app-header";
-import { TimelineTaskList } from './timeline-task-list';
+import { TimelineTaskList, TaskRow } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
 import { ListView } from './list-view';
 import { Button } from './ui/button';
 import { MONTH_ROW_HEIGHT } from '@/lib/utils';
 import TeamView from './team-view';
+import { DndContext, DragOverlay, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 
 const ROW_HEIGHT = 40; 
@@ -44,6 +47,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [currentMonthLabel, setCurrentMonthLabel] = useState('');
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -560,7 +564,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     return 'hsl(var(--primary))';
   }, [tasks]);
 
-  const justTasks = useMemo(() => displayTasks.filter(t => t.type === 'task'), [displayTasks]);
   
   const handleSetOpenQuickAddId = (id: string | null) => {
     if (id) {
@@ -604,23 +607,100 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     }
   }, [projectStart, dayWidth, currentMonthLabel]);
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 100, tolerance: 5 },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const task = displayTasks.find(t => t.id === active.id);
+    if (task) {
+      setActiveTask(task);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveTask(null);
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+    
+    const activeTask = tasks.find(t => t.id === active.id);
+    const overTask = tasks.find(t => t.id === over.id);
+
+    if (!activeTask) return;
+
+    const oldIndex = displayTasks.findIndex(t => t.id === active.id);
+    let newIndex = displayTasks.findIndex(t => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    let newTasks = [...tasks];
+    const [movedTask] = newTasks.splice(tasks.findIndex(t => t.id === active.id), 1);
+    
+    let targetParentId = overTask?.type === 'category' ? over.id : overTask?.parentId || null;
+    
+    const overIndexInNewTasks = newTasks.findIndex(t => t.id === over.id);
+    
+    movedTask.parentId = targetParentId;
+    
+    if (overTask?.type === 'category') {
+        newTasks.splice(overIndexInNewTasks + 1, 0, movedTask);
+    } else {
+        newTasks.splice(overIndexInNewTasks, 0, movedTask);
+    }
+    
+    onReorderTasks(newTasks);
+  };
+
+
   const renderCurrentView = () => {
     switch (view) {
         case 'timeline':
             return (
                 <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-y-auto">
-                    <TimelineTaskList 
-                        displayTasks={displayTasks}
-                        justTasks={justTasks}
-                        onAddTaskClick={onAddTaskClick}
-                        onAddCategoryClick={onAddCategoryClick}
-                        toggleCategory={toggleCategory}
-                        onTaskClick={onTaskClick}
-                        getTaskColor={getTaskColor}
-                        onQuickAddTask={handleQuickAddTask}
-                        openQuickAddId={openQuickAddId}
-                        setOpenQuickAddId={handleSetOpenQuickAddId}
-                    />
+                    <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis]}
+                    >
+                        <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                            <TimelineTaskList 
+                                displayTasks={displayTasks}
+                                onAddTaskClick={onAddTaskClick}
+                                onAddCategoryClick={onAddCategoryClick}
+                                toggleCategory={toggleCategory}
+                                onTaskClick={onTaskClick}
+                                getTaskColor={getTaskColor}
+                                onQuickAddTask={handleQuickAddTask}
+                                openQuickAddId={openQuickAddId}
+                                setOpenQuickAddId={handleSetOpenQuickAddId}
+                            />
+                        </SortableContext>
+                        <DragOverlay>
+                          {activeTask ? (
+                              <TaskRow
+                                  task={activeTask}
+                                  onTaskClick={() => {}}
+                                  toggleCategory={() => {}}
+                                  getTaskColor={getTaskColor}
+                                  onQuickAddTask={() => {}}
+                                  openQuickAddId={null}
+                                  setOpenQuickAddId={() => {}}
+                                  isOverlay
+                              />
+                          ) : null}
+                        </DragOverlay>
+                    </DndContext>
                     <TimelineCalendarView 
                         timeline={timeline}
                         totalDays={totalDays}

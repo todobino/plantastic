@@ -6,6 +6,7 @@ import {
   CornerDownRight,
   DiamondPlus,
   FolderPlus,
+  GripVertical,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -20,10 +21,11 @@ import { hexToRgba, cn, HEADER_HEIGHT, MONTH_ROW_HEIGHT, DAY_ROW_HEIGHT, ROW_HEI
 import { Task } from "@/types";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import QuickTaskForm from "./quick-task-form";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type TimelineTaskListProps = {
   displayTasks: (Task & { milestone?: string })[];
-  justTasks: Task[];
   onAddTaskClick: () => void;
   onAddCategoryClick: () => void;
   toggleCategory: (id: string) => void;
@@ -32,11 +34,154 @@ type TimelineTaskListProps = {
   onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
   openQuickAddId: string | null;
   setOpenQuickAddId: (id: string | null) => void;
+  isOverlay?: boolean;
 };
+
+export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
+    task: Task;
+    onTaskClick: (task: Task) => void;
+    toggleCategory: (id: string) => void;
+    getTaskColor: (task: Task) => string;
+    onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
+    openQuickAddId: string | null;
+    setOpenQuickAddId: (id: string | null) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { type: 'task', task } });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+    
+    return (
+        <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
+            <TaskRow 
+              task={task} 
+              onTaskClick={onTaskClick}
+              toggleCategory={toggleCategory}
+              getTaskColor={getTaskColor}
+              onQuickAddTask={onQuickAddTask}
+              openQuickAddId={openQuickAddId}
+              setOpenQuickAddId={setOpenQuickAddId}
+              dragAttributes={attributes} 
+              dragListeners={listeners} />
+        </div>
+    );
+}
+
+export function TaskRow({
+  task,
+  onTaskClick,
+  toggleCategory,
+  getTaskColor,
+  onQuickAddTask,
+  openQuickAddId,
+  setOpenQuickAddId,
+  isOverlay = false,
+  dragAttributes,
+  dragListeners,
+}: {
+  task: Task & { milestone?: string };
+  onTaskClick: (task: Task) => void;
+  toggleCategory: (id: string) => void;
+  getTaskColor: (task: Task) => string;
+  onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
+  openQuickAddId: string | null;
+  setOpenQuickAddId: (id: string | null) => void;
+  isOverlay?: boolean;
+  dragAttributes?: any;
+  dragListeners?: any;
+}) {
+    const level = parseInt(task.milestone || "0", 10);
+    const isCategory = task.type === "category";
+
+    return (
+        <div
+            style={{ height: `${ROW_HEIGHT}px` }}
+            className={cn(
+                "group/task-row w-full text-sm flex items-center border-b",
+                isOverlay && "bg-background shadow-xl"
+            )}
+        >
+            <div
+            style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
+            className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer hover:bg-secondary"
+            >
+                {isCategory ? (
+                    <div className="p-1" onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }}>
+                        {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </div>
+                ) : (
+                    <span {...dragListeners} {...dragAttributes} className={cn("w-full h-full flex items-center justify-center cursor-grab", isOverlay && "cursor-grabbing")}>
+                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                    </span>
+                )}
+            </div>
+            <div
+            className={cn(
+                "flex-grow h-full cursor-pointer pr-2 group-hover/task-row:bg-secondary",
+                isCategory ? "pl-2" : "pl-0"
+            )}
+            onClick={() => onTaskClick(task)}
+            >
+            <div
+                className="flex items-center gap-2 h-full"
+                style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
+            >
+                {!isCategory && level > 0 && (
+                <CornerDownRight
+                    className="h-4 w-4 flex-shrink-0"
+                    style={{ color: getTaskColor(task) }}
+                />
+                )}
+
+                {isCategory ? (
+                <span
+                    className="px-2 py-0.5 rounded-md font-semibold"
+                    style={{
+                    color: task.color || "hsl(var(--foreground))",
+                    backgroundColor: task.color
+                        ? hexToRgba(task.color, 0.15)
+                        : "transparent",
+                    }}
+                >
+                    {task.name}
+                </span>
+                ) : (
+                <span className="truncate flex-1">{task.name}</span>
+                )}
+                {isCategory && !isOverlay ? (
+                    <Popover open={openQuickAddId === task.id} onOpenChange={(isOpen) => setOpenQuickAddId(isOpen ? task.id : null)}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 ml-auto opacity-0 group-hover/task-row:opacity-100"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="right" align="start" className="w-80" onClick={(e) => e.stopPropagation()}>
+                        <QuickTaskForm 
+                            categoryId={task.id}
+                            onAddTask={onQuickAddTask} 
+                            onClose={() => setOpenQuickAddId(null)}
+                        />
+                    </PopoverContent>
+                </Popover>
+                ) : !isOverlay && (
+                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover/task-row:opacity-100 ml-auto" />
+                )}
+            </div>
+            </div>
+        </div>
+    );
+}
 
 export function TimelineTaskList({
   displayTasks,
-  justTasks,
   onAddTaskClick,
   onAddCategoryClick,
   toggleCategory,
@@ -112,114 +257,26 @@ export function TimelineTaskList({
           className="flex items-center text-xs font-medium text-muted-foreground"
         >
           <div style={{width: `${DAY_ROW_HEIGHT}px`, height: `${DAY_ROW_HEIGHT}px`}} className="flex-shrink-0 text-center border-r h-full flex items-center justify-center">
-            ID
+            #
           </div>
-          <div className="flex-grow text-left h-full flex items-center justify-start pl-4">
+          <div className="flex-grow text-left h-full flex items-center justify-start pl-2">
             Name
           </div>
         </div>
       </div>
       <div className="relative">
-        {displayTasks.map((task) => {
-          const level = parseInt(task.milestone || "0", 10);
-          const isCategory = task.type === "category";
-          let taskIndex = -1;
-          if (!isCategory) {
-            taskIndex = justTasks.findIndex((t) => t.id === task.id);
-          }
-          return (
-            <div
-              key={task.id}
-              style={{ height: `${ROW_HEIGHT}px` }}
-              className="group w-full text-sm flex items-center border-b"
-            >
-              <div
-                style={{width: `${DAY_ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px`}}
-                className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center cursor-pointer hover:bg-secondary"
-                onClick={(e) => {
-                  if (isCategory) {
-                    e.stopPropagation();
-                    toggleCategory(task.id);
-                  }
-                }}
-              >
-                {isCategory ? (
-                  <div className="p-1">
-                    {task.isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </div>
-                ) : taskIndex > -1 ? (
-                  taskIndex + 1
-                ) : (
-                  ""
-                )}
-              </div>
-              <div
-                className={cn(
-                  "flex-grow h-full cursor-pointer pr-2 group-hover:bg-secondary",
-                  isCategory ? "pl-2" : "pl-0"
-                )}
-                onClick={() => onTaskClick(task)}
-              >
-                <div
-                  className="flex items-center gap-2 h-full pl-4"
-                  style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
-                >
-                  {!isCategory && level > 0 && (
-                    <CornerDownRight
-                      className="h-4 w-4 flex-shrink-0"
-                      style={{ color: getTaskColor(task) }}
-                    />
-                  )}
-
-                  {isCategory ? (
-                    <span
-                      className="px-2 py-0.5 rounded-md font-semibold"
-                      style={{
-                        color: task.color || "hsl(var(--foreground))",
-                        backgroundColor: task.color
-                          ? hexToRgba(task.color, 0.15)
-                          : "transparent",
-                      }}
-                    >
-                      {task.name}
-                    </span>
-                  ) : (
-                    <span className="truncate flex-1">{task.name}</span>
-                  )}
-                   {isCategory ? (
-                     <Popover open={openQuickAddId === task.id} onOpenChange={(isOpen) => setOpenQuickAddId(isOpen ? task.id : null)}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                            >
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent side="right" align="start" className="w-80" onClick={(e) => e.stopPropagation()}>
-                            <QuickTaskForm 
-                                categoryId={task.id}
-                                onAddTask={onQuickAddTask} 
-                                onClose={() => setOpenQuickAddId(null)}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {displayTasks.map((task) => (
+            <DraggableTaskRow 
+                key={task.id}
+                task={task}
+                onTaskClick={onTaskClick}
+                toggleCategory={toggleCategory}
+                getTaskColor={getTaskColor}
+                onQuickAddTask={onQuickAddTask}
+                openQuickAddId={openQuickAddId}
+                setOpenQuickAddId={setOpenQuickAddId}
+            />
+        ))}
       </div>
     </div>
   );
