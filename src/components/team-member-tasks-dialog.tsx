@@ -49,7 +49,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
             <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex-grow border rounded-md overflow-hidden">
+      <div className="flex-grow border rounded-md">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
