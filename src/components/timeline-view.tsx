@@ -5,7 +5,7 @@ import { useMemo, useState, useRef, useCallback, useEffect, PointerEvent as Reac
 import type { Task, Milestone, Project, TeamMember } from '@/types';
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import AppHeader from "./app-header";
-import { TimelineTaskList, TaskRow } from './timeline-task-list';
+import { TimelineTaskList, DraggableTaskRow, TaskRow } from './timeline-task-list';
 import { TimelineCalendarView } from './timeline-calendar-view';
 import { ListView } from './list-view';
 import { Button } from './ui/button';
@@ -48,6 +48,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [currentMonthLabel, setCurrentMonthLabel] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeTaskIndex, setActiveTaskIndex] = useState(-1);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -542,7 +543,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
         scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
-  }, [project.id]);
+  }, [project.id, dateToX, dayWidth]);
   
   const toggleCategory = (categoryId: string) => {
     setTasks(tasks.map(t => 
@@ -621,11 +622,13 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const task = displayTasks.find(t => t.id === active.id);
     if (task) {
       setActiveTask(task);
+      setActiveTaskIndex(displayTasks.findIndex(t => t.id === active.id));
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveTask(null);
+    setActiveTaskIndex(-1);
     const { active, over } = event;
 
     if (!over || active.id === over.id) {
@@ -690,6 +693,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                           {activeTask ? (
                               <TaskRow
                                   task={activeTask}
+                                  index={activeTaskIndex}
                                   onTaskClick={() => {}}
                                   toggleCategory={() => {}}
                                   getTaskColor={getTaskColor}
