@@ -187,25 +187,32 @@ export function TimelineCalendarView({
                 </Button>
             </div>
 
-            <div className="relative h-full" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
+            <div className="absolute top-0 w-full">
               <div
                 className="relative border-b"
-                style={{ height: `${MONTH_ROW_HEIGHT}px` }}
+                style={{
+                    height: `${MONTH_ROW_HEIGHT}px`,
+                    gridTemplateColumns: `repeat(${totalDays}, ${dayWidth}px)`,
+                    display: 'grid',
+                }}
               >
               {headerGroups.map((group, index) => {
-                  const groupStartX = dateToX(group.startDay);
-                  const cellWidth = group.days * dayWidth;
+                  const startColumn = differenceInDays(group.startDay, timeline[0]) + 1;
+                  const endColumn = startColumn + group.days;
                   
                   return (
                     <div
                       key={index}
-                      className="absolute top-0 h-full border-r"
+                      className={cn(
+                        "h-full border-r flex items-center",
+                        group.label === currentMonthLabel && 'opacity-0'
+                      )}
                       style={{
-                          left: `${groupStartX}px`,
-                          width: `${cellWidth}px`,
+                          gridColumnStart: startColumn,
+                          gridColumnEnd: endColumn,
                       }}
                     >
-                      <span className="absolute top-1/2 left-2 -translate-y-1/2 truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm">
+                      <span className="truncate bg-secondary text-secondary-foreground rounded-md px-2 py-1 font-semibold text-sm ml-2">
                         {group.label}
                       </span>
                     </div>
@@ -267,7 +274,7 @@ export function TimelineCalendarView({
               ></div>
             ))}
           </div>
-
+          
           <div
             className="absolute top-0 left-0 h-full w-0.5 bg-primary z-10 pointer-events-none"
             style={{ left: `${todayX + dayWidth / 2}px` }}
