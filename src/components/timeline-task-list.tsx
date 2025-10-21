@@ -111,7 +111,7 @@ export function TaskRow({
                 className="flex-shrink-0 text-center text-muted-foreground border-r h-full flex items-center justify-center group/handle"
             >
                 {isCategory ? (
-                    <div className="p-1 cursor-pointer hover:bg-secondary" onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }}>
+                    <div className="p-1 cursor-pointer hover:bg-secondary rounded-md" onClick={(e) => { e.stopPropagation(); toggleCategory(task.id); }}>
                         {task.isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </div>
                 ) : (
