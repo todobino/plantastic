@@ -47,7 +47,7 @@ export function TimelineTaskList({
   setOpenQuickAddId,
 }: TimelineTaskListProps) {
   return (
-    <div className="col-span-3 border-r overflow-y-auto shadow-md z-20">
+    <div className="border-r shadow-md z-20 bg-background">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
         className="sticky top-0 bg-background z-40 flex flex-col border-b"

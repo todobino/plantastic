@@ -201,26 +201,27 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         if (timeline.length === 0) return groups;
 
         let currentMonth = -1;
+        let currentGroup: { label: string, days: number, startDay: Date } | null = null;
 
-        timeline.forEach((day, i) => {
-            if (day.getMonth() !== currentMonth) {
-                currentMonth = day.getMonth();
-                const monthStart = startOfMonth(day);
-                
-                let monthEndInTimeline = endOfMonth(day);
-                if (monthEndInTimeline > viewEndDate) {
-                    monthEndInTimeline = viewEndDate;
+        timeline.forEach((day) => {
+            const month = day.getMonth();
+            if (month !== currentMonth) {
+                if (currentGroup) {
+                    groups.push(currentGroup);
                 }
-
-                const daysInGroup = differenceInDays(monthEndInTimeline, day) + 1;
-                
-                groups.push({
+                currentMonth = month;
+                currentGroup = {
                     label: format(day, 'MMMM yyyy'),
-                    days: daysInGroup,
-                    startDay: day
-                });
+                    days: 1,
+                    startDay: day,
+                };
+            } else if (currentGroup) {
+                currentGroup.days++;
             }
         });
+        if (currentGroup) {
+            groups.push(currentGroup);
+        }
         return groups;
     }
 
@@ -531,7 +532,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
   useEffect(() => {
     const scroller = timelineRef.current;
-    if (scroller && totalDays > 0) {
+    if (scroller) {
         const todayX = dateToX(new Date());
         const scrollerWidth = scroller.clientWidth;
         const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
@@ -607,49 +608,47 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     switch (view) {
         case 'timeline':
             return (
-                <div className="relative w-full h-full">
-                    <div className="grid grid-cols-12 w-full h-full">
-                        <TimelineTaskList 
-                            displayTasks={displayTasks}
-                            justTasks={justTasks}
-                            onAddTaskClick={onAddTaskClick}
-                            onAddCategoryClick={onAddCategoryClick}
-                            toggleCategory={toggleCategory}
-                            onTaskClick={onTaskClick}
-                            getTaskColor={getTaskColor}
-                            onQuickAddTask={handleQuickAddTask}
-                            openQuickAddId={openQuickAddId}
-                            setOpenQuickAddId={handleSetOpenQuickAddId}
-                        />
-                        <TimelineCalendarView 
-                            timeline={timeline}
-                            totalDays={totalDays}
-                            dayWidth={dayWidth}
-                            headerGroups={headerGroups}
-                            displayTasks={displayTasks}
-                            tasks={tasks}
-                            taskPositions={taskPositions}
-                            onBarPointerDown={onBarPointerDown}
-                            onBarPointerMove={onBarPointerMove}
-                            onBarPointerUp={onBarPointerUp}
-                            onResizeMove={onResizeMove}
-                            onResizeUp={onResizeUp}
-                            handleBarClick={handleBarClick}
-                            onLeftHandleDown={onLeftHandleDown}
-                            onRightHandleDown={onRightHandleDown}
-                            getVisualPos={getVisualPos}
-                            getTaskColor={getTaskColor}
-                            routeFS={routeFS}
-                            isResizingThis={(task: Task) => resizeState.id === task.id}
-                            isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
-                            timelineRef={timelineRef}
-                            onTodayClick={handleTodayClick}
-                            hoveredTaskId={hoveredTaskId}
-                            setHoveredTaskId={setHoveredTaskId}
-                            currentMonthLabel={currentMonthLabel}
-                            onScroll={handleTimelineScroll}
-                        />
-                    </div>
+                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-y-auto">
+                    <TimelineTaskList 
+                        displayTasks={displayTasks}
+                        justTasks={justTasks}
+                        onAddTaskClick={onAddTaskClick}
+                        onAddCategoryClick={onAddCategoryClick}
+                        toggleCategory={toggleCategory}
+                        onTaskClick={onTaskClick}
+                        getTaskColor={getTaskColor}
+                        onQuickAddTask={handleQuickAddTask}
+                        openQuickAddId={openQuickAddId}
+                        setOpenQuickAddId={handleSetOpenQuickAddId}
+                    />
+                    <TimelineCalendarView 
+                        timeline={timeline}
+                        totalDays={totalDays}
+                        dayWidth={dayWidth}
+                        headerGroups={headerGroups}
+                        displayTasks={displayTasks}
+                        tasks={tasks}
+                        taskPositions={taskPositions}
+                        onBarPointerDown={onBarPointerDown}
+                        onBarPointerMove={onBarPointerMove}
+                        onBarPointerUp={onBarPointerUp}
+                        onResizeMove={onResizeMove}
+                        onResizeUp={onResizeUp}
+                        handleBarClick={handleBarClick}
+                        onLeftHandleDown={onLeftHandleDown}
+                        onRightHandleDown={onRightHandleDown}
+                        getVisualPos={getVisualPos}
+                        getTaskColor={getTaskColor}
+                        routeFS={routeFS}
+                        isResizingThis={(task: Task) => resizeState.id === task.id}
+                        isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                        timelineRef={timelineRef}
+                        onTodayClick={handleTodayClick}
+                        hoveredTaskId={hoveredTaskId}
+                        setHoveredTaskId={setHoveredTaskId}
+                        currentMonthLabel={currentMonthLabel}
+                        onScroll={handleTimelineScroll}
+                    />
                 </div>
             );
         case 'list':

@@ -152,19 +152,22 @@ export function TimelineCalendarView({
   };
 
   return (
-    <div ref={timelineRef} className="col-span-9 overflow-auto relative">
+    <div
+      ref={timelineRef}
+      className="overflow-x-auto relative"
+      onPointerDown={handlePanStart}
+      onPointerMove={handlePanMove}
+      onPointerUp={handlePanEnd}
+      onPointerLeave={handlePanEnd}
+      onPointerCancel={handlePanEnd}
+    >
       <div
         className={cn("relative", panState.isPanning && "cursor-grabbing")}
-        style={{ width: `${totalDays * dayWidth}px` }}
-        onPointerDown={handlePanStart}
-        onPointerMove={handlePanMove}
-        onPointerUp={handlePanEnd}
-        onPointerLeave={handlePanEnd}
-        onPointerCancel={handlePanEnd}
+        style={{ width: `${totalDays * dayWidth}px`, height: '100%' }}
       >
         <div
             style={{ height: `${HEADER_HEIGHT}px` }}
-            className="sticky top-0 z-40"
+            className="sticky top-0 z-40 bg-background"
         >
             <div
                 className="sticky left-0 top-0 z-50 flex items-center gap-2 px-4"
@@ -182,7 +185,7 @@ export function TimelineCalendarView({
                 </Button>
             </div>
 
-            <div className="relative h-full bg-background" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
+            <div className="relative h-full" style={{ marginTop: -MONTH_ROW_HEIGHT }}>
               <div
                 className="relative border-b"
                 style={{ height: `${MONTH_ROW_HEIGHT}px` }}
