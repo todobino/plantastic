@@ -199,7 +199,7 @@ export function TimelineTaskList({
 }: TimelineTaskListProps) {
   
   return (
-    <div className="border-r shadow-md z-20 bg-background">
+    <div className="border-r z-20 bg-background">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
         className="sticky top-0 bg-background z-40 flex flex-col border-b"
