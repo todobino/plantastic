@@ -13,6 +13,7 @@ import { AuthForm } from './auth-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from './theme-toggle';
 
 
 type AppHeaderProps = {
@@ -81,6 +82,7 @@ export default function AppHeader({
         </Tabs>
       </div>
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         {user ? (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
