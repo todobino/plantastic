@@ -6,7 +6,7 @@ import GanttasticApp from "@/components/ganttastic-app";
 import AppSidebar from "@/components/app-sidebar";
 
 export default function Home() {
-    const [currentProject, setCurrentProject] = useState('Plandalf Plan');
+    const [currentProject, setCurrentProject] = useState('Plantastic Plan');
     const [isImporterOpen, setImporterOpen] = useState(false);
 
     return (

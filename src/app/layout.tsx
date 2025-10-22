@@ -7,7 +7,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Plandalf',
+  title: 'Plantastic',
   description: 'A simple modern gantt chart software for managing projects and tasks.',
 };
 

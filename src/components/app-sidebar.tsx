@@ -24,7 +24,7 @@ import type { Project } from '@/types';
 
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Plandalf Plan', icon: 'Briefcase' },
+  { id: 'proj-1', name: 'Plantastic Plan', icon: 'Briefcase' },
   { id: 'proj-2', name: 'Marketing Campaign', icon: 'Book' },
   { id: 'proj-3', name: 'Website Redesign', icon: 'Code' },
   { id: 'proj-4', name: 'New Feature Launch', icon: 'Plane' },
@@ -231,7 +231,7 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
         <div className="flex items-center gap-3">
             <GanttChartSquare className="h-7 w-7 text-primary" />
             <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
-            Plandalf
+            Plantastic
             </h1>
         </div>
       </SidebarFooter>

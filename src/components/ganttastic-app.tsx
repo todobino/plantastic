@@ -33,8 +33,8 @@ const getInitialTeam = (): TeamMember[] => [
 
 const getInitialProject = (): Project => ({
   id: 'proj-1',
-  name: 'Plandalf Plan',
-  description: 'A sample project plan for the Plandalf application.',
+  name: 'Plantastic Plan',
+  description: 'A sample project plan for the Plantastic application.',
   startDate: new Date(),
   endDate: addDays(new Date(), 30),
   budget: 100000,
@@ -61,7 +61,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   useEffect(() => {
     setIsMounted(true);
     try {
-      const savedTasks = localStorage.getItem('plandalf-tasks');
+      const savedTasks = localStorage.getItem('plantastic-tasks');
       if (savedTasks) {
         const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
           ...task,
@@ -73,7 +73,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
         setTasks(getInitialTasks());
       }
       
-      const savedProject = localStorage.getItem('plandalf-project');
+      const savedProject = localStorage.getItem('plantastic-project');
       if (savedProject) {
         const parsedProject = JSON.parse(savedProject);
         setProject({
@@ -86,7 +86,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
         setProject({...getInitialProject(), name: currentProjectName });
       }
 
-      const savedTeam = localStorage.getItem('plandalf-team');
+      const savedTeam = localStorage.getItem('plantastic-team');
       if (savedTeam) {
         setTeamMembers(JSON.parse(savedTeam));
       } else {
@@ -104,9 +104,9 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   useEffect(() => {
     if (isMounted) {
         try {
-            localStorage.setItem('plandalf-tasks', JSON.stringify(tasks));
-            localStorage.setItem('plandalf-project', JSON.stringify(project));
-            localStorage.setItem('plandalf-team', JSON.stringify(teamMembers));
+            localStorage.setItem('plantastic-tasks', JSON.stringify(tasks));
+            localStorage.setItem('plantastic-project', JSON.stringify(project));
+            localStorage.setItem('plantastic-team', JSON.stringify(teamMembers));
         } catch (error) {
             console.error("Failed to save data to localStorage", error);
         }
