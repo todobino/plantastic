@@ -21,6 +21,7 @@ type ListViewProps = {
   teamMembers: TeamMember[];
   onTaskClick: (task: Task) => void;
   onAssigneeClick: (member: TeamMember) => void;
+  taskNumbering: Map<string, number>;
 };
 
 type ListedTask = Task & {
@@ -28,7 +29,7 @@ type ListedTask = Task & {
   assignee?: TeamMember;
 };
 
-export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick }: ListViewProps) {
+export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick, taskNumbering }: ListViewProps) {
   const listedTasks = useMemo(() => {
     const categories = new Map(tasks.filter(t => t.type === 'category').map(c => [c.id, c]));
     const members = new Map(teamMembers.map(m => [m.id, m]));
@@ -69,9 +70,9 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick }: L
           </TableRow>
         </TableHeader>
         <TableBody>
-          {listedTasks.map((task, index) => (
+          {listedTasks.map((task) => (
             <TableRow key={task.id} >
-              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{index + 1}</TableCell>
+              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{taskNumbering.get(task.id)}</TableCell>
               <TableCell className="font-medium border-r align-top" onClick={() => onTaskClick(task)}>
                 <div className="flex flex-col gap-1">
                   {task.category && (

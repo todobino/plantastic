@@ -35,17 +35,18 @@ type TimelineTaskListProps = {
   openQuickAddId: string | null;
   setOpenQuickAddId: (id: string | null) => void;
   isOverlay?: boolean;
+  taskNumbering: Map<string, number>;
 };
 
-export function DraggableTaskRow({ task, taskNumber, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
+export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask, taskNumbering }: {
     task: Task;
-    taskNumber: number | null;
     onTaskClick: (task: Task) => void;
     toggleCategory: (id: string) => void;
     getTaskColor: (task: Task) => string;
     onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
     openQuickAddId: string | null;
     setOpenQuickAddId: (id: string | null) => void;
+    taskNumbering: Map<string, number>;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { type: 'task', task } });
     const style = {
@@ -57,7 +58,6 @@ export function DraggableTaskRow({ task, taskNumber, onTaskClick, toggleCategory
         <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
             <TaskRow 
               task={task} 
-              taskNumber={taskNumber}
               onTaskClick={onTaskClick}
               toggleCategory={toggleCategory}
               getTaskColor={getTaskColor}
@@ -65,14 +65,14 @@ export function DraggableTaskRow({ task, taskNumber, onTaskClick, toggleCategory
               openQuickAddId={openQuickAddId}
               setOpenQuickAddId={setOpenQuickAddId}
               dragAttributes={attributes} 
-              dragListeners={listeners} />
+              dragListeners={listeners}
+              taskNumbering={taskNumbering} />
         </div>
     );
 }
 
 export function TaskRow({
   task,
-  taskNumber,
   onTaskClick,
   toggleCategory,
   getTaskColor,
@@ -82,9 +82,9 @@ export function TaskRow({
   isOverlay = false,
   dragAttributes,
   dragListeners,
+  taskNumbering,
 }: {
   task: Task & { milestone?: string };
-  taskNumber: number | null;
   onTaskClick: (task: Task) => void;
   toggleCategory: (id: string) => void;
   getTaskColor: (task: Task) => string;
@@ -94,6 +94,7 @@ export function TaskRow({
   isOverlay?: boolean;
   dragAttributes?: any;
   dragListeners?: any;
+  taskNumbering: Map<string, number>;
 }) {
     const level = parseInt(task.milestone || "0", 10);
     const isCategory = task.type === "category";
@@ -116,7 +117,7 @@ export function TaskRow({
                     </div>
                 ) : (
                     <span {...dragListeners} {...dragAttributes} className={cn("w-full h-full flex items-center justify-center cursor-grab", isOverlay && "cursor-grabbing")}>
-                        <span className="group-hover/handle:hidden">{taskNumber}</span>
+                        <span className="group-hover/handle:hidden">{taskNumbering.get(task.id)}</span>
                         <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
                     </span>
                 )}
@@ -196,16 +197,9 @@ export function TimelineTaskList({
   onQuickAddTask,
   openQuickAddId,
   setOpenQuickAddId,
+  taskNumbering,
 }: TimelineTaskListProps) {
   
-  const taskNumbering = new Map<string, number>();
-  let taskCounter = 1;
-  displayTasks.forEach(task => {
-    if (task.type === 'task') {
-      taskNumbering.set(task.id, taskCounter++);
-    }
-  });
-
   return (
     <div className="border-r shadow-md z-20 bg-background">
       <div
@@ -284,13 +278,13 @@ export function TimelineTaskList({
             <DraggableTaskRow 
                 key={task.id}
                 task={task}
-                taskNumber={task.type === 'task' ? taskNumbering.get(task.id)! : null}
                 onTaskClick={onTaskClick}
                 toggleCategory={toggleCategory}
                 getTaskColor={getTaskColor}
                 onQuickAddTask={onQuickAddTask}
                 openQuickAddId={openQuickAddId}
                 setOpenQuickAddId={setOpenQuickAddId}
+                taskNumbering={taskNumbering}
             />
         ))}
       </div>
