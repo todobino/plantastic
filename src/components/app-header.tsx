@@ -92,7 +92,7 @@ export default function AppHeader({
         ) : (
           <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
               <DialogTrigger asChild>
-                  <Button variant="outline">
+                  <Button>
                   <UserCircle className="mr-2 h-4 w-4"/>
                   Login
                   </Button>
