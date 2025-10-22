@@ -365,11 +365,12 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
   
   const handleBarClick = (task: Task) => {
-    if (!wasDraggedRef.current && !wasResizedRef.current) {
-        if(task.id === 'placeholder') return;
-        onTaskClick(task);
+    if (wasDraggedRef.current || wasResizedRef.current) {
+      wasResizedRef.current = false;
+      return;
     }
-    wasResizedRef.current = false;
+    if (task.id === 'placeholder') return;
+    // We are not opening the editor from here anymore.
   }
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
@@ -820,3 +821,5 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
+
+    
