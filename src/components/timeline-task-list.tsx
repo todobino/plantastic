@@ -156,7 +156,7 @@ export function TaskRow({
                 ) : (
                 <span className="truncate flex-1">{task.name}</span>
                 )}
-                {isCategory && !isOverlay ? (
+                {isCategory && !isOverlay && (
                     <Popover open={openQuickAddId === task.id} onOpenChange={(isOpen) => setOpenQuickAddId(isOpen ? task.id : null)}>
                     <PopoverTrigger asChild>
                         <Button
@@ -178,8 +178,6 @@ export function TaskRow({
                         />
                     </PopoverContent>
                 </Popover>
-                ) : !isOverlay && (
-                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover/task-row:opacity-100 ml-auto" />
                 )}
             </div>
             </div>
