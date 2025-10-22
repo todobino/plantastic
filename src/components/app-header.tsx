@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
-import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon, LayoutGrid } from 'lucide-react';
+import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon, Kanban } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 import { useAuth, useUser } from '@/firebase/provider';
@@ -70,7 +70,7 @@ export default function AppHeader({
               List
             </TabsTrigger>
              <TabsTrigger value="board">
-              <LayoutGrid className="h-4 w-4 mr-2" />
+              <Kanban className="h-4 w-4 mr-2" />
               Board
             </TabsTrigger>
             <TabsTrigger value="team">
