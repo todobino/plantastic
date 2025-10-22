@@ -124,13 +124,14 @@ export function TaskRow({
             <div
             className={cn(
                 "flex-grow h-full cursor-pointer pr-2 group-hover/task-row:bg-secondary",
-                !isCategory && !task.parentId && "pl-4"
+                !isCategory && !task.parentId && "pl-4",
+                isCategory && "pl-4"
             )}
             onClick={() => onTaskClick(task)}
             >
             <div
                 className="flex items-center gap-2 h-full"
-                style={!isCategory && level ? { paddingLeft: `${level * 1.5}rem` } : undefined}
+                style={!isCategory && level > 0 ? { paddingLeft: `${level * 1.5}rem` } : undefined}
             >
                 {!isCategory && level > 0 && (
                 <CornerDownRight
