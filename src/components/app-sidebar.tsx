@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, UserCircle, LogOut, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, type LucideIcon } from 'lucide-react';
+import { Search, Plus, GripVertical, MoreHorizontal, Edit, Trash2, GanttChartSquare, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, DragOverlay, closestCenter, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
@@ -17,15 +17,10 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
-import { AuthForm } from './auth-form';
 import { Sheet, SheetContent } from './ui/sheet';
 import ProjectEditor from './project-editor';
 import { DeleteProjectDialog } from './delete-project-dialog';
 import type { Project } from '@/types';
-import { useAuth, useUser } from '@/firebase/provider';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 
 const initialProjects: Project[] = [
@@ -37,7 +32,7 @@ const initialProjects: Project[] = [
 ];
 
 const icons: Record<string, LucideIcon> = {
-    Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code
+    Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit
 };
 
 function DraggableProject({ item, onEdit, onDelete, isActive, onClick }: { item: Project; isActive?: boolean; onClick?: () => void; onEdit: () => void; onDelete: () => void; }) {
@@ -105,12 +100,8 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [isLoginOpen, setLoginOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   
-  const { user } = useUser();
-  const auth = useAuth();
-
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
 
@@ -173,13 +164,6 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
     setDeletingProject(null);
   };
   
-  const handleLogout = () => {
-    if (auth) {
-        auth.signOut();
-    }
-  }
-
-
   return (
     <>
       <SidebarContent className="flex-grow p-4">
@@ -244,39 +228,12 @@ export default function ProjectSidebar({ currentProjectName, onProjectChange, on
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto border-t">
-          {user ? (
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="w-full justify-start gap-2">
-                          <Avatar className="h-6 w-6">
-                              <AvatarImage src={user.photoURL || ''} alt={user.displayName || user.email || 'User'}/>
-                              <AvatarFallback>
-                                  <UserCircle />
-                              </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{user.displayName || user.email}</span>
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-48">
-                      <DropdownMenuItem onClick={handleLogout}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Log out</span>
-                      </DropdownMenuItem>
-                  </DropdownMenuContent>
-              </DropdownMenu>
-          ) : (
-            <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="secondary" className="w-full justify-start">
-                    <UserCircle className="mr-2"/>
-                    Login/Sign Up
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                    <AuthForm onSuccess={() => setLoginOpen(false)} />
-                </DialogContent>
-            </Dialog>
-          )}
+        <div className="flex items-center gap-3">
+            <GanttChartSquare className="h-7 w-7 text-primary" />
+            <h1 className="text-xl font-bold tracking-tight text-foreground font-headline">
+            Plandalf
+            </h1>
+        </div>
       </SidebarFooter>
 
       {editingProject && (

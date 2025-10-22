@@ -44,9 +44,11 @@ const getInitialProject = (): Project => ({
 type GanttasticAppProps = {
     isImporterOpen: boolean;
     setImporterOpen: (isOpen: boolean) => void;
+    currentProjectName: string;
+    onProjectNameChange: (name: string) => void;
 }
 
-export default function GanttasticApp({ isImporterOpen, setImporterOpen }: GanttasticAppProps) {
+export default function GanttasticApp({ isImporterOpen, setImporterOpen, currentProjectName }: GanttasticAppProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -76,9 +78,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
         const parsedProject = JSON.parse(savedProject);
         setProject({
           ...parsedProject,
+          name: currentProjectName, // Make sure project name is in sync
           startDate: parsedProject.startDate ? new Date(parsedProject.startDate) : undefined,
           endDate: parsedProject.endDate ? new Date(parsedProject.endDate) : undefined,
         });
+      } else {
+        setProject({...getInitialProject(), name: currentProjectName });
       }
 
       const savedTeam = localStorage.getItem('plandalf-team');
@@ -94,7 +99,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
       setProject(getInitialProject());
       setTeamMembers(getInitialTeam());
     }
-  }, []);
+  }, [currentProjectName]);
 
   useEffect(() => {
     if (isMounted) {
@@ -287,7 +292,6 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen }: Gantt
           onProjectUpdate={handleProjectUpdate}
           onReorderTasks={handleReorderTasks}
           onTaskUpdate={handleUpdateTask}
-          onNewProjectClick={() => setImporterOpen(true)}
           onAssigneeClick={setViewingMemberTasks}
           onQuickAddTask={handleQuickAddTask}
         />

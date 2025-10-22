@@ -31,13 +31,12 @@ type TimelineViewProps = {
     onProjectUpdate: (project: Project) => void;
     onReorderTasks: (reorderedTasks: Task[]) => void;
     onTaskUpdate: (task: Task) => void;
-    onNewProjectClick: () => void;
     onQuickAddTask: (categoryId: string, taskName: string, duration: number) => void;
     onAssigneeClick: (member: TeamMember) => void;
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onNewProjectClick, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -597,8 +596,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const scroller = timelineRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
-    const scrollOffset = scroller.getBoundingClientRect().left;
-    const centerDate = addDays(timeline[0], (scrollLeft - scrollOffset + scroller.clientWidth / 2) / dayWidth);
+    const scrollOffset = 200; // This should be a bit less than the task list width
+    const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
     const newLabel = format(centerDate, 'MMMM yyyy');
 
     if (newLabel !== currentMonthLabel) {
@@ -769,7 +768,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         onProjectUpdate={onProjectUpdate}
         view={view}
         onViewChange={setView}
-        onNewProjectClick={onNewProjectClick}
       />
       <div className="flex-grow flex overflow-hidden relative">
         {renderCurrentView()}
@@ -777,4 +775,3 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
-

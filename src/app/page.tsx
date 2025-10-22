@@ -22,6 +22,8 @@ export default function Home() {
                 <GanttasticApp
                     isImporterOpen={isImporterOpen}
                     setImporterOpen={setImporterOpen}
+                    currentProjectName={currentProject}
+                    onProjectNameChange={setCurrentProject}
                 />
             </div>
         </main>
