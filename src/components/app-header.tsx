@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GanttChart, List, Users, LogOut, UserCircle } from 'lucide-react';
+import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 import { useAuth, useUser } from '@/firebase/provider';
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { AuthForm } from './auth-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { cn } from '@/lib/utils';
 
 
 type AppHeaderProps = {
@@ -20,6 +21,10 @@ type AppHeaderProps = {
   onProjectUpdate: (project: Project) => void;
   view: 'timeline' | 'list' | 'team';
   onViewChange: (view: 'timeline' | 'list' | 'team') => void;
+};
+
+const icons: Record<string, LucideIcon> = {
+    Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit
 };
 
 export default function AppHeader({
@@ -31,6 +36,9 @@ export default function AppHeader({
   const [isLoginOpen, setLoginOpen] = useState(false);
   const { user } = useUser();
   const auth = useAuth();
+  
+  const IconComponent = project.icon ? icons[project.icon] || Briefcase : Briefcase;
+
 
   const handleLogout = () => {
     if (auth) {
@@ -43,7 +51,8 @@ export default function AppHeader({
       <div className="flex items-center gap-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="group text-lg font-extrabold font-headline hover:bg-accent">
+            <Button variant="ghost" className="group text-lg font-extrabold font-headline hover:bg-accent gap-2">
+              <IconComponent className="h-6 w-6" />
               {project.name}
             </Button>
           </SheetTrigger>
