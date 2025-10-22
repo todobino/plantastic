@@ -43,7 +43,7 @@ export default function AppHeader({
       <div className="flex items-center gap-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button className="group text-lg font-semibold font-headline">
+            <Button variant="ghost" className="group text-lg font-extrabold font-headline hover:bg-accent">
               {project.name}
             </Button>
           </SheetTrigger>
