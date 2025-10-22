@@ -6,7 +6,7 @@ import type { TeamMember, Task } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserPlus, Edit, Trash2, Check, Search } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Check, Search, UserCircle } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,6 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks, onTaskUpd
     const newMember: TeamMember = {
       id: `member-${Date.now()}`,
       name: searchTerm.trim(),
-      photoURL: `https://i.pravatar.cc/150?u=${Date.now()}`
     };
     setTeamMembers([...teamMembers, newMember]);
     setSearchTerm('');
@@ -165,8 +164,9 @@ export default function TeamView({ teamMembers, setTeamMembers, tasks, onTaskUpd
                     <>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.photoURL} alt={member.name} />
-                            <AvatarFallback>{getAssigneeInitials(member.name)}</AvatarFallback>
+                           <AvatarFallback>
+                                <UserCircle className="h-5 w-5" />
+                           </AvatarFallback>
                         </Avatar>
                         <p className="font-medium text-sm">{member.name}</p>
                       </div>

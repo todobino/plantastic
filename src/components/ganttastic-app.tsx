@@ -25,9 +25,9 @@ const getInitialTasks = (): Task[] => [
 ];
 
 const getInitialTeam = (): TeamMember[] => [
-    { id: '1', name: 'Alex Johnson', photoURL: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
-    { id: '2', name: 'Maria Garcia', photoURL: 'https://i.pravatar.cc/150?u=a042581f4e29026704e' },
-    { id: '3', name: 'James Smith', photoURL: 'https://i.pravatar.cc/150?u=a042581f4e29026704f' },
+    { id: '1', name: 'Alex Johnson' },
+    { id: '2', name: 'Maria Garcia' },
+    { id: '3', name: 'James Smith' },
 ];
 
 

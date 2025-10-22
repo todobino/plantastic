@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetHeader, SheetTitle, SheetFooter, SheetClose } from './ui/sheet';
-import { Edit, Trash2, UserPlus, Check } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Check, UserCircle } from 'lucide-react';
 import type { TeamMember, Task } from '@/types';
 import { Dialog, DialogContent } from './ui/dialog';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
@@ -30,7 +30,6 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
     const newMember: TeamMember = {
       id: `member-${Date.now()}`,
       name: newMemberName.trim(),
-      photoURL: `https://i.pravatar.cc/150?u=${Date.now()}`
     };
     setTeamMembers([...teamMembers, newMember]);
     setNewMemberName('');
@@ -127,8 +126,9 @@ export default function TeamManager({ teamMembers, setTeamMembers, tasks }: Team
                         ) : (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={member.photoURL} alt={member.name} />
-                                <AvatarFallback>{getAssigneeInitials(member.name)}</AvatarFallback>
+                                <AvatarFallback>
+                                    <UserCircle className="h-5 w-5" />
+                                </AvatarFallback>
                             </Avatar>
                             <p className="font-medium">{member.name}</p>
                           </div>
