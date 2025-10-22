@@ -56,7 +56,7 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick }: L
 
   return (
     <div className="w-full overflow-auto">
-      <Table>
+      <Table className="border-b">
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="w-[50px] border-r">#</TableHead>

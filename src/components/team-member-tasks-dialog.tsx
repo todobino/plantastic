@@ -50,7 +50,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
         </Button>
       </div>
       <div className="flex-grow border rounded-md">
-          <Table>
+          <Table className="border-b">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-[40%] border-r">Task</TableHead>
