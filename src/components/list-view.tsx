@@ -73,9 +73,9 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick, tas
         </TableHeader>
         <TableBody>
           {listedTasks.map((task) => (
-            <TableRow key={task.id} >
-              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{taskNumbering.get(task.id)}</TableCell>
-              <TableCell className="font-medium border-r align-top" onClick={() => onTaskClick(task)}>
+            <TableRow key={task.id} onClick={() => onTaskClick(task)} className="cursor-pointer">
+              <TableCell className="border-r">{taskNumbering.get(task.id)}</TableCell>
+              <TableCell className="font-medium border-r align-top">
                 <div className="flex flex-col gap-1">
                   {task.category && (
                       <div className="flex items-center gap-2 text-xs font-normal text-muted-foreground">
@@ -91,23 +91,23 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick, tas
                   )}
                 </div>
               </TableCell>
-              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell className="border-r" onClick={() => onTaskClick(task)}>{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
-              <TableCell className="border-r" onClick={() => onTaskClick(task)}>
+              <TableCell className="border-r">{task.start ? format(task.start, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r">{task.end ? format(task.end, 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell className="border-r">
                 {task.start && task.end 
                   ? `${differenceInDays(task.end, task.start) + 1} day(s)`
                   : '-'
                 }
               </TableCell>
               <TableCell 
-                className="border-r cursor-pointer" 
-                onClick={() => task.assignee && onAssigneeClick(task.assignee)}
+                className="border-r" 
+                onClick={(e) => { e.stopPropagation(); task.assignee && onAssigneeClick(task.assignee); }}
               >
                   {task.assignee ? (
                     <span className="text-sm">{task.assignee.name}</span>
                   ) : <span className="text-muted-foreground">-</span>}
               </TableCell>
-              <TableCell onClick={() => onTaskClick(task)}>
+              <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {task.dependencies.map(depId => {
                     const depTask = getTaskById(depId);
