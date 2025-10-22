@@ -37,9 +37,9 @@ type TimelineTaskListProps = {
   isOverlay?: boolean;
 };
 
-export function DraggableTaskRow({ task, index, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
+export function DraggableTaskRow({ task, taskNumber, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask }: {
     task: Task;
-    index: number;
+    taskNumber: number | null;
     onTaskClick: (task: Task) => void;
     toggleCategory: (id: string) => void;
     getTaskColor: (task: Task) => string;
@@ -57,7 +57,7 @@ export function DraggableTaskRow({ task, index, onTaskClick, toggleCategory, get
         <div ref={setNodeRef} style={style} className={cn("touch-none", isDragging && "opacity-0")}>
             <TaskRow 
               task={task} 
-              index={index}
+              taskNumber={taskNumber}
               onTaskClick={onTaskClick}
               toggleCategory={toggleCategory}
               getTaskColor={getTaskColor}
@@ -72,7 +72,7 @@ export function DraggableTaskRow({ task, index, onTaskClick, toggleCategory, get
 
 export function TaskRow({
   task,
-  index,
+  taskNumber,
   onTaskClick,
   toggleCategory,
   getTaskColor,
@@ -84,7 +84,7 @@ export function TaskRow({
   dragListeners,
 }: {
   task: Task & { milestone?: string };
-  index: number;
+  taskNumber: number | null;
   onTaskClick: (task: Task) => void;
   toggleCategory: (id: string) => void;
   getTaskColor: (task: Task) => string;
@@ -116,7 +116,7 @@ export function TaskRow({
                     </div>
                 ) : (
                     <span {...dragListeners} {...dragAttributes} className={cn("w-full h-full flex items-center justify-center cursor-grab", isOverlay && "cursor-grabbing")}>
-                        <span className="group-hover/handle:hidden">{index + 1}</span>
+                        <span className="group-hover/handle:hidden">{taskNumber}</span>
                         <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
                     </span>
                 )}
@@ -197,6 +197,15 @@ export function TimelineTaskList({
   openQuickAddId,
   setOpenQuickAddId,
 }: TimelineTaskListProps) {
+  
+  const taskNumbering = new Map<string, number>();
+  let taskCounter = 1;
+  displayTasks.forEach(task => {
+    if (task.type === 'task') {
+      taskNumbering.set(task.id, taskCounter++);
+    }
+  });
+
   return (
     <div className="border-r shadow-md z-20 bg-background">
       <div
@@ -271,11 +280,11 @@ export function TimelineTaskList({
         </div>
       </div>
       <div className="relative">
-        {displayTasks.map((task, index) => (
+        {displayTasks.map((task) => (
             <DraggableTaskRow 
                 key={task.id}
                 task={task}
-                index={index}
+                taskNumber={task.type === 'task' ? taskNumbering.get(task.id)! : null}
                 onTaskClick={onTaskClick}
                 toggleCategory={toggleCategory}
                 getTaskColor={getTaskColor}
