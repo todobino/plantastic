@@ -33,16 +33,18 @@ export function ListView({ tasks, teamMembers, onTaskClick, onAssigneeClick, tas
   const listedTasks = useMemo(() => {
     const categories = new Map(tasks.filter(t => t.type === 'category').map(c => [c.id, c]));
     const members = new Map(teamMembers.map(m => [m.id, m]));
+    
+    // Sort tasks based on the numbering map
     const justTasks = tasks
-        .filter(t => t.type === 'task')
-        .sort((a,b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0));
+        .filter(t => t.type === 'task' && taskNumbering.has(t.id))
+        .sort((a,b) => (taskNumbering.get(a.id) || 0) - (taskNumbering.get(b.id) || 0));
 
     return justTasks.map(task => ({
         ...task,
         category: task.parentId ? categories.get(task.parentId) : undefined,
         assignee: task.assigneeId ? members.get(task.assigneeId) : undefined,
     }));
-  }, [tasks, teamMembers]);
+  }, [tasks, teamMembers, taskNumbering]);
 
   const getTaskById = (id: string) => tasks.find(t => t.id === id);
 

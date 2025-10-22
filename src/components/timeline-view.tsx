@@ -597,8 +597,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const scroller = timelineRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
-    const centerViewportX = scrollLeft + scroller.clientWidth / 4;
-    const centerDate = addDays(timeline[0], centerViewportX / dayWidth);
+    const scrollOffset = scroller.getBoundingClientRect().left;
+    const centerDate = addDays(timeline[0], (scrollLeft - scrollOffset + scroller.clientWidth / 2) / dayWidth);
     const newLabel = format(centerDate, 'MMMM yyyy');
 
     if (newLabel !== currentMonthLabel) {
@@ -666,14 +666,14 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
   const taskNumbering = useMemo(() => {
     const numbering = new Map<string, number>();
-    const sortedTasks = tasks
-        .filter(t => t.type === 'task')
-        .sort((a,b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0));
-    sortedTasks.forEach((task, index) => {
-        numbering.set(task.id, index + 1);
+    let taskCounter = 1;
+    displayTasks.forEach((task) => {
+      if (task.type === 'task') {
+        numbering.set(task.id, taskCounter++);
+      }
     });
     return numbering;
-  }, [tasks]);
+  }, [displayTasks]);
 
 
 
@@ -777,3 +777,4 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
+
