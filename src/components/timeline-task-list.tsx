@@ -124,7 +124,7 @@ export function TaskRow({
             <div
             className={cn(
                 "flex-grow h-full cursor-pointer pr-2 group-hover/task-row:bg-secondary",
-                isCategory ? "pl-2" : ""
+                !isCategory && !task.parentId && "pl-4"
             )}
             onClick={() => onTaskClick(task)}
             >
