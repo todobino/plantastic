@@ -69,6 +69,11 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const allTasks = placeholderTask ? [...tasks, placeholderTask] : tasks;
     const taskMap = new Map(allTasks.map(t => [t.id, t]));
 
+    const taskOrder = new Map<string, number>();
+    allTasks.forEach((task, index) => {
+        taskOrder.set(task.id, index);
+    });
+
     // Use a stable sort that respects the current order for tasks with same start date
     const sortedMap = new Map<string | null, Task[]>();
     allTasks.forEach(task => {
@@ -78,6 +83,12 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         }
         sortedMap.get(parentId)!.push(task);
     });
+
+    // Sort children within each parent based on the original `tasks` array order
+    for (const children of sortedMap.values()) {
+        children.sort((a, b) => (taskOrder.get(a.id) ?? 0) - (taskOrder.get(b.id) ?? 0));
+    }
+
 
     const addTaskRecursive = (task: Task, level: number) => {
         flatList.push({ ...task, milestone: `${level}` }); 
@@ -537,7 +548,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     if (scroller) {
         const todayX = dateToX(new Date());
         const scrollerWidth = scroller.clientWidth;
-        const scrollTo = todayX - scrollerWidth / 2 + dayWidth / 2;
+        const scrollTo = todayX - 200 + dayWidth / 2;
         scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
   }, [project.id, dateToX, dayWidth]);
@@ -596,7 +607,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const scroller = timelineRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
-    const scrollOffset = 200; // This should be a bit less than the task list width
+    const scrollOffset = 300; // This should be a bit less than the task list width
     const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
     const newLabel = format(centerDate, 'MMMM yyyy');
 
@@ -665,14 +676,48 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
   const taskNumbering = useMemo(() => {
     const numbering = new Map<string, number>();
+    // Create a stable, hierarchical list of all tasks.
+    const flatList: Task[] = [];
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+
+    const taskOrder = new Map<string, number>();
+    tasks.forEach((task, index) => {
+        taskOrder.set(task.id, index);
+    });
+
+    const sortedMap = new Map<string | null, Task[]>();
+    tasks.forEach(task => {
+        const parentId = task.parentId || null;
+        if (!sortedMap.has(parentId)) {
+            sortedMap.set(parentId, []);
+        }
+        sortedMap.get(parentId)!.push(task);
+    });
+    
+    for (const children of sortedMap.values()) {
+        children.sort((a, b) => (taskOrder.get(a.id) ?? 0) - (taskOrder.get(b.id) ?? 0));
+    }
+
+    const addTaskRecursive = (task: Task) => {
+        flatList.push(task);
+        if (task.type === 'category') {
+            const children = sortedMap.get(task.id) || [];
+            children.forEach(child => addTaskRecursive(child));
+        }
+    }
+
+    const topLevelTasks = sortedMap.get(null) || [];
+    topLevelTasks.forEach(task => addTaskRecursive(task));
+
+    // Now, number only the tasks from this stable list.
     let taskCounter = 1;
-    displayTasks.forEach((task) => {
+    flatList.forEach((task) => {
       if (task.type === 'task') {
         numbering.set(task.id, taskCounter++);
       }
     });
     return numbering;
-  }, [displayTasks]);
+  }, [tasks]);
 
 
 
@@ -681,7 +726,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         case 'timeline':
             if (!timeline || timeline.length === 0) return null;
             return (
-                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-hidden">
+                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-auto">
                     <div className="flex flex-col h-full overflow-hidden">
                         <DndContext 
                             sensors={sensors}
