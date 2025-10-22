@@ -9,7 +9,6 @@ import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf,
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 import { useAuth, useUser } from '@/firebase/provider';
-import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { AuthForm } from './auth-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -99,17 +98,17 @@ export default function AppHeader({
                 </DropdownMenuContent>
             </DropdownMenu>
         ) : (
-          <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
-              <DialogTrigger asChild>
+          <Sheet open={isLoginOpen} onOpenChange={setLoginOpen}>
+              <SheetTrigger asChild>
                   <Button>
                   <UserCircle className="mr-2 h-4 w-4"/>
                   Login
                   </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
+              </SheetTrigger>
+              <SheetContent className="max-w-md p-0">
                   <AuthForm onSuccess={() => setLoginOpen(false)} />
-              </DialogContent>
-          </Dialog>
+              </SheetContent>
+          </Sheet>
         )}
       </div>
     </div>
