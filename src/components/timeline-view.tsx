@@ -370,7 +370,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       return;
     }
     if (task.id === 'placeholder') return;
-    // We are not opening the editor from here anymore.
   }
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {

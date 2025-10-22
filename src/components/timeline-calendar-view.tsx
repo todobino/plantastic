@@ -429,18 +429,9 @@ export function TimelineCalendarView({
                   <TooltipContent className="bg-card border">
                     <p className="font-bold">{task.name}</p>
                     {task.description && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground max-w-xs">
                         {task.description}
                       </p>
-                    )}
-                    {pos.s && pos.e && (
-                      <>
-                        <p>Start: {format(pos.s, "MMM d, yyyy")}</p>
-                        <p>End: {format(pos.e, "MMM d, yyyy")}</p>
-                        <p>
-                          Duration: {differenceInDays(pos.e, pos.s) + 1} day(s)
-                        </p>
-                      </>
                     )}
                     {task.type === 'category' && (
                         <p>Tasks: {countTasksInCategory(task.id, tasks)}</p>

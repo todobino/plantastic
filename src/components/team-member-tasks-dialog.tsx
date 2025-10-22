@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 type TeamMemberTasksDialogProps = {
   member: TeamMember;
   tasks: Task[];
-  allTasks: Task[];
+  allTasks?: Task[];
   onDelete: (e: React.MouseEvent) => void;
   teamMembers: TeamMember[];
   onTaskUpdate: (task: Task) => void;
@@ -37,7 +37,7 @@ export default function TeamMemberTasksDialog({ member, tasks, allTasks, onDelet
   const sortedTeamMembers = [...teamMembers].sort((a, b) => a.name.localeCompare(b.name));
   
   const getCategoryForTask = (task: Task) => {
-    if (!task.parentId) return null;
+    if (!task.parentId || !allTasks) return null;
     return allTasks.find(t => t.id === task.parentId && t.type === 'category');
   }
 
