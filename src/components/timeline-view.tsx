@@ -14,6 +14,7 @@ import TeamView from './team-view';
 import { DndContext, DragOverlay, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import BoardView from './board-view';
 
 
 const ROW_HEIGHT = 40; 
@@ -41,7 +42,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
   const wasResizedRef = useRef(false);
-  const [view, setView] = useState<'timeline' | 'list' | 'team'>('timeline');
+  const [view, setView] = useState<'timeline' | 'list' | 'team' | 'board'>('timeline');
   const [openQuickAddId, setOpenQuickAddId] = useState<string | null>(null);
   const [placeholderTask, setPlaceholderTask] = useState<Task | null>(null);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
@@ -798,6 +799,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
             );
         case 'list':
             return <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} taskNumbering={taskNumbering} />;
+        case 'board':
+            return <BoardView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onTaskUpdate={onTaskUpdate} />;
         case 'team':
             return <TeamView teamMembers={teamMembers} setTeamMembers={setTeamMembers} tasks={tasks} onTaskUpdate={onTaskUpdate} onTaskClick={onTaskClick} />;
         default:

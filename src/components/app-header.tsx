@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { GanttChart, List, Users, LogOut, UserCircle, Briefcase, PawPrint, Leaf, Gamepad2, Film, Book, Home, Plane, Music, Code, Utensils, PartyPopper, Building, Rocket, BrainCircuit, type LucideIcon, LayoutGrid } from 'lucide-react';
 import ProjectEditor from './project-editor';
 import type { Project } from '@/types';
 import { useAuth, useUser } from '@/firebase/provider';
@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils';
 type AppHeaderProps = {
   project: Project;
   onProjectUpdate: (project: Project) => void;
-  view: 'timeline' | 'list' | 'team';
-  onViewChange: (view: 'timeline' | 'list' | 'team') => void;
+  view: 'timeline' | 'list' | 'team' | 'board';
+  onViewChange: (view: 'timeline' | 'list' | 'team' | 'board') => void;
 };
 
 const icons: Record<string, LucideIcon> = {
@@ -59,7 +59,7 @@ export default function AppHeader({
             <ProjectEditor project={project} onProjectUpdate={onProjectUpdate} />
           </SheetContent>
         </Sheet>
-        <Tabs value={view} onValueChange={(v) => onViewChange(v as 'timeline' | 'list' | 'team')}>
+        <Tabs value={view} onValueChange={(v) => onViewChange(v as 'timeline' | 'list' | 'team' | 'board')}>
           <TabsList>
             <TabsTrigger value="timeline">
               <GanttChart className="h-4 w-4 mr-2" />
@@ -68,6 +68,10 @@ export default function AppHeader({
             <TabsTrigger value="list">
               <List className="h-4 w-4 mr-2" />
               List
+            </TabsTrigger>
+             <TabsTrigger value="board">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Board
             </TabsTrigger>
             <TabsTrigger value="team">
               <Users className="h-4 w-4 mr-2" />
