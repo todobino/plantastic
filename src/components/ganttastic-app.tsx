@@ -224,13 +224,13 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
 
   const handleUpdateTask = useCallback((updatedTask: Task) => {
     let finalTask = { ...updatedTask };
-    if (finalTask.type === 'milestone') {
+    if (finalTask.type === 'milestone' && finalTask.parentId) {
       const categoryTasks = tasks.filter(t => t.parentId === finalTask.parentId && t.type === 'task' && t.end);
       const latestEndDate = categoryTasks.reduce((latest, current) => {
         return current.end && (!latest || current.end > latest) ? current.end : latest;
       }, null as Date | null);
       
-      const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : startOfDay(new Date());
+      const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : (finalTask.start || startOfDay(new Date()));
       finalTask.start = milestoneDate;
       finalTask.end = milestoneDate;
       finalTask.dependencies = categoryTasks.map(t => t.id);

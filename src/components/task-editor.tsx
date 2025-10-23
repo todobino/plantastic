@@ -156,7 +156,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   };
   
   const existingMilestoneParentIds = tasks.filter(t => t.type === 'milestone' && t.id !== selectedTask?.id).map(t => t.parentId);
-  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id && !existingMilestoneParentIds.includes(t.id));
+  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id && (!isMilestone || !existingMilestoneParentIds.includes(t.id)));
   const availableDependencies = tasks.filter(t => t.type !== 'category' && t.id !== selectedTask?.id);
 
   return (
