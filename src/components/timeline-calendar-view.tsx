@@ -370,10 +370,10 @@ export function TimelineCalendarView({
                                         isDraggingThis(task) && "opacity-90"
                                     )}
                                     style={{
-                                        top: `${pos.y + (ROW_HEIGHT - 24) / 2}px`,
-                                        left: `${vPos.left + (dayWidth / 2) - 12}px`,
-                                        width: '24px',
-                                        height: '24px',
+                                        top: `${pos.y + (ROW_HEIGHT - 32) / 2}px`,
+                                        left: `${vPos.left + (dayWidth / 2) - 16}px`,
+                                        width: '32px',
+                                        height: '32px',
                                     }}
                                 >
                                     <Diamond className="w-full h-full rotate-45" style={{ color: getTaskColor(task) }} fill={getTaskColor(task)} />
