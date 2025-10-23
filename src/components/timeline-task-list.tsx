@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import QuickTaskForm from "./quick-task-form";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { ScrollArea } from "./ui/scroll-area";
+import { forwardRef } from "react";
 
 type TimelineTaskListProps = {
   displayTasks: (Task & { milestone?: string })[];
@@ -186,7 +188,7 @@ export function TaskRow({
     );
 }
 
-export function TimelineTaskList({
+export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps & { onScroll?: (e: React.UIEvent<HTMLDivElement>) => void }>(({
   displayTasks,
   onAddTaskClick,
   onAddCategoryClick,
@@ -198,13 +200,13 @@ export function TimelineTaskList({
   openQuickAddId,
   setOpenQuickAddId,
   taskNumbering,
-}: TimelineTaskListProps) {
+}, ref) => {
   
   return (
-    <div className="border-r z-20 bg-background">
+    <div className="border-r z-20 bg-background flex flex-col h-full overflow-hidden">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
-        className="sticky top-0 bg-background z-40 flex flex-col border-b"
+        className="flex-shrink-0 bg-background z-40 flex flex-col border-b"
       >
         <div
           style={{ height: `${MONTH_ROW_HEIGHT}px` }}
@@ -273,21 +275,25 @@ export function TimelineTaskList({
           </div>
         </div>
       </div>
-      <div className="relative">
-        {displayTasks.map((task) => (
-            <DraggableTaskRow 
-                key={task.id}
-                task={task}
-                onTaskClick={onTaskClick}
-                toggleCategory={toggleCategory}
-                getTaskColor={getTaskColor}
-                onQuickAddTask={onQuickAddTask}
-                openQuickAddId={openQuickAddId}
-                setOpenQuickAddId={setOpenQuickAddId}
-                taskNumbering={taskNumbering}
-            />
-        ))}
-      </div>
+      <ScrollArea className="flex-grow" viewportRef={ref as React.Ref<HTMLDivElement>}>
+        <div className="relative">
+            {displayTasks.map((task) => (
+                <DraggableTaskRow 
+                    key={task.id}
+                    task={task}
+                    onTaskClick={onTaskClick}
+                    toggleCategory={toggleCategory}
+                    getTaskColor={getTaskColor}
+                    onQuickAddTask={onQuickAddTask}
+                    openQuickAddId={openQuickAddId}
+                    setOpenQuickAddId={setOpenQuickAddId}
+                    taskNumbering={taskNumbering}
+                />
+            ))}
+        </div>
+      </ScrollArea>
     </div>
   );
-}
+});
+
+TimelineTaskList.displayName = "TimelineTaskList";

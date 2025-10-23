@@ -41,6 +41,7 @@ type TimelineViewProps = {
 export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onAddMilestoneClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
+  const taskListRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
   const wasResizedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list' | 'team' | 'board'>('timeline');
@@ -50,6 +51,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [currentMonthLabel, setCurrentMonthLabel] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeTaskIndex, setActiveTaskIndex] = useState(-1);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -623,9 +625,11 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     onQuickAddTask(categoryId, taskName, duration);
   };
 
-  const handleTimelineScroll = useCallback((scrollLeft: number) => {
+  const handleTimelineScroll = useCallback((scrollLeft: number, newScrollTop: number) => {
     const scroller = timelineRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
+    
+    setScrollTop(newScrollTop);
 
     const scrollOffset = 300; // This should be a bit less than the task list width
     const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
@@ -635,6 +639,14 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       setCurrentMonthLabel(newLabel);
     }
   }, [timeline, dayWidth, currentMonthLabel]);
+
+  useEffect(() => {
+    if (taskListRef.current) {
+        if (taskListRef.current.scrollTop !== scrollTop) {
+            taskListRef.current.scrollTop = scrollTop;
+        }
+    }
+  }, [scrollTop]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -746,47 +758,46 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         case 'timeline':
             if (!timeline || timeline.length === 0) return null;
             return (
-                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-auto">
-                    <div className="flex flex-col h-full overflow-hidden">
-                        <DndContext 
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            modifiers={[restrictToVerticalAxis]}
-                        >
-                            <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                                <TimelineTaskList 
-                                    displayTasks={displayTasks}
-                                    onAddTaskClick={onAddTaskClick}
-                                    onAddCategoryClick={onAddCategoryClick}
-                                    onAddMilestoneClick={onAddMilestoneClick}
-                                    toggleCategory={toggleCategory}
-                                    onTaskClick={onTaskClick}
-                                    getTaskColor={getTaskColor}
-                                    onQuickAddTask={handleQuickAddTask}
-                                    openQuickAddId={openQuickAddId}
-                                    setOpenQuickAddId={handleSetOpenQuickAddId}
-                                    taskNumbering={taskNumbering}
-                                />
-                            </SortableContext>
-                            <DragOverlay>
-                              {activeTask && (
-                                  <TaskRow
-                                      task={activeTask}
-                                      onTaskClick={() => {}}
-                                      toggleCategory={() => {}}
-                                      getTaskColor={getTaskColor}
-                                      onQuickAddTask={() => {}}
-                                      openQuickAddId={null}
-                                      setOpenQuickAddId={() => {}}
-                                      isOverlay
-                                      taskNumbering={taskNumbering}
-                                  />
-                              )}
-                            </DragOverlay>
-                        </DndContext>
-                    </div>
+                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-hidden">
+                    <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis]}
+                    >
+                        <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                            <TimelineTaskList 
+                                ref={taskListRef}
+                                displayTasks={displayTasks}
+                                onAddTaskClick={onAddTaskClick}
+                                onAddCategoryClick={onAddCategoryClick}
+                                onAddMilestoneClick={onAddMilestoneClick}
+                                toggleCategory={toggleCategory}
+                                onTaskClick={onTaskClick}
+                                getTaskColor={getTaskColor}
+                                onQuickAddTask={handleQuickAddTask}
+                                openQuickAddId={openQuickAddId}
+                                setOpenQuickAddId={handleSetOpenQuickAddId}
+                                taskNumbering={taskNumbering}
+                            />
+                        </SortableContext>
+                        <DragOverlay>
+                          {activeTask && (
+                              <TaskRow
+                                  task={activeTask}
+                                  onTaskClick={() => {}}
+                                  toggleCategory={() => {}}
+                                  getTaskColor={getTaskColor}
+                                  onQuickAddTask={() => {}}
+                                  openQuickAddId={null}
+                                  setOpenQuickAddId={() => {}}
+                                  isOverlay
+                                  taskNumbering={taskNumbering}
+                              />
+                          )}
+                        </DragOverlay>
+                    </DndContext>
                     <TimelineCalendarView 
                         timeline={timeline}
                         totalDays={totalDays}

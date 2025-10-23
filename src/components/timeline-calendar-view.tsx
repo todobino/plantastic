@@ -53,7 +53,7 @@ type TimelineCalendarViewProps = {
   hoveredTaskId: string | null;
   setHoveredTaskId: (id: string | null) => void;
   currentMonthLabel: string;
-  onScroll: (scrollLeft: number) => void;
+  onScroll: (scrollLeft: number, scrollTop: number) => void;
 };
 
 export function TimelineCalendarView({
@@ -106,7 +106,7 @@ export function TimelineCalendarView({
     if (!scroller) return;
 
     const handleScroll = () => {
-      onScroll(scroller.scrollLeft);
+      onScroll(scroller.scrollLeft, scroller.scrollTop);
     };
 
     scroller.addEventListener("scroll", handleScroll, { passive: true });
@@ -210,7 +210,7 @@ export function TimelineCalendarView({
   return (
     <div
       ref={timelineRef}
-      className="relative overflow-x-auto overflow-y-visible"
+      className="relative overflow-auto"
       onPointerDown={handlePanStart}
       onPointerMove={handlePanMove}
       onPointerUp={handlePanEnd}
@@ -219,7 +219,7 @@ export function TimelineCalendarView({
     >
       <div
         className={cn("relative", panState.isPanning && "cursor-grabbing")}
-        style={{ width: `${totalDays * dayWidth}px`, height: '100%' }}
+        style={{ width: `${totalDays * dayWidth}px`, height: `${displayTasks.length * ROW_HEIGHT + HEADER_HEIGHT}px` }}
       >
         <div
             style={{ height: `${HEADER_HEIGHT}px` }}
@@ -356,8 +356,9 @@ export function TimelineCalendarView({
                   });
               }
               
-              if (task.dependencies.includes(hoveredTaskId!)) {
-                  relations.push({ from: hoveredTaskId!, to: task.id });
+              const hoveredTask = tasks.find(t => t.id === hoveredTaskId);
+              if (hoveredTask && hoveredTask.dependencies.includes(task.id)) {
+                  relations.push({ from: task.id, to: hoveredTaskId! });
               }
 
               return relations.map(({from, to}) => {
