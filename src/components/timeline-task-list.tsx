@@ -39,7 +39,6 @@ type TimelineTaskListProps = {
   setOpenQuickAddId: (id: string | null) => void;
   isOverlay?: boolean;
   taskNumbering: Map<string, number>;
-  onScroll: (scrollTop: number) => void;
 };
 
 export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask, taskNumbering }: {
@@ -201,14 +200,13 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
   openQuickAddId,
   setOpenQuickAddId,
   taskNumbering,
-  onScroll
 }, ref) => {
   
   return (
-    <div className="border-r z-20 bg-background flex flex-col h-full overflow-hidden">
+    <div ref={ref} className="border-r z-20 bg-background flex flex-col h-full overflow-hidden">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
-        className="flex-shrink-0 bg-background z-40 flex flex-col border-b"
+        className="flex-shrink-0 bg-background z-40 flex flex-col border-b sticky top-0"
       >
         <div
           style={{ height: `${MONTH_ROW_HEIGHT}px` }}
@@ -277,27 +275,21 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
           </div>
         </div>
       </div>
-      <ScrollArea 
-        className="flex-grow" 
-        viewportRef={ref as React.Ref<HTMLDivElement>}
-        onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
-      >
-        <div className="relative">
-            {displayTasks.map((task) => (
-                <DraggableTaskRow 
-                    key={task.id}
-                    task={task}
-                    onTaskClick={onTaskClick}
-                    toggleCategory={toggleCategory}
-                    getTaskColor={getTaskColor}
-                    onQuickAddTask={onQuickAddTask}
-                    openQuickAddId={openQuickAddId}
-                    setOpenQuickAddId={setOpenQuickAddId}
-                    taskNumbering={taskNumbering}
-                />
-            ))}
-        </div>
-      </ScrollArea>
+      <div className="relative">
+          {displayTasks.map((task) => (
+              <DraggableTaskRow 
+                  key={task.id}
+                  task={task}
+                  onTaskClick={onTaskClick}
+                  toggleCategory={toggleCategory}
+                  getTaskColor={getTaskColor}
+                  onQuickAddTask={onQuickAddTask}
+                  openQuickAddId={openQuickAddId}
+                  setOpenQuickAddId={setOpenQuickAddId}
+                  taskNumbering={taskNumbering}
+              />
+          ))}
+      </div>
     </div>
   );
 });

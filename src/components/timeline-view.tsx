@@ -15,6 +15,7 @@ import { DndContext, DragOverlay, closestCenter, MouseSensor, TouchSensor, useSe
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import BoardView from './board-view';
+import { ScrollArea } from './ui/scroll-area';
 
 
 const ROW_HEIGHT = 40; 
@@ -40,8 +41,8 @@ type TimelineViewProps = {
 
 export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onAddMilestoneClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const timelineRef = useRef<HTMLDivElement | null>(null);
-  const taskListRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timelineGridRef = useRef<HTMLDivElement>(null);
   const wasDraggedRef = useRef(false);
   const wasResizedRef = useRef(false);
   const [view, setView] = useState<'timeline' | 'list' | 'team' | 'board'>('timeline');
@@ -51,7 +52,16 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [currentMonthLabel, setCurrentMonthLabel] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeTaskIndex, setActiveTaskIndex] = useState(-1);
-  const isScrollingRef = useRef(false);
+
+  const [panState, setPanState] = useState<{
+    isPanning: boolean;
+    startX: number;
+    startScrollLeft: number;
+    lastMoveX: number;
+    lastMoveTime: number;
+    velocity: number;
+  }>({ isPanning: false, startX: 0, startScrollLeft: 0, lastMoveX: 0, lastMoveTime: 0, velocity: 0 });
+  const animationFrameRef = useRef<number | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -332,7 +342,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
     const snapDeltaPx = xToDayDelta(clampedLeftPx - dragState.startLeftPx) * pxPerDay;
     
-    const scroller = timelineRef.current; 
+    const scroller = scrollContainerRef.current; 
     if (scroller) {
       const margin = 40;
       if (e.clientX > scroller.getBoundingClientRect().right - margin) scroller.scrollLeft += pxPerDay;
@@ -548,7 +558,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
 
   const handleTodayClick = useCallback(() => {
-    const scroller = timelineRef.current;
+    const scroller = scrollContainerRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
     const todayX = dateToX(new Date());
@@ -563,7 +573,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   }, [dateToX, dayWidth, timeline]);
   
   useEffect(() => {
-    const scroller = timelineRef.current;
+    const scroller = scrollContainerRef.current;
     if (scroller) {
         const todayX = dateToX(new Date());
         const scrollerWidth = scroller.clientWidth;
@@ -571,6 +581,106 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         scroller.scrollTo({ left: scrollTo, behavior: 'auto' });
     }
   }, [project.id, dateToX, dayWidth]);
+
+  useEffect(() => {
+    const scroller = scrollContainerRef.current;
+    if (!scroller) return;
+
+    const handleScroll = () => {
+      const scrollLeft = scroller.scrollLeft;
+      if (timelineGridRef.current) {
+        timelineGridRef.current.scrollLeft = scrollLeft;
+      }
+
+      const scrollOffset = 300; 
+      const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
+      const newLabel = format(centerDate, 'MMMM yyyy');
+
+      if (newLabel !== currentMonthLabel) {
+        setCurrentMonthLabel(newLabel);
+      }
+    };
+
+    scroller.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    
+    return () => {
+      scroller.removeEventListener("scroll", handleScroll);
+    };
+  }, [timeline, dayWidth, currentMonthLabel]);
+
+  const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+    }
+    
+    const scroller = scrollContainerRef.current;
+    if (!scroller) return;
+    if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]") || (e.target as HTMLElement).closest("[data-today-button]")) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    document.body.style.cursor = "grabbing";
+    setPanState({
+      isPanning: true,
+      startX: e.clientX,
+      startScrollLeft: scroller.scrollLeft,
+      lastMoveX: e.clientX,
+      lastMoveTime: Date.now(),
+      velocity: 0,
+    });
+  };
+
+  const handlePanMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const scroller = scrollContainerRef.current;
+    if (!panState.isPanning || !scroller) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const now = Date.now();
+    const deltaTime = now - panState.lastMoveTime;
+    const deltaX = e.clientX - panState.lastMoveX;
+
+    let velocity = 0;
+    if (deltaTime > 0) {
+      velocity = deltaX / deltaTime;
+    }
+    
+    const walk = e.clientX - panState.startX;
+    scroller.scrollLeft = panState.startScrollLeft - walk;
+
+    setPanState(prev => ({
+        ...prev,
+        lastMoveX: e.clientX,
+        lastMoveTime: now,
+        velocity: velocity
+    }));
+  };
+
+  const handlePanEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const scroller = scrollContainerRef.current;
+    if (!panState.isPanning || !scroller) return;
+    document.body.style.cursor = "default";
+    setPanState(prev => ({ ...prev, isPanning: false }));
+    
+    if (Math.abs(panState.velocity) > 0.1) {
+      let velocity = panState.velocity;
+      
+      const coast = () => {
+        scroller.scrollLeft -= velocity * 16;
+        velocity *= 0.95; 
+
+        if (Math.abs(velocity) > 0.05) {
+          animationFrameRef.current = requestAnimationFrame(coast);
+        } else {
+            animationFrameRef.current = null;
+        }
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(coast);
+    }
+  };
   
   const toggleCategory = (categoryId: string) => {
     setTasks(tasks.map(t => 
@@ -624,38 +734,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     setPlaceholderTask(null);
     onQuickAddTask(categoryId, taskName, duration);
   };
-
-  const handleScroll = (scrollTop: number, scrollLeft: number, source: 'timeline' | 'tasklist') => {
-    if (isScrollingRef.current) return;
-  
-    isScrollingRef.current = true;
-  
-    const timelineScroller = timelineRef.current;
-    const taskListScroller = taskListRef.current;
-  
-    if (timelineScroller && timelineScroller.scrollTop !== scrollTop) {
-      timelineScroller.scrollTop = scrollTop;
-    }
-  
-    if (taskListScroller && taskListScroller.scrollTop !== scrollTop) {
-      taskListScroller.scrollTop = scrollTop;
-    }
-
-    if (source === 'timeline') {
-      const scrollOffset = 300; 
-      const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
-      const newLabel = format(centerDate, 'MMMM yyyy');
-
-      if (newLabel !== currentMonthLabel) {
-        setCurrentMonthLabel(newLabel);
-      }
-    }
-  
-    setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 50); 
-  };
-
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -717,7 +795,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
   const taskNumbering = useMemo(() => {
     const numbering = new Map<string, number>();
-    // Create a stable, hierarchical list of all tasks.
     const flatList: Task[] = [];
     const taskMap = new Map(tasks.map(t => [t.id, t]));
 
@@ -750,7 +827,6 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     const topLevelTasks = sortedMap.get(null) || [];
     topLevelTasks.forEach(task => addTaskRecursive(task));
 
-    // Now, number only the tasks from this stable list.
     let taskCounter = 1;
     flatList.forEach((task) => {
       if (task.type === 'task') {
@@ -767,76 +843,85 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         case 'timeline':
             if (!timeline || timeline.length === 0) return null;
             return (
-                <div className="relative w-full h-full grid grid-cols-[300px_1fr] overflow-hidden">
-                    <DndContext 
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        modifiers={[restrictToVerticalAxis]}
-                    >
-                        <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                            <TimelineTaskList 
-                                ref={taskListRef}
-                                displayTasks={displayTasks}
-                                onAddTaskClick={onAddTaskClick}
-                                onAddCategoryClick={onAddCategoryClick}
-                                onAddMilestoneClick={onAddMilestoneClick}
-                                toggleCategory={toggleCategory}
-                                onTaskClick={onTaskClick}
+              <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  modifiers={[restrictToVerticalAxis]}
+              >
+                <ScrollArea
+                    ref={scrollContainerRef}
+                    className="w-full h-full overflow-auto"
+                    onPointerDown={handlePanStart}
+                    onPointerMove={handlePanMove}
+                    onPointerUp={handlePanEnd}
+                    onPointerLeave={handlePanEnd}
+                    onPointerCancel={handlePanEnd}
+                >
+                  <div className="relative w-full grid grid-cols-[300px_1fr]">
+                      <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                          <TimelineTaskList 
+                              displayTasks={displayTasks}
+                              onAddTaskClick={onAddTaskClick}
+                              onAddCategoryClick={onAddCategoryClick}
+                              onAddMilestoneClick={onAddMilestoneClick}
+                              toggleCategory={toggleCategory}
+                              onTaskClick={onTaskClick}
+                              getTaskColor={getTaskColor}
+                              onQuickAddTask={handleQuickAddTask}
+                              openQuickAddId={openQuickAddId}
+                              setOpenQuickAddId={handleSetOpenQuickAddId}
+                              taskNumbering={taskNumbering}
+                          />
+                      </SortableContext>
+                      <TimelineCalendarView
+                          ref={timelineGridRef}
+                          timeline={timeline}
+                          totalDays={totalDays}
+                          dayWidth={dayWidth}
+                          headerGroups={headerGroups}
+                          displayTasks={displayTasks}
+                          tasks={tasks}
+                          taskPositions={taskPositions}
+                          onBarPointerDown={onBarPointerDown}
+                          onBarPointerMove={onBarPointerMove}
+                          onBarPointerUp={onBarPointerUp}
+                          onResizeMove={onResizeMove}
+                          onResizeUp={onResizeUp}
+                          handleBarClick={onTaskClick}
+                          onLeftHandleDown={onLeftHandleDown}
+                          onRightHandleDown={onRightHandleDown}
+                          getVisualPos={getVisualPos}
+                          getTaskColor={getTaskColor}
+                          routeFS={routeFS}
+                          isResizingThis={(task: Task) => resizeState.id === task.id}
+                          isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                          onTodayClick={handleTodayClick}
+                          hoveredTaskId={hoveredTaskId}
+                          setHoveredTaskId={setHoveredTaskId}
+                          currentMonthLabel={currentMonthLabel}
+                      />
+                  </div>
+                  <DragOverlay>
+                    {activeTask && (
+                        <div className="grid grid-cols-[300px_1fr] w-full">
+                            <TaskRow
+                                task={activeTask}
+                                onTaskClick={() => {}}
+                                toggleCategory={() => {}}
                                 getTaskColor={getTaskColor}
-                                onQuickAddTask={handleQuickAddTask}
-                                openQuickAddId={openQuickAddId}
-                                setOpenQuickAddId={handleSetOpenQuickAddId}
+                                onQuickAddTask={() => {}}
+                                openQuickAddId={null}
+                                setOpenQuickAddId={() => {}}
+                                isOverlay
                                 taskNumbering={taskNumbering}
-                                onScroll={(scrollTop) => handleScroll(timelineRef.current?.scrollLeft || 0, scrollTop, 'tasklist')}
                             />
-                        </SortableContext>
-                        <DragOverlay>
-                          {activeTask && (
-                              <TaskRow
-                                  task={activeTask}
-                                  onTaskClick={() => {}}
-                                  toggleCategory={() => {}}
-                                  getTaskColor={getTaskColor}
-                                  onQuickAddTask={() => {}}
-                                  openQuickAddId={null}
-                                  setOpenQuickAddId={() => {}}
-                                  isOverlay
-                                  taskNumbering={taskNumbering}
-                              />
-                          )}
-                        </DragOverlay>
-                    </DndContext>
-                    <TimelineCalendarView 
-                        timeline={timeline}
-                        totalDays={totalDays}
-                        dayWidth={dayWidth}
-                        headerGroups={headerGroups}
-                        displayTasks={displayTasks}
-                        tasks={tasks}
-                        taskPositions={taskPositions}
-                        onBarPointerDown={onBarPointerDown}
-                        onBarPointerMove={onBarPointerMove}
-                        onBarPointerUp={onBarPointerUp}
-                        onResizeMove={onResizeMove}
-                        onResizeUp={onResizeUp}
-                        handleBarClick={onTaskClick}
-                        onLeftHandleDown={onLeftHandleDown}
-                        onRightHandleDown={onRightHandleDown}
-                        getVisualPos={getVisualPos}
-                        getTaskColor={getTaskColor}
-                        routeFS={routeFS}
-                        isResizingThis={(task: Task) => resizeState.id === task.id}
-                        isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
-                        timelineRef={timelineRef}
-                        onTodayClick={handleTodayClick}
-                        hoveredTaskId={hoveredTaskId}
-                        setHoveredTaskId={setHoveredTaskId}
-                        currentMonthLabel={currentMonthLabel}
-                        onScroll={(scrollLeft, scrollTop) => handleScroll(scrollTop, scrollLeft, 'timeline')}
-                    />
-                </div>
+                        </div>
+                    )}
+                  </DragOverlay>
+                </ScrollArea>
+              </DndContext>
             );
         case 'list':
             return <ListView tasks={tasks} teamMembers={teamMembers} onTaskClick={onTaskClick} onAssigneeClick={onAssigneeClick} taskNumbering={taskNumbering} />;
