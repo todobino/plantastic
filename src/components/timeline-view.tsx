@@ -51,7 +51,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const [currentMonthLabel, setCurrentMonthLabel] = useState('');
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeTaskIndex, setActiveTaskIndex] = useState(-1);
-  const [scrollTop, setScrollTop] = useState(0);
+  const isScrollingRef = useRef(false);
 
   const [dragState, setDragState] = useState<{
     id: string | null;
@@ -625,28 +625,37 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     onQuickAddTask(categoryId, taskName, duration);
   };
 
-  const handleTimelineScroll = useCallback((scrollLeft: number, newScrollTop: number) => {
-    const scroller = timelineRef.current;
-    if (!scroller || !timeline || timeline.length === 0) return;
-    
-    setScrollTop(newScrollTop);
-
-    const scrollOffset = 300; // This should be a bit less than the task list width
-    const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
-    const newLabel = format(centerDate, 'MMMM yyyy');
-
-    if (newLabel !== currentMonthLabel) {
-      setCurrentMonthLabel(newLabel);
+  const handleScroll = (scrollTop: number, scrollLeft: number, source: 'timeline' | 'tasklist') => {
+    if (isScrollingRef.current) return;
+  
+    isScrollingRef.current = true;
+  
+    const timelineScroller = timelineRef.current;
+    const taskListScroller = taskListRef.current;
+  
+    if (timelineScroller && timelineScroller.scrollTop !== scrollTop) {
+      timelineScroller.scrollTop = scrollTop;
     }
-  }, [timeline, dayWidth, currentMonthLabel]);
-
-  useEffect(() => {
-    if (taskListRef.current) {
-        if (taskListRef.current.scrollTop !== scrollTop) {
-            taskListRef.current.scrollTop = scrollTop;
-        }
+  
+    if (taskListScroller && taskListScroller.scrollTop !== scrollTop) {
+      taskListScroller.scrollTop = scrollTop;
     }
-  }, [scrollTop]);
+
+    if (source === 'timeline') {
+      const scrollOffset = 300; 
+      const centerDate = addDays(timeline[0], (scrollLeft + scrollOffset) / dayWidth);
+      const newLabel = format(centerDate, 'MMMM yyyy');
+
+      if (newLabel !== currentMonthLabel) {
+        setCurrentMonthLabel(newLabel);
+      }
+    }
+  
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 50); 
+  };
+
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -780,6 +789,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                                 openQuickAddId={openQuickAddId}
                                 setOpenQuickAddId={handleSetOpenQuickAddId}
                                 taskNumbering={taskNumbering}
+                                onScroll={(scrollTop) => handleScroll(timelineRef.current?.scrollLeft || 0, scrollTop, 'tasklist')}
                             />
                         </SortableContext>
                         <DragOverlay>
@@ -824,7 +834,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                         hoveredTaskId={hoveredTaskId}
                         setHoveredTaskId={setHoveredTaskId}
                         currentMonthLabel={currentMonthLabel}
-                        onScroll={handleTimelineScroll}
+                        onScroll={(scrollLeft, scrollTop) => handleScroll(scrollTop, scrollLeft, 'timeline')}
                     />
                 </div>
             );

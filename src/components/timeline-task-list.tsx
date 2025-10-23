@@ -39,6 +39,7 @@ type TimelineTaskListProps = {
   setOpenQuickAddId: (id: string | null) => void;
   isOverlay?: boolean;
   taskNumbering: Map<string, number>;
+  onScroll: (scrollTop: number) => void;
 };
 
 export function DraggableTaskRow({ task, onTaskClick, toggleCategory, getTaskColor, openQuickAddId, setOpenQuickAddId, onQuickAddTask, taskNumbering }: {
@@ -188,7 +189,7 @@ export function TaskRow({
     );
 }
 
-export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps & { onScroll?: (e: React.UIEvent<HTMLDivElement>) => void }>(({
+export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps>(({
   displayTasks,
   onAddTaskClick,
   onAddCategoryClick,
@@ -200,6 +201,7 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
   openQuickAddId,
   setOpenQuickAddId,
   taskNumbering,
+  onScroll
 }, ref) => {
   
   return (
@@ -275,7 +277,11 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
           </div>
         </div>
       </div>
-      <ScrollArea className="flex-grow" viewportRef={ref as React.Ref<HTMLDivElement>}>
+      <ScrollArea 
+        className="flex-grow" 
+        viewportRef={ref as React.Ref<HTMLDivElement>}
+        onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
+      >
         <div className="relative">
             {displayTasks.map((task) => (
                 <DraggableTaskRow 
