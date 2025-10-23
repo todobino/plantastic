@@ -306,7 +306,7 @@ export function TimelineCalendarView({
               );
 
               return deps.map((depId) => {
-                 if (hoveredTaskId && (hoveredTaskId !== task.id && hoveredTaskId !== depId)) {
+                 if (hoveredTaskId && (hoveredTaskId !== task.id && hoveredTaskId !== depId) && task.type !== 'milestone' && tasks.find(t=>t.id === depId)?.type !== 'milestone' ) {
                     return null;
                  }
                 const fromV = getVisualPos(depId);
@@ -352,43 +352,58 @@ export function TimelineCalendarView({
             const isMilestone = task.type === 'milestone';
             
             if (isMilestone) {
-                const color = getTaskColor(task);
-                return (
-                    <TooltipProvider key={task.id} delayDuration={100}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div
-                                    data-task-bar="true"
-                                    onClick={() => handleBarClick(task)}
-                                    onPointerEnter={() => setHoveredTaskId(task.id)}
-                                    onPointerLeave={() => setHoveredTaskId(null)}
-                                    className="absolute z-20 cursor-pointer flex items-center justify-center"
-                                    style={{
-                                        top: `${pos.y + BAR_TOP_MARGIN}px`,
-                                        left: `${vPos.left + (dayWidth / 2) - (BAR_HEIGHT / 2)}px`,
-                                        width: `${BAR_HEIGHT}px`,
-                                        height: `${BAR_HEIGHT}px`,
-                                    }}
-                                >
-                                    <Diamond 
-                                        className="w-full h-full rotate-45"
-                                        stroke={color}
-                                        fill={hexToRgba(color, 0.2)}
-                                        strokeWidth={2}
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                             <TooltipContent className="bg-card border">
-                                <p className="font-bold">{task.name}</p>
-                                {task.description && (
-                                  <p className="text-sm text-muted-foreground max-w-xs">
-                                    {task.description}
-                                  </p>
-                                )}
-                              </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )
+              // Solid bar like a taskbar, but scoped to a single day cell
+              // Width adapts to cell size but stays visually chunky.
+              const MILESTONE_WIDTH = Math.max(48, Math.min(dayWidth - 10, 120)); // tweak if you want chunkier
+              const barTop = pos.y + BAR_TOP_MARGIN;
+              const barLeft = vPos.left + (dayWidth - MILESTONE_WIDTH) / 2;
+
+              return (
+                <TooltipProvider key={task.id} delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        data-task-bar="true"
+                        onClick={() => handleBarClick(task)}
+                        onPointerEnter={() => setHoveredTaskId(task.id)}
+                        onPointerLeave={() => setHoveredTaskId(null)}
+                        className={cn(
+                          "absolute z-30 rounded-md shadow",
+                          "flex items-center justify-center",
+                          // solid bar: black on light, white on dark
+                          "bg-black dark:bg-white",
+                          // make icon/text contrast
+                          "text-white dark:text-black",
+                          // mild hover feedback; not draggable
+                          "hover:brightness-110 cursor-pointer"
+                        )}
+                        style={{
+                          top: `${barTop}px`,
+                          left: `${barLeft}px`,
+                          width: `${MILESTONE_WIDTH}px`,
+                          height: `${BAR_HEIGHT}px`,
+                        }}
+                      >
+                        <Diamond
+                          className="w-4 h-4"
+                          // rely on currentColor for strong contrast
+                          stroke="currentColor"
+                          fill="none"
+                          strokeWidth={2}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-card border">
+                      <p className="font-bold">{task.name}</p>
+                      {task.description && (
+                        <p className="text-sm text-muted-foreground max-w-xs">
+                          {task.description}
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
             }
 
 
