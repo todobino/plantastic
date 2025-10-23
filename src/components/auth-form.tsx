@@ -87,6 +87,9 @@ export function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
                 </h1>
             </div>
         </SheetTitle>
+        <SheetDescription className="sr-only">
+          Log in to or sign up for a new account.
+        </SheetDescription>
       </SheetHeader>
       <ScrollArea>
         <div className="p-6">
