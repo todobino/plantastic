@@ -294,8 +294,8 @@ export function TimelineCalendarView({
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
             {tasks.map((task) => {
               if (task.type === "category" || !task.start || task.type === 'milestone') return null;
-              if (hoveredTaskId !== task.id && !(task.dependencies || []).includes(hoveredTaskId || '')) {
-                return null;
+              if (hoveredTaskId && !task.dependencies.includes(hoveredTaskId) && task.id !== hoveredTaskId) {
+                  return null;
               }
 
               const toV = getVisualPos(task.id);
@@ -306,7 +306,7 @@ export function TimelineCalendarView({
               );
 
               return deps.map((depId) => {
-                 if (hoveredTaskId !== task.id && hoveredTaskId !== depId) {
+                 if (hoveredTaskId && (hoveredTaskId !== task.id && hoveredTaskId !== depId)) {
                     return null;
                  }
                 const fromV = getVisualPos(depId);
@@ -362,12 +362,12 @@ export function TimelineCalendarView({
                                     onClick={() => handleBarClick(task)}
                                     onPointerEnter={() => setHoveredTaskId(task.id)}
                                     onPointerLeave={() => setHoveredTaskId(null)}
-                                    className="absolute z-20 cursor-pointer"
+                                    className="absolute z-20 cursor-pointer flex items-center justify-center"
                                     style={{
-                                        top: `${pos.y + (ROW_HEIGHT - 32) / 2}px`,
-                                        left: `${vPos.left + (dayWidth / 2) - 16}px`,
-                                        width: '32px',
-                                        height: '32px',
+                                        top: `${pos.y + BAR_TOP_MARGIN}px`,
+                                        left: `${vPos.left + (dayWidth / 2) - (BAR_HEIGHT / 2)}px`,
+                                        width: `${BAR_HEIGHT}px`,
+                                        height: `${BAR_HEIGHT}px`,
                                     }}
                                 >
                                     <Diamond 
@@ -491,3 +491,5 @@ export function TimelineCalendarView({
     </div>
   );
 }
+
+      
