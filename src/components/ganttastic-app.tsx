@@ -187,7 +187,9 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
 
     setTasks(prev => {
         let newTasks = [...prev, finalTask];
-        newTasks = updateDependentTasks(newId, newTasks);
+        if (finalTask.type !== 'milestone') {
+            newTasks = updateDependentTasks(newId, newTasks);
+        }
         return newTasks;
     });
     setTaskEditorOpen(false);
@@ -223,30 +225,36 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   }
 
   const handleUpdateTask = useCallback((updatedTask: Task) => {
-    let finalTask = { ...updatedTask };
-    if (finalTask.type === 'milestone' && finalTask.parentId) {
-      const categoryTasks = tasks.filter(t => t.parentId === finalTask.parentId && t.type === 'task' && t.end);
-      const latestEndDate = categoryTasks.reduce((latest, current) => {
-        return current.end && (!latest || current.end > latest) ? current.end : latest;
-      }, null as Date | null);
-      
-      const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : (finalTask.start || startOfDay(new Date()));
-      finalTask.start = milestoneDate;
-      finalTask.end = milestoneDate;
-      finalTask.dependencies = categoryTasks.map(t => t.id);
-    }
-    
     setTasks(prev => {
-      let newTasks = prev.map(task => (task.id === finalTask.id ? finalTask : task));
-      newTasks = updateDependentTasks(finalTask.id, newTasks);
-      return newTasks;
+        let newTasks = [...prev];
+        let finalTask = { ...updatedTask };
+        
+        if (finalTask.type === 'milestone' && finalTask.parentId) {
+            const categoryTasks = newTasks.filter(t => t.parentId === finalTask.parentId && t.type === 'task' && t.end);
+            const latestEndDate = categoryTasks.reduce((latest, current) => {
+                return current.end && (!latest || current.end > latest) ? current.end : latest;
+            }, null as Date | null);
+            
+            const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : (finalTask.start || startOfDay(new Date()));
+            finalTask.start = milestoneDate;
+            finalTask.end = milestoneDate;
+            finalTask.dependencies = categoryTasks.map(t => t.id);
+        }
+        
+        newTasks = newTasks.map(task => (task.id === finalTask.id ? finalTask : task));
+        
+        if (finalTask.type !== 'milestone') {
+            newTasks = updateDependentTasks(finalTask.id, newTasks);
+        }
+        
+        return newTasks;
     });
 
     setTaskEditorOpen(false);
     setCategoryEditorOpen(false);
     setMilestoneEditorOpen(false);
     setSelectedTask(null);
-  }, [tasks, updateDependentTasks]);
+  }, [updateDependentTasks]);
 
 
   const handleDeleteTask = (taskId: string) => {

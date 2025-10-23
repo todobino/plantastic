@@ -137,8 +137,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     const taskData = {
       name: data.name,
       description: data.description,
-      start: data.start,
-      end: isMilestone ? data.start : data.end,
+      start: isMilestone ? new Date() : data.start, // Pass a placeholder for auto-calculation
+      end: isMilestone ? new Date() : data.end,
       dependencies: data.dependencies || [],
       type: isMilestone ? 'milestone' as const : 'task' as const,
       parentId: data.parentId,
