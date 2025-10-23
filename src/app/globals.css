@@ -5,6 +5,7 @@
 
 body {
   font-family: 'DM Sans', sans-serif;
+  overscroll-behavior: none;
 }
 
 .dragging-clone {
