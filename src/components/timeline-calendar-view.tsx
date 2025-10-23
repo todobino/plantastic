@@ -352,23 +352,17 @@ export function TimelineCalendarView({
             const isMilestone = task.type === 'milestone';
             
             if (isMilestone) {
+                const color = getTaskColor(task);
                 return (
                     <TooltipProvider key={task.id} delayDuration={100}>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <div
                                     data-task-bar="true"
-                                    onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
-                                    onPointerMove={(e) => onBarPointerMove(e, task)}
-                                    onPointerUp={(e) => onBarPointerUp(e, task)}
-                                    onPointerCancel={(e) => onBarPointerUp(e, task)}
                                     onClick={() => handleBarClick(task)}
                                     onPointerEnter={() => setHoveredTaskId(task.id)}
                                     onPointerLeave={() => setHoveredTaskId(null)}
-                                    className={cn(
-                                        "absolute z-20 cursor-grab active:cursor-grabbing",
-                                        isDraggingThis(task) && "opacity-90"
-                                    )}
+                                    className="absolute z-20 cursor-pointer"
                                     style={{
                                         top: `${pos.y + (ROW_HEIGHT - 32) / 2}px`,
                                         left: `${vPos.left + (dayWidth / 2) - 16}px`,
@@ -376,7 +370,12 @@ export function TimelineCalendarView({
                                         height: '32px',
                                     }}
                                 >
-                                    <Diamond className="w-full h-full rotate-45" style={{ color: getTaskColor(task) }} fill={getTaskColor(task)} />
+                                    <Diamond 
+                                        className="w-full h-full rotate-45"
+                                        style={{ color: color }} 
+                                        fill={hexToRgba(color, 0.2)}
+                                        strokeWidth={2}
+                                    />
                                 </div>
                             </TooltipTrigger>
                              <TooltipContent className="bg-card border">
