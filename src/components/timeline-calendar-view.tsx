@@ -88,7 +88,13 @@ export function TimelineCalendarView({
     isPanning: boolean;
     startX: number;
     startScrollLeft: number;
-  }>({ isPanning: false, startX: 0, startScrollLeft: 0 });
+    lastMoveX: number;
+    lastMoveTime: number;
+    velocity: number;
+  }>({ isPanning: false, startX: 0, startScrollLeft: 0, lastMoveX: 0, lastMoveTime: 0, velocity: 0 });
+
+  const animationFrameRef = useRef<number | null>(null);
+
 
   const dateToX = useCallback((d: Date) => {
     if (!timeline || timeline.length === 0) return 0;
@@ -105,12 +111,22 @@ export function TimelineCalendarView({
 
     scroller.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
+    
+    // Cleanup animation frame on unmount
     return () => {
       scroller.removeEventListener("scroll", handleScroll);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [timelineRef, onScroll]);
 
   const handlePanStart = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+    }
+    
     if (!timelineRef.current) return;
     if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]") || (e.target as HTMLElement).closest("[data-today-button]")) return;
 
@@ -121,6 +137,9 @@ export function TimelineCalendarView({
       isPanning: true,
       startX: e.clientX,
       startScrollLeft: timelineRef.current.scrollLeft,
+      lastMoveX: e.clientX,
+      lastMoveTime: Date.now(),
+      velocity: 0,
     });
   };
 
@@ -128,15 +147,49 @@ export function TimelineCalendarView({
     if (!panState.isPanning || !timelineRef.current) return;
     e.preventDefault();
     e.stopPropagation();
-    const x = e.clientX;
-    const walk = x - panState.startX;
+    
+    const now = Date.now();
+    const deltaTime = now - panState.lastMoveTime;
+    const deltaX = e.clientX - panState.lastMoveX;
+
+    let velocity = 0;
+    if (deltaTime > 0) {
+      velocity = deltaX / deltaTime;
+    }
+    
+    const walk = e.clientX - panState.startX;
     timelineRef.current.scrollLeft = panState.startScrollLeft - walk;
+
+    setPanState(prev => ({
+        ...prev,
+        lastMoveX: e.clientX,
+        lastMoveTime: now,
+        velocity: velocity
+    }));
   };
 
   const handlePanEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!panState.isPanning) return;
     document.body.style.cursor = "default";
-    setPanState({ isPanning: false, startX: 0, startScrollLeft: 0 });
+    setPanState(prev => ({ ...prev, isPanning: false }));
+    
+    if (Math.abs(panState.velocity) > 0.1 && timelineRef.current) {
+      let velocity = panState.velocity;
+      const scroller = timelineRef.current;
+      
+      const coast = () => {
+        scroller.scrollLeft -= velocity * 16; // 16ms approx per frame
+        velocity *= 0.95; // Damping factor
+
+        if (Math.abs(velocity) > 0.05) {
+          animationFrameRef.current = requestAnimationFrame(coast);
+        } else {
+            animationFrameRef.current = null;
+        }
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(coast);
+    }
   };
   
   const countTasksInCategory = (categoryId: string, allTasks: Task[]): number => {
@@ -292,7 +345,7 @@ export function TimelineCalendarView({
           </div>
 
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-            {hoveredTaskId && tasks.map((task) => {
+            {tasks.map((task) => {
               if (task.type === "category" || !task.start || task.type === 'milestone') return null;
 
               let relations: {from: string, to: string}[] = [];
@@ -303,8 +356,8 @@ export function TimelineCalendarView({
                   });
               }
               
-              if (task.dependencies.includes(hoveredTaskId)) {
-                  relations.push({ from: hoveredTaskId, to: task.id });
+              if (task.dependencies.includes(hoveredTaskId!)) {
+                  relations.push({ from: hoveredTaskId!, to: task.id });
               }
 
               return relations.map(({from, to}) => {
