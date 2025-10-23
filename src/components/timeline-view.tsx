@@ -193,13 +193,11 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
             const { start, end } = getCategoryDates(task.id);
             s = start;
             e = end;
-        } else if (task.type === 'milestone') {
-            e = s;
         }
 
-        if (s && e) {
+        if (s) {
             const startOfDay_s = startOfDay(s);
-            const startOfDay_e = startOfDay(e);
+            const startOfDay_e = startOfDay(e || s);
             const offset = differenceInDays(startOfDay_s, viewStartDate);
             const durationCalendar = differenceInDays(startOfDay_e, startOfDay_s);
             taskPositions.set(task.id, {
@@ -802,7 +800,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                         onBarPointerUp={onBarPointerUp}
                         onResizeMove={onResizeMove}
                         onResizeUp={onResizeUp}
-                        handleBarClick={handleBarClick}
+                        handleBarClick={onTaskClick}
                         onLeftHandleDown={onLeftHandleDown}
                         onRightHandleDown={onRightHandleDown}
                         getVisualPos={getVisualPos}
@@ -845,5 +843,3 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
-
-    

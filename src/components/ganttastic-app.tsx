@@ -4,19 +4,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Project, TeamMember } from '@/types';
 import TimelineView from './timeline-view';
-import GanttasticSidebarContent from './ganttastic-sidebar-content';
+import Importer from './importer';
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Sheet, SheetContent } from './ui/sheet';
-import TeamManager from './team-manager';
 import TeamMemberTasksDialog from './team-member-tasks-dialog';
+import TaskDialog from './task-dialog';
 
 const getInitialTasks = (): Task[] => [
   { id: 'cat-1', name: 'Planning Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#3b82f6' },
   { id: 'task-1', name: 'Project Kick-off Meeting', description: 'Initial meeting with stakeholders to define project scope and goals.', start: new Date(), end: addDays(new Date(), 1), dependencies: [], type: 'task', parentId: 'cat-1', assigneeId: '1', priority: 'high', progress: 100 },
   { id: 'task-2', name: 'Requirement Gathering', description: 'Gathering detailed requirements from all stakeholders.', start: addDays(new Date(), 1), end: addDays(new Date(), 3), dependencies: ['task-1'], type: 'task', parentId: 'cat-1', assigneeId: '2', priority: 'high', progress: 75 },
-  { id: 'milestone-1', name: 'Planning Complete', start: addDays(new Date(), 3), type: 'milestone', parentId: 'cat-1', dependencies: ['task-2'] },
-  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 4), end: addDays(new Date(), 8), dependencies: ['milestone-1'], type: 'task', parentId: 'cat-1', assigneeId: '1', priority: 'medium', progress: 50 },
+  { id: 'task-3', name: 'UI/UX Design', description: 'Designing the user interface and user experience.', start: addDays(new Date(), 4), end: addDays(new Date(), 8), dependencies: ['task-2'], type: 'task', parentId: 'cat-1', assigneeId: '1', priority: 'medium', progress: 50 },
+  { id: 'milestone-1', name: 'Planning Complete', start: addDays(new Date(), 8), type: 'milestone', parentId: 'cat-1', dependencies: ['task-3'] },
   { id: 'cat-2', name: 'Development Phase', dependencies: [], type: 'category', isExpanded: true, parentId: null, color: '#10b981' },
   { id: 'task-4', name: 'Frontend Development', description: 'Building the client-side of the application.', start: addDays(new Date(), 9), end: addDays(new Date(), 19), dependencies: ['task-3'], type: 'task', parentId: 'cat-2', assigneeId: '3', priority: 'high', progress: 20 },
   { id: 'task-5', name: 'Backend Development', description: 'Building the server-side of the application.', start: addDays(new Date(), 9), end: addDays(new Date(), 21), dependencies: ['task-3'], type: 'task', parentId: 'cat-2', assigneeId: '2', priority: 'high', progress: 10 },
@@ -54,10 +54,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState<Project>(getInitialProject());
-  const [isTaskEditorOpen, setTaskEditorOpen] = useState(false);
-  const [isCategoryEditorOpen, setCategoryEditorOpen] = useState(false);
-  const [isMilestoneEditorOpen, setMilestoneEditorOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | { type: 'task' | 'category' | 'milestone' } | null>(null);
   const [viewingMemberTasks, setViewingMemberTasks] = useState<TeamMember | null>(null);
 
   useEffect(() => {
@@ -119,7 +116,6 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
     const newTasks = [...tasksToUpdate];
     const updatedTask = newTasks.find(t => t.id === updatedTaskId);
     if (!updatedTask || !updatedTask.start) return newTasks;
-    const updatedTaskEnd = updatedTask.end || updatedTask.start;
   
     const queue: string[] = [updatedTaskId];
     const visited = new Set<string>();
@@ -166,34 +162,29 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   }, []);
   
 
-  const handleAddTask = (task: Omit<Task, 'id'>) => {
-    const newId = `${task.type}-${Date.now()}`;
-    let finalTask: Task;
-
-    if (task.type === 'milestone') {
-        const categoryTasks = tasks.filter(t => t.parentId === task.parentId && t.type === 'task' && t.end);
-        const latestEndDate = categoryTasks.reduce((latest, current) => {
-            return current.end && (!latest || current.end > latest) ? current.end : latest;
-        }, null as Date | null);
-        
-        const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : startOfDay(new Date());
-
-        const dependencies = categoryTasks.map(t => t.id);
-
-        finalTask = { ...task, id: newId, start: milestoneDate, end: milestoneDate, dependencies };
-    } else {
-        finalTask = { ...task, id: newId };
-    }
-
-    setTasks(prev => {
-        let newTasks = [...prev, finalTask];
-        if (finalTask.type !== 'milestone') {
-            newTasks = updateDependentTasks(newId, newTasks);
+  const handleUpsertTask = (taskData: Omit<Task, 'id'> | Task) => {
+    if ('id' in taskData) {
+      // Update
+      setTasks(prev => {
+        let newTasks = prev.map(t => t.id === taskData.id ? taskData : t);
+        if (taskData.type !== 'milestone') {
+          newTasks = updateDependentTasks(taskData.id, newTasks);
         }
         return newTasks;
-    });
-    setTaskEditorOpen(false);
-    setMilestoneEditorOpen(false);
+      });
+    } else {
+      // Add
+      const newId = `${taskData.type}-${Date.now()}`;
+      const finalTask: Task = { ...taskData, id: newId };
+      setTasks(prev => {
+          let newTasks = [...prev, finalTask];
+          if (finalTask.type !== 'milestone') {
+              newTasks = updateDependentTasks(newId, newTasks);
+          }
+          return newTasks;
+      });
+    }
+    setEditingTask(null);
   };
 
   const handleQuickAddTask = (categoryId: string, taskName: string, duration: number) => {
@@ -216,53 +207,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
     };
     setTasks(prev => [...prev, newTask]);
   }
-  
-  const handleAddCategory = (category: Omit<Task, 'id' | 'type'>) => {
-    const newId = `cat-${Date.now()}`;
-    const newCategory: Task = { ...category, id: newId, type: 'category' };
-    setTasks(prev => [...prev, newCategory]);
-    setCategoryEditorOpen(false);
-  }
-
-  const handleUpdateTask = useCallback((updatedTask: Task) => {
-    setTasks(prev => {
-        let newTasks = [...prev];
-        let finalTask = { ...updatedTask };
-        
-        if (finalTask.type === 'milestone' && finalTask.parentId) {
-            const categoryTasks = newTasks.filter(t => t.parentId === finalTask.parentId && t.type === 'task' && t.end);
-            const latestEndDate = categoryTasks.reduce((latest, current) => {
-                return current.end && (!latest || current.end > latest) ? current.end : latest;
-            }, null as Date | null);
-            
-            const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : (finalTask.start || startOfDay(new Date()));
-            finalTask.start = milestoneDate;
-            finalTask.end = milestoneDate;
-            finalTask.dependencies = categoryTasks.map(t => t.id);
-        }
-        
-        newTasks = newTasks.map(task => (task.id === finalTask.id ? finalTask : task));
-        
-        if (finalTask.type !== 'milestone') {
-            newTasks = updateDependentTasks(finalTask.id, newTasks);
-        }
-        
-        return newTasks;
-    });
-
-    setTaskEditorOpen(false);
-    setCategoryEditorOpen(false);
-    setMilestoneEditorOpen(false);
-    setSelectedTask(null);
-  }, [updateDependentTasks]);
-
 
   const handleDeleteTask = (taskId: string) => {
     setTasks(prev => {
         const tasksToDelete = new Set<string>([taskId]);
         const taskToDelete = prev.find(t => t.id === taskId);
 
-        // If it's a category, also delete all its children
         if (taskToDelete?.type === 'category') {
             const findChildrenRecursive = (parentId: string) => {
                 prev.forEach(t => {
@@ -279,16 +229,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
 
         const remainingTasks = prev.filter(task => !tasksToDelete.has(task.id));
 
-        // Remove deleted tasks from dependencies of other tasks
         return remainingTasks.map(t => ({
             ...t,
             dependencies: t.dependencies.filter(depId => !tasksToDelete.has(depId))
         }));
     });
-    setTaskEditorOpen(false);
-    setCategoryEditorOpen(false);
-    setMilestoneEditorOpen(false);
-    setSelectedTask(null);
+    setEditingTask(null);
   };
   
   const handleProjectUpdate = (updatedProject: Project) => {
@@ -306,29 +252,11 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   };
 
   const openEditor = (task: Task) => {
-    setSelectedTask(task);
-    if (task.type === 'category') {
-      setCategoryEditorOpen(true);
-    } else if (task.type === 'milestone') {
-      setMilestoneEditorOpen(true);
-    } else {
-      setTaskEditorOpen(true);
-    }
+    setEditingTask(task);
   }
 
-  const openNewTaskEditor = () => {
-    setSelectedTask(null);
-    setTaskEditorOpen(true);
-  }
-
-  const openNewCategoryEditor = () => {
-    setSelectedTask(null);
-    setCategoryEditorOpen(true);
-  }
-
-  const openNewMilestoneEditor = () => {
-    setSelectedTask(null);
-    setMilestoneEditorOpen(true);
+  const openNewEditor = (type: 'task' | 'category' | 'milestone') => {
+    setEditingTask({ type });
   }
   
   if (!isMounted) {
@@ -345,12 +273,12 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
           teamMembers={teamMembers}
           setTeamMembers={setTeamMembers}
           onTaskClick={openEditor}
-          onAddTaskClick={openNewTaskEditor}
-          onAddCategoryClick={openNewCategoryEditor}
-          onAddMilestoneClick={openNewMilestoneEditor}
+          onAddTaskClick={() => openNewEditor('task')}
+          onAddCategoryClick={() => openNewEditor('category')}
+          onAddMilestoneClick={() => openNewEditor('milestone')}
           onProjectUpdate={handleProjectUpdate}
           onReorderTasks={handleReorderTasks}
-          onTaskUpdate={handleUpdateTask}
+          onTaskUpdate={handleUpsertTask}
           onAssigneeClick={setViewingMemberTasks}
           onQuickAddTask={handleQuickAddTask}
         />
@@ -358,68 +286,19 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
       
       <Sheet open={isImporterOpen} onOpenChange={setImporterOpen}>
         <SheetContent side="left" className="max-w-2xl p-0">
-            <GanttasticSidebarContent
-              view='IMPORTER'
-              onImportProject={handleImportProject}
-              onClose={() => setImporterOpen(false)}
-              tasks={tasks}
-              selectedTask={null}
-              onAddTask={() => {}}
-              onUpdateTask={() => {}}
-              onDeleteTask={() => {}}
-              teamMembers={teamMembers}
-            />
+            <Importer onImport={handleImportProject} onClose={() => setImporterOpen(false)} />
         </SheetContent>
       </Sheet>
       
-      <Dialog open={isTaskEditorOpen} onOpenChange={setTaskEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-              <GanttasticSidebarContent
-                  view='TASK_EDITOR'
-                  tasks={tasks}
-                  selectedTask={selectedTask}
-                  onAddTask={handleAddTask}
-                  onUpdateTask={handleUpdateTask}
-                  onDeleteTask={handleDeleteTask}
-                  onClose={() => setTaskEditorOpen(false)}
-                  onImportProject={() => {}}
-                  teamMembers={teamMembers}
-              />
-          </DialogContent>
-      </Dialog>
-
-      <Dialog open={isMilestoneEditorOpen} onOpenChange={setMilestoneEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-              <GanttasticSidebarContent
-                  view='MILESTONE_EDITOR'
-                  tasks={tasks}
-                  selectedTask={selectedTask}
-                  onAddTask={handleAddTask}
-                  onUpdateTask={handleUpdateTask}
-                  onDeleteTask={handleDeleteTask}
-                  onClose={() => setMilestoneEditorOpen(false)}
-                  onImportProject={() => {}}
-                  teamMembers={teamMembers}
-              />
-          </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isCategoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
-          <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-               <GanttasticSidebarContent
-                  view='CATEGORY_EDITOR'
-                  tasks={tasks}
-                  selectedTask={selectedTask}
-                  onAddCategory={handleAddCategory}
-                  onUpdateTask={handleUpdateTask}
-                  onDeleteTask={handleDeleteTask}
-                  onClose={() => setCategoryEditorOpen(false)}
-                  onImportProject={() => {}}
-                  onAddTask={() => {}}
-                  teamMembers={teamMembers}
-              />
-          </DialogContent>
-      </Dialog>
+      <TaskDialog
+        open={!!editingTask}
+        onOpenChange={(isOpen) => { if (!isOpen) setEditingTask(null); }}
+        task={editingTask}
+        tasks={tasks}
+        teamMembers={teamMembers}
+        onTaskUpsert={handleUpsertTask}
+        onTaskDelete={handleDeleteTask}
+      />
       
       {viewingMemberTasks && (
         <Dialog open={!!viewingMemberTasks} onOpenChange={(isOpen) => !isOpen && setViewingMemberTasks(null)}>
@@ -430,7 +309,7 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
                     allTasks={tasks}
                     onDelete={() => {}}
                     teamMembers={teamMembers}
-                    onTaskUpdate={handleUpdateTask}
+                    onTaskUpdate={handleUpsertTask}
                     onTaskClick={openEditor}
                 />
             </DialogContent>
@@ -440,5 +319,3 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
     </div>
   );
 }
-
-    

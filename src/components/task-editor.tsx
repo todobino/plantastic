@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,12 +23,9 @@ import type { Task, TeamMember } from '@/types';
 import { useEffect, useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from './ui/badge';
 import { DialogBody, DialogFooter } from './ui/dialog';
-import { Slider } from './ui/slider';
-
 
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
@@ -51,14 +47,12 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type TaskEditorProps = {
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[], type: 'task' | 'milestone' }) => void;
-  onUpdateTask: (task: Task) => void;
-  onDeleteTask: (taskId: string) => void;
+  onUpsert: (task: Omit<Task, 'id'> | Task) => void;
+  onDelete: (taskId: string) => void;
   teamMembers: TeamMember[];
-  isMilestone?: boolean;
 };
 
-export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, teamMembers, isMilestone = false }: TaskEditorProps) {
+export default function TaskEditor({ tasks, selectedTask, onUpsert, onDelete, teamMembers }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -87,13 +81,11 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         priority: selectedTask.priority || 'medium',
         progress: selectedTask.progress || 0,
       });
-      if (!isMilestone) {
-        const taskDuration = selectedTask.end && selectedTask.start ? differenceInDays(selectedTask.end, selectedTask.start) + 1 : 1;
-        setDuration(taskDuration >= 1 ? taskDuration : 1);
-      }
+      const taskDuration = selectedTask.end && selectedTask.start ? differenceInDays(selectedTask.end, selectedTask.start) + 1 : 1;
+      setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
       const defaultStartDate = new Date();
-      const defaultDuration = isMilestone ? 0 : 1;
+      const defaultDuration = 1;
       form.reset({
         name: '',
         description: '',
@@ -105,25 +97,18 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         priority: 'medium',
         progress: 0,
       });
-      if (!isMilestone) {
-        setDuration(defaultDuration);
-      }
+      setDuration(defaultDuration);
     }
-  }, [selectedTask, form, isMilestone]);
+  }, [selectedTask, form]);
 
 
   const handleStartDateChange = (date: Date) => {
     form.setValue('start', date);
-    if (!isMilestone) {
-        const currentDuration = duration;
-        form.setValue('end', addDays(date, currentDuration - 1));
-    } else {
-        form.setValue('end', date);
-    }
+    const currentDuration = duration;
+    form.setValue('end', addDays(date, currentDuration - 1));
   }
   
   const handleDurationChange = (newDuration: number) => {
-    if (isMilestone) return;
     if (newDuration < 1) newDuration = 1;
     setDuration(newDuration);
     const startDate = form.getValues('start');
@@ -132,31 +117,19 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     }
   }
 
-
   const onSubmit = (data: TaskFormValues) => {
     const taskData = {
-      name: data.name,
-      description: data.description,
-      start: isMilestone ? new Date() : data.start, // Pass a placeholder for auto-calculation
-      end: isMilestone ? new Date() : data.end,
-      dependencies: data.dependencies || [],
-      type: isMilestone ? 'milestone' as const : 'task' as const,
-      parentId: data.parentId,
-      assigneeId: data.assigneeId,
-      priority: data.priority,
-      progress: data.progress,
-      isExpanded: selectedTask?.isExpanded ?? true,
-      color: selectedTask?.color,
+      ...data,
+      type: 'task' as const,
     };
     if (selectedTask) {
-      onUpdateTask({ ...taskData, id: selectedTask.id });
+      onUpsert({ ...selectedTask, ...taskData });
     } else {
-      onAddTask(taskData);
+      onUpsert(taskData);
     }
   };
   
-  const existingMilestoneParentIds = tasks.filter(t => t.type === 'milestone' && t.id !== selectedTask?.id).map(t => t.parentId);
-  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id && (!isMilestone || !existingMilestoneParentIds.includes(t.id)));
+  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id);
   const availableDependencies = tasks.filter(t => t.type !== 'category' && t.id !== selectedTask?.id);
 
   return (
@@ -170,16 +143,16 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                         name="name"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>{isMilestone ? 'Milestone Name' : 'Task Name'}</FormLabel>
+                            <FormLabel>Task Name</FormLabel>
                             <FormControl>
-                            <Input placeholder={isMilestone ? "e.g., Project Launch" : "e.g., Design homepage"} {...field} />
+                            <Input placeholder="e.g., Design homepage" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}
                     />
 
-                    {!isMilestone && <FormField
+                    <FormField
                         control={form.control}
                         name="description"
                         render={({ field }) => (
@@ -191,9 +164,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                         </FormItem>
                         )}
-                    />}
+                    />
 
-                    {!isMilestone && <FormField
+                    <FormField
                         control={form.control}
                         name="dependencies"
                         render={({ field }) => (
@@ -256,12 +229,11 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                 <FormMessage />
                             </FormItem>
                         )}
-                    />}
+                    />
                 </div>
 
                 <div className="space-y-4 md:col-span-1">
-                    {!isMilestone && (
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField
                         control={form.control}
                         name="start"
@@ -302,9 +274,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                 />
                             </FormControl>
                         </FormItem>
-                      </div>
-                    )}
-                    {!isMilestone && <FormField
+                    </div>
+                    <FormField
                         control={form.control}
                         name="assigneeId"
                         render={({ field }) => (
@@ -329,8 +300,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                             </FormItem>
                         )}
-                        />}
-                    {!isMilestone && <FormField
+                        />
+                    <FormField
                         control={form.control}
                         name="priority"
                         render={({ field }) => (
@@ -351,7 +322,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                             </FormItem>
                         )}
-                        />}
+                        />
                      <FormField
                         control={form.control}
                         name="parentId"
@@ -386,14 +357,14 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         <DialogFooter>
           <div className="flex justify-between items-center w-full">
             {selectedTask && (
-                <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => onDeleteTask(selectedTask.id)}>
+                <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => onDelete(selectedTask.id)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                 </Button>
             )}
             <div className="ml-auto">
                 <Button type="submit">
-                    {selectedTask ? 'Save Changes' : (isMilestone ? 'Add Milestone' : 'Add Task')}
+                    {selectedTask ? 'Save Changes' : 'Add Task'}
                 </Button>
             </div>
           </div>
@@ -402,5 +373,3 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
-
-    
