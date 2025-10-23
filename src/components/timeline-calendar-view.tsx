@@ -293,50 +293,49 @@ export function TimelineCalendarView({
 
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
             {hoveredTaskId && tasks.map((task) => {
-              if (task.type === "category" || !task.start) return null;
+              if (task.type === "category" || !task.start || task.type === 'milestone') return null;
 
-              const isHovered = task.id === hoveredTaskId;
-              const isDependencyOfHovered = task.dependencies.includes(hoveredTaskId);
+              let relations: {from: string, to: string}[] = [];
+
+              if (task.id === hoveredTaskId) {
+                  task.dependencies.forEach(depId => {
+                      relations.push({ from: depId, to: task.id });
+                  });
+              }
               
-              if (!isHovered && !isDependencyOfHovered) return null;
+              if (task.dependencies.includes(hoveredTaskId)) {
+                  relations.push({ from: hoveredTaskId, to: task.id });
+              }
 
-              const toV = getVisualPos(task.id);
-              if (!toV) return null;
+              return relations.map(({from, to}) => {
+                const fromV = getVisualPos(from);
+                const toV = getVisualPos(to);
 
-              const deps = Array.from(
-                new Set(task.dependencies.filter((d) => d !== task.id))
-              );
+                if (!fromV || !toV) return null;
 
-              return deps.map((depId) => {
-                if (isHovered || depId === hoveredTaskId) {
-                  const fromV = getVisualPos(depId);
-                  if (!fromV) return null;
+                const sx = fromV.right;
+                const sy = fromV.cy;
+                const tx = toV.left;
+                const ty = toV.cy;
 
-                  const sx = fromV.right;
-                  const sy = fromV.cy;
-                  const tx = toV.left;
-                  const ty = toV.cy;
+                const d = routeFS(sx, sy, tx, ty);
 
-                  const d = routeFS(sx, sy, tx, ty);
-
-                  return (
-                    <g key={`${depId}-${task.id}`}>
-                      <path
-                        d={d}
-                        stroke="hsl(var(--muted-foreground))"
-                        strokeWidth="2"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        vectorEffect="non-scaling-stroke"
-                        opacity="0.9"
-                      />
-                      <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
-                      <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
-                    </g>
-                  );
-                }
-                return null;
+                return (
+                  <g key={`${from}-${to}`}>
+                    <path
+                      d={d}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                      opacity="0.9"
+                    />
+                    <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                    <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
+                  </g>
+                );
               });
             })}
           </svg>
