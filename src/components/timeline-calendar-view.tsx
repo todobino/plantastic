@@ -293,7 +293,7 @@ export function TimelineCalendarView({
 
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
             {tasks.map((task) => {
-              if (task.type === "category" || !task.start) return null;
+              if (task.type === "category" || !task.start || task.type === 'milestone') return null;
               if (hoveredTaskId !== task.id && !(task.dependencies || []).includes(hoveredTaskId || '')) {
                 return null;
               }
@@ -372,7 +372,7 @@ export function TimelineCalendarView({
                                 >
                                     <Diamond 
                                         className="w-full h-full rotate-45"
-                                        style={{ color: color }} 
+                                        stroke={color}
                                         fill={hexToRgba(color, 0.2)}
                                         strokeWidth={2}
                                     />
