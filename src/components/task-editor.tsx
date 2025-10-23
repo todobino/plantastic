@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar } from './ui/calendar';
 import { CalendarIcon, Check, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, addDays } from 'date-fns';
@@ -91,7 +91,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       setDuration(taskDuration >= 1 ? taskDuration : 1);
     } else {
       const defaultStartDate = new Date();
-      const defaultDuration = 1;
+      const defaultDuration = isMilestone ? 0 : 1;
       form.reset({
         name: '',
         description: '',
@@ -151,7 +151,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     }
   };
   
-  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id);
+  const existingMilestoneParentIds = tasks.filter(t => t.type === 'milestone' && t.id !== selectedTask?.id).map(t => t.parentId);
+  const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id && !existingMilestoneParentIds.includes(t.id));
   const availableDependencies = tasks.filter(t => t.type !== 'category' && t.id !== selectedTask?.id);
 
   return (
@@ -174,7 +175,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                         )}
                     />
 
-                    <FormField
+                    {!isMilestone && <FormField
                         control={form.control}
                         name="description"
                         render={({ field }) => (
@@ -186,9 +187,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                         </FormItem>
                         )}
-                    />
+                    />}
 
-                    <FormField
+                    {!isMilestone && <FormField
                         control={form.control}
                         name="dependencies"
                         render={({ field }) => (
@@ -251,7 +252,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                 <FormMessage />
                             </FormItem>
                         )}
-                    />
+                    />}
                 </div>
 
                 <div className="space-y-4 md:col-span-1">
