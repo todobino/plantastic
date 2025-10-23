@@ -10,10 +10,10 @@ import { DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { ScrollArea } from './ui/scroll-area';
 
 type GanttasticSidebarContentProps = {
-  view: 'TASK_EDITOR' | 'CATEGORY_EDITOR' | 'IMPORTER';
+  view: 'TASK_EDITOR' | 'CATEGORY_EDITOR' | 'IMPORTER' | 'MILESTONE_EDITOR';
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id' | 'type'>) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[], type: 'task' | 'milestone' }) => void;
   onAddCategory?: (category: Pick<Task, 'name' | 'color' | 'dependencies'>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
@@ -41,6 +41,8 @@ export default function GanttasticSidebarContent({
         return 'Create New Project';
       case 'TASK_EDITOR':
         return selectedTask ? 'Edit Task' : 'New Task';
+      case 'MILESTONE_EDITOR':
+        return selectedTask ? 'Edit Milestone' : 'New Milestone';
       case 'CATEGORY_EDITOR':
         return selectedTask ? 'Edit Category' : 'New Category';
     }
@@ -52,6 +54,8 @@ export default function GanttasticSidebarContent({
         return '';
       case 'TASK_EDITOR':
         return selectedTask ? 'Update the details for this task.' : 'Add a new task to your project.';
+      case 'MILESTONE_EDITOR':
+        return selectedTask ? 'Update the details for this milestone.' : 'Add a new milestone to your project.';
       case 'CATEGORY_EDITOR':
         return selectedTask ? 'Update the details for this category.' : 'Add a new category to your project.';
     }
@@ -68,6 +72,18 @@ export default function GanttasticSidebarContent({
                     onUpdateTask={onUpdateTask}
                     onDeleteTask={onDeleteTask}
                     teamMembers={teamMembers}
+                />
+            );
+        case 'MILESTONE_EDITOR':
+            return (
+                <TaskEditor
+                    tasks={tasks}
+                    selectedTask={selectedTask}
+                    onAddTask={onAddTask}
+                    onUpdateTask={onUpdateTask}
+                    onDeleteTask={onDeleteTask}
+                    teamMembers={teamMembers}
+                    isMilestone={true}
                 />
             );
         case 'CATEGORY_EDITOR':

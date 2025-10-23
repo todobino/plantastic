@@ -29,6 +29,7 @@ type TimelineViewProps = {
     onTaskClick: (task: Task) => void;
     onAddTaskClick: () => void;
     onAddCategoryClick: () => void;
+    onAddMilestoneClick: () => void;
     onProjectUpdate: (project: Project) => void;
     onReorderTasks: (reorderedTasks: Task[]) => void;
     onTaskUpdate: (task: Task) => void;
@@ -37,7 +38,7 @@ type TimelineViewProps = {
 };
 
 
-export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
+export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onAddMilestoneClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const wasDraggedRef = useRef(false);
@@ -157,19 +158,22 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         return { ...t, start, end };
       }
       return t;
-    }).filter(t => t.start && t.end);
+    }).filter(t => t.start);
 
     let effectiveProjectStart = project.startDate;
     let effectiveProjectEnd = project.endDate;
 
-    if (!effectiveProjectStart || !effectiveProjectEnd) {
-      if (allTasksWithDates.length > 0) {
-        effectiveProjectStart = new Date(Math.min(...allTasksWithDates.map(t => t.start!.getTime())));
-        effectiveProjectEnd = new Date(Math.max(...allTasksWithDates.map(t => t.end!.getTime())));
-      } else {
-        effectiveProjectStart = startOfMonth(today);
-        effectiveProjectEnd = endOfMonth(today);
-      }
+    if (allTasksWithDates.length > 0) {
+        const startDates = allTasksWithDates.map(t => t.start!.getTime());
+        const endDates = allTasksWithDates.map(t => (t.end || t.start)!.getTime());
+        const minTaskStart = new Date(Math.min(...startDates));
+        const maxTaskEnd = new Date(Math.max(...endDates));
+
+        effectiveProjectStart = !project.startDate || minTaskStart < project.startDate ? minTaskStart : project.startDate;
+        effectiveProjectEnd = !project.endDate || maxTaskEnd > project.endDate ? maxTaskEnd : project.endDate;
+    } else {
+        effectiveProjectStart = project.startDate || startOfMonth(today);
+        effectiveProjectEnd = project.endDate || endOfMonth(today);
     }
     
     viewStartDate = subDays(effectiveProjectStart, 7);
@@ -189,6 +193,8 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
             const { start, end } = getCategoryDates(task.id);
             s = start;
             e = end;
+        } else if (task.type === 'milestone') {
+            e = s;
         }
 
         if (s && e) {
@@ -199,7 +205,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
             taskPositions.set(task.id, {
                 x: offset * dayWidth,
                 y: index * ROW_HEIGHT,
-                width: (durationCalendar + 1) * dayWidth,
+                width: task.type === 'milestone' ? dayWidth : (durationCalendar + 1) * dayWidth,
                 s: startOfDay_s, 
                 e: startOfDay_e
             });
@@ -295,7 +301,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     if (!task.dependencies || task.dependencies.length === 0) return null;
     const latestPredEnd = new Date(Math.max(...task.dependencies
       .map(id => tasks.find(t => t.id === id))
-      .filter((t): t is Task => !!t && !!t.end)!.map(t => startOfDay((t as Task).end!).getTime())));
+      .filter((t): t is Task => !!t && !!(t.end || t.start))!.map(t => startOfDay((t as Task).end || (t as Task).start!).getTime())));
     return addDays(startOfDay(latestPredEnd), 1);
   };
     
@@ -348,7 +354,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     document.body.style.userSelect = '';
   
     const pos = taskPositions.get(task.id);
-    if (!pos || !task.start || !task.end) return;
+    if (!pos || !task.start) return;
   
     const calDelta = xToDayDelta(dragState.previewDeltaPx);
   
@@ -356,8 +362,15 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       const minStart = minStartAllowed(task);
       const proposedStart = addDays(pos.s, calDelta);
       const newStart = (minStart && proposedStart < minStart) ? minStart : proposedStart;
-      const duration = Math.max(0, differenceInDays(pos.e, pos.s));
-      const newEnd = addDays(newStart, duration);
+      
+      let newEnd = task.end;
+      if (task.type === 'task' && task.end) {
+        const duration = Math.max(0, differenceInDays(pos.e, pos.s));
+        newEnd = addDays(newStart, duration);
+      } else if (task.type === 'milestone') {
+        newEnd = newStart;
+      }
+
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
     }
   
@@ -375,7 +388,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
   const onLeftHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
-    if(task.type === 'category' || task.id === 'placeholder') return;
+    if(task.type === 'category' || task.type === 'milestone' || task.id === 'placeholder') return;
     wasResizedRef.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
@@ -384,7 +397,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
   const onRightHandleDown = (e: React.PointerEvent, task: Task) => {
     e.stopPropagation();
-    if(task.type === 'category' || task.id === 'placeholder') return;
+    if(task.type === 'category' || task.type === 'milestone' || task.id === 'placeholder') return;
     wasResizedRef.current = true;
     (e.target as Element).setPointerCapture(e.pointerId);
     document.body.style.userSelect = 'none';
@@ -398,7 +411,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
   
   const onResizeUp = (e: React.PointerEvent, task: Task) => {
-    if (resizeState.id !== task.id || !resizeState.edge || !task.start || !task.end) return;
+    if (resizeState.id !== task.id || !resizeState.edge || !task.start) return;
     (e.target as Element).releasePointerCapture(e.pointerId);
     document.body.style.userSelect = '';
   
@@ -407,7 +420,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   
     const dayDelta = xToDayDelta(dragState.previewDeltaPx);
     let newStart = pos.s;
-    let newEnd = pos.e;
+    let newEnd = task.end || pos.s;
   
     if (resizeState.edge === 'left' && dayDelta !== 0) {
       newStart = addDays(pos.s, dayDelta);
@@ -420,12 +433,12 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       if (newEnd < newStart) newEnd = newStart;
     }
   
-    if (newStart.getTime() !== task.start.getTime() || newEnd.getTime() !== task.end.getTime()) {
+    if (newStart.getTime() !== task.start.getTime() || (task.end && newEnd.getTime() !== task.end.getTime())) {
       onTaskUpdate({ ...task, start: newStart, end: newEnd });
     }
   
     setResizeState({ id: null, edge: null, startX: 0 });
-    setDragState(s => ({ s, previewDeltaPx: 0 }));
+    setDragState(s => ({ ...s, previewDeltaPx: 0 }));
     setTimeout(() => { wasResizedRef.current = false; }, 0);
   };
 
@@ -497,7 +510,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
       }
     }
     return m;
-  }, [dragging, resizeState.id, resizeState.edge, dragState.previewDeltaPx, tasks, taskPositions, pxPerDay, successorsById, minStartAllowed, dateToX]);
+  }, [dragging, resizeState.id, resizeState.edge, dragState.previewDeltaPx, tasks, taskPositions, pxPerDay, successorsById, minStartAllowed]);
   
   const getVisualPos = (id: string) => {
     const p = taskPositions.get(id);
@@ -521,6 +534,11 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     
     const task = displayTasks.find(t => t.id === id);
     const isCategory = task?.type === 'category';
+    const isMilestone = task?.type === 'milestone';
+
+    if (isMilestone) {
+        width = 0; // Milestones are points
+    }
 
     const barHeight = isCategory ? 14 : BAR_HEIGHT;
     const topMargin = isCategory ? (ROW_HEIGHT - 14) / 2 : (ROW_HEIGHT - BAR_HEIGHT) / 2;
@@ -563,6 +581,9 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   const getTaskColor = useCallback((task: Task) => {
     if (task.id === 'placeholder') {
         return 'hsl(var(--muted-foreground))';
+    }
+    if (task.type === 'milestone') {
+        return task.color || 'hsl(var(--primary))';
     }
     if (task.type === 'category') {
         return task.color || 'hsl(var(--secondary))';
@@ -741,6 +762,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                                     displayTasks={displayTasks}
                                     onAddTaskClick={onAddTaskClick}
                                     onAddCategoryClick={onAddCategoryClick}
+                                    onAddMilestoneClick={onAddMilestoneClick}
                                     toggleCategory={toggleCategory}
                                     onTaskClick={onTaskClick}
                                     getTaskColor={getTaskColor}

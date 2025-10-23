@@ -4,10 +4,10 @@ import {
   ChevronRight,
   CirclePlus,
   CornerDownRight,
+  Diamond,
   DiamondPlus,
   FolderPlus,
   GripVertical,
-  Pencil,
   Plus,
 } from "lucide-react";
 import {
@@ -28,6 +28,7 @@ type TimelineTaskListProps = {
   displayTasks: (Task & { milestone?: string })[];
   onAddTaskClick: () => void;
   onAddCategoryClick: () => void;
+  onAddMilestoneClick: () => void;
   toggleCategory: (id: string) => void;
   onTaskClick: (task: Task) => void;
   getTaskColor: (task: Task) => string;
@@ -98,6 +99,7 @@ export function TaskRow({
 }) {
     const level = parseInt(task.milestone || "0", 10);
     const isCategory = task.type === "category";
+    const isMilestone = task.type === 'milestone';
 
     return (
         <div
@@ -117,7 +119,7 @@ export function TaskRow({
                     </div>
                 ) : (
                     <span {...dragListeners} {...dragAttributes} className={cn("w-full h-full flex items-center justify-center cursor-grab", isOverlay && "cursor-grabbing")}>
-                        <span className="group-hover/handle:hidden">{taskNumbering.get(task.id)}</span>
+                        <span className="group-hover/handle:hidden">{task.type === 'task' ? taskNumbering.get(task.id) : <Diamond className="h-3 w-3" />}</span>
                         <GripVertical className="h-5 w-5 text-muted-foreground hidden group-hover/handle:block" />
                     </span>
                 )}
@@ -135,10 +137,9 @@ export function TaskRow({
                 style={!isCategory && level > 0 ? { paddingLeft: `${level * 1.5}rem` } : undefined}
             >
                 {!isCategory && level > 0 && (
-                <CornerDownRight
-                    className="h-4 w-4 flex-shrink-0"
-                    style={{ color: getTaskColor(task) }}
-                />
+                 isMilestone ? 
+                    <Diamond className="h-4 w-4 flex-shrink-0" style={{ color: getTaskColor(task) }} />
+                    : <CornerDownRight className="h-4 w-4 flex-shrink-0" style={{ color: getTaskColor(task) }} />
                 )}
 
                 {isCategory ? (
@@ -189,6 +190,7 @@ export function TimelineTaskList({
   displayTasks,
   onAddTaskClick,
   onAddCategoryClick,
+  onAddMilestoneClick,
   toggleCategory,
   onTaskClick,
   getTaskColor,
@@ -247,7 +249,7 @@ export function TimelineTaskList({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7"
-                    onClick={() => {}}
+                    onClick={onAddMilestoneClick}
                   >
                     <DiamondPlus className="h-4 w-4" />
                   </Button>

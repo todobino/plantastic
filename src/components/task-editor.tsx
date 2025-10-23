@@ -34,14 +34,14 @@ import { Slider } from './ui/slider';
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
   description: z.string().optional(),
-  start: z.date({ required_error: 'A start date is required.' }),
-  end: z.date({ required_error: 'An end date is required.' }),
+  start: z.date({ required_error: 'A date is required.' }),
+  end: z.date().optional(),
   dependencies: z.array(z.string()).optional(),
   parentId: z.string().nullable().optional(),
   assigneeId: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   progress: z.number().min(0).max(100).optional(),
-}).refine(data => data.end >= data.start, {
+}).refine(data => !data.end || data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
 });
@@ -51,13 +51,14 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type TaskEditorProps = {
   tasks: Task[];
   selectedTask: Task | null;
-  onAddTask: (task: Omit<Task, 'id' | 'dependencies' | 'type'> & { dependencies: string[] }) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'dependencies'> & { dependencies: string[], type: 'task' | 'milestone' }) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   teamMembers: TeamMember[];
+  isMilestone?: boolean;
 };
 
-export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, teamMembers }: TaskEditorProps) {
+export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTask, onDeleteTask, teamMembers, isMilestone = false }: TaskEditorProps) {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -104,16 +105,21 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       });
       setDuration(defaultDuration);
     }
-  }, [selectedTask, form]);
+  }, [selectedTask, form, isMilestone]);
 
 
   const handleStartDateChange = (date: Date) => {
     form.setValue('start', date);
-    const currentDuration = duration;
-    form.setValue('end', addDays(date, currentDuration - 1));
+    if (!isMilestone) {
+        const currentDuration = duration;
+        form.setValue('end', addDays(date, currentDuration - 1));
+    } else {
+        form.setValue('end', date);
+    }
   }
   
   const handleDurationChange = (newDuration: number) => {
+    if (isMilestone) return;
     if (newDuration < 1) newDuration = 1;
     setDuration(newDuration);
     const startDate = form.getValues('start');
@@ -128,14 +134,15 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
       name: data.name,
       description: data.description,
       start: data.start,
-      end: data.end,
+      end: isMilestone ? data.start : data.end,
       dependencies: data.dependencies || [],
-      type: 'task' as const,
+      type: isMilestone ? 'milestone' as const : 'task' as const,
       parentId: data.parentId,
       assigneeId: data.assigneeId,
       priority: data.priority,
       progress: data.progress,
       isExpanded: selectedTask?.isExpanded ?? true,
+      color: selectedTask?.color,
     };
     if (selectedTask) {
       onUpdateTask({ ...taskData, id: selectedTask.id });
@@ -145,7 +152,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
   };
   
   const availableCategories = tasks.filter(t => t.type === 'category' && t.id !== selectedTask?.id);
-  const availableDependencies = tasks.filter(t => t.type === 'task' && t.id !== selectedTask?.id);
+  const availableDependencies = tasks.filter(t => t.type !== 'category' && t.id !== selectedTask?.id);
 
   return (
     <Form {...form}>
@@ -158,9 +165,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                         name="name"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Task Name</FormLabel>
+                            <FormLabel>{isMilestone ? 'Milestone Name' : 'Task Name'}</FormLabel>
                             <FormControl>
-                            <Input placeholder={"e.g., Design homepage"} {...field} />
+                            <Input placeholder={isMilestone ? "e.g., Project Launch" : "e.g., Design homepage"} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -211,7 +218,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                         <Command>
                                             <CommandInput placeholder="Search tasks..." />
                                             <CommandList>
-                                                <CommandEmpty>No tasks found.</CommandEmpty>
+                                                <CommandEmpty>No items found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {availableDependencies.map(task => (
                                                         <CommandItem
@@ -248,13 +255,13 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </div>
 
                 <div className="space-y-4 md:col-span-1">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className={cn("grid gap-4", isMilestone ? "grid-cols-1" : "grid-cols-2")}>
                         <FormField
                         control={form.control}
                         name="start"
                         render={({ field }) => (
                             <FormItem className="flex flex-col gap-2">
-                            <FormLabel>Start Date</FormLabel>
+                            <FormLabel>{isMilestone ? 'Date' : 'Start Date'}</FormLabel>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <FormControl>
@@ -278,7 +285,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             </FormItem>
                         )}
                         />
-                        <FormItem className="flex flex-col gap-2">
+                        {!isMilestone && <FormItem className="flex flex-col gap-2">
                             <FormLabel>Duration (days)</FormLabel>
                             <FormControl>
                                 <Input 
@@ -288,9 +295,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                 onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
                                 />
                             </FormControl>
-                        </FormItem>
+                        </FormItem>}
                     </div>
-                    <FormField
+                    {!isMilestone && <FormField
                         control={form.control}
                         name="assigneeId"
                         render={({ field }) => (
@@ -315,8 +322,8 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                             </FormItem>
                         )}
-                        />
-                    <FormField
+                        />}
+                    {!isMilestone && <FormField
                         control={form.control}
                         name="priority"
                         render={({ field }) => (
@@ -337,7 +344,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             <FormMessage />
                             </FormItem>
                         )}
-                        />
+                        />}
                      <FormField
                         control={form.control}
                         name="parentId"
@@ -379,7 +386,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
             )}
             <div className="ml-auto">
                 <Button type="submit">
-                    {selectedTask ? 'Save Changes' : 'Add Task'}
+                    {selectedTask ? 'Save Changes' : (isMilestone ? 'Add Milestone' : 'Add Task')}
                 </Button>
             </div>
           </div>

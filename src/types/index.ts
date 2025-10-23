@@ -15,7 +15,7 @@ export interface Task {
   dependencies: string[];
   color?: string;
   milestone?: string;
-  type: 'task' | 'category';
+  type: 'task' | 'category' | 'milestone';
   parentId?: string | null;
   isExpanded?: boolean;
   assigneeId?: string | null;

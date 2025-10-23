@@ -22,6 +22,7 @@ import { Task } from "@/types";
 import { addDays, differenceInDays, format, isToday, startOfDay } from "date-fns";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
+import { Diamond } from "lucide-react";
 
 type TimelineCalendarViewProps = {
   timeline: Date[];
@@ -348,6 +349,50 @@ export function TimelineCalendarView({
             const isPlaceholder = task.id === 'placeholder';
 
             const isCategory = task.type === "category";
+            const isMilestone = task.type === 'milestone';
+            
+            if (isMilestone) {
+                return (
+                    <TooltipProvider key={task.id} delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div
+                                    data-task-bar="true"
+                                    onPointerDown={(e) => onBarPointerDown(e, task, pos.x)}
+                                    onPointerMove={(e) => onBarPointerMove(e, task)}
+                                    onPointerUp={(e) => onBarPointerUp(e, task)}
+                                    onPointerCancel={(e) => onBarPointerUp(e, task)}
+                                    onClick={() => handleBarClick(task)}
+                                    onPointerEnter={() => setHoveredTaskId(task.id)}
+                                    onPointerLeave={() => setHoveredTaskId(null)}
+                                    className={cn(
+                                        "absolute z-20 cursor-grab active:cursor-grabbing",
+                                        isDraggingThis(task) && "opacity-90"
+                                    )}
+                                    style={{
+                                        top: `${pos.y + (ROW_HEIGHT - 24) / 2}px`,
+                                        left: `${vPos.left + (dayWidth / 2) - 12}px`,
+                                        width: '24px',
+                                        height: '24px',
+                                    }}
+                                >
+                                    <Diamond className="w-full h-full rotate-45" style={{ color: getTaskColor(task) }} fill={getTaskColor(task)} />
+                                </div>
+                            </TooltipTrigger>
+                             <TooltipContent className="bg-card border">
+                                <p className="font-bold">{task.name}</p>
+                                {task.description && (
+                                  <p className="text-sm text-muted-foreground max-w-xs">
+                                    {task.description}
+                                  </p>
+                                )}
+                              </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )
+            }
+
+
             const barHeight = isCategory ? CATEGORY_BAR_HEIGHT : BAR_HEIGHT;
             const topMargin = isCategory
               ? (ROW_HEIGHT - barHeight) / 2
