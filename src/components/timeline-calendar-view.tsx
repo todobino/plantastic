@@ -292,11 +292,13 @@ export function TimelineCalendarView({
           </div>
 
           <svg className="absolute top-0 left-0 w-full h-full z-30 pointer-events-none">
-            {tasks.map((task) => {
-              if (task.type === "category" || !task.start || task.type === 'milestone') return null;
-              if (hoveredTaskId && !task.dependencies.includes(hoveredTaskId) && task.id !== hoveredTaskId) {
-                  return null;
-              }
+            {hoveredTaskId && tasks.map((task) => {
+              if (task.type === "category" || !task.start) return null;
+
+              const isHovered = task.id === hoveredTaskId;
+              const isDependencyOfHovered = task.dependencies.includes(hoveredTaskId);
+              
+              if (!isHovered && !isDependencyOfHovered) return null;
 
               const toV = getVisualPos(task.id);
               if (!toV) return null;
@@ -306,35 +308,35 @@ export function TimelineCalendarView({
               );
 
               return deps.map((depId) => {
-                 if (hoveredTaskId && (hoveredTaskId !== task.id && hoveredTaskId !== depId) && task.type !== 'milestone' && tasks.find(t=>t.id === depId)?.type !== 'milestone' ) {
-                    return null;
-                 }
-                const fromV = getVisualPos(depId);
-                if (!fromV) return null;
+                if (isHovered || depId === hoveredTaskId) {
+                  const fromV = getVisualPos(depId);
+                  if (!fromV) return null;
 
-                const sx = fromV.right;
-                const sy = fromV.cy;
-                const tx = toV.left;
-                const ty = toV.cy;
+                  const sx = fromV.right;
+                  const sy = fromV.cy;
+                  const tx = toV.left;
+                  const ty = toV.cy;
 
-                const d = routeFS(sx, sy, tx, ty);
+                  const d = routeFS(sx, sy, tx, ty);
 
-                return (
-                  <g key={`${depId}-${task.id}`}>
-                    <path
-                      d={d}
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      vectorEffect="non-scaling-stroke"
-                      opacity="0.9"
-                    />
-                    <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
-                    <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
-                  </g>
-                );
+                  return (
+                    <g key={`${depId}-${task.id}`}>
+                      <path
+                        d={d}
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        vectorEffect="non-scaling-stroke"
+                        opacity="0.9"
+                      />
+                      <circle cx={sx} cy={sy} r={3.5} fill="hsl(var(--foreground))" />
+                      <circle cx={tx} cy={ty} r={3.5} fill="hsl(var(--foreground))" />
+                    </g>
+                  );
+                }
+                return null;
               });
             })}
           </svg>
@@ -506,5 +508,3 @@ export function TimelineCalendarView({
     </div>
   );
 }
-
-      
