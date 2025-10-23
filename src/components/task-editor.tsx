@@ -34,14 +34,14 @@ import { Slider } from './ui/slider';
 const taskSchema = z.object({
   name: z.string().min(2, 'Task name must be at least 2 characters.'),
   description: z.string().optional(),
-  start: z.date({ required_error: 'A date is required.' }),
+  start: z.date({ required_error: 'A date is required.' }).optional(),
   end: z.date().optional(),
   dependencies: z.array(z.string()).optional(),
   parentId: z.string().nullable().optional(),
   assigneeId: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   progress: z.number().min(0).max(100).optional(),
-}).refine(data => !data.end || data.end >= data.start, {
+}).refine(data => !data.start || !data.end || data.end >= data.start, {
   message: "End date cannot be before start date.",
   path: ["end"],
 });
@@ -87,8 +87,10 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         priority: selectedTask.priority || 'medium',
         progress: selectedTask.progress || 0,
       });
-      const taskDuration = selectedTask.end && selectedTask.start ? differenceInDays(selectedTask.end, selectedTask.start) + 1 : 1;
-      setDuration(taskDuration >= 1 ? taskDuration : 1);
+      if (!isMilestone) {
+        const taskDuration = selectedTask.end && selectedTask.start ? differenceInDays(selectedTask.end, selectedTask.start) + 1 : 1;
+        setDuration(taskDuration >= 1 ? taskDuration : 1);
+      }
     } else {
       const defaultStartDate = new Date();
       const defaultDuration = isMilestone ? 0 : 1;
@@ -103,7 +105,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
         priority: 'medium',
         progress: 0,
       });
-      setDuration(defaultDuration);
+      if (!isMilestone) {
+        setDuration(defaultDuration);
+      }
     }
   }, [selectedTask, form, isMilestone]);
 
@@ -256,13 +260,14 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                 </div>
 
                 <div className="space-y-4 md:col-span-1">
-                    <div className={cn("grid gap-4", isMilestone ? "grid-cols-1" : "grid-cols-2")}>
+                    {!isMilestone && (
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                         control={form.control}
                         name="start"
                         render={({ field }) => (
                             <FormItem className="flex flex-col gap-2">
-                            <FormLabel>{isMilestone ? 'Date' : 'Start Date'}</FormLabel>
+                            <FormLabel>Start Date</FormLabel>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <FormControl>
@@ -286,7 +291,7 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                             </FormItem>
                         )}
                         />
-                        {!isMilestone && <FormItem className="flex flex-col gap-2">
+                        <FormItem className="flex flex-col gap-2">
                             <FormLabel>Duration (days)</FormLabel>
                             <FormControl>
                                 <Input 
@@ -296,8 +301,9 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
                                 onChange={(e) => handleDurationChange(parseInt(e.target.value, 10) || 1)}
                                 />
                             </FormControl>
-                        </FormItem>}
-                    </div>
+                        </FormItem>
+                      </div>
+                    )}
                     {!isMilestone && <FormField
                         control={form.control}
                         name="assigneeId"
@@ -396,3 +402,5 @@ export default function TaskEditor({ tasks, selectedTask, onAddTask, onUpdateTas
     </Form>
   );
 }
+
+    

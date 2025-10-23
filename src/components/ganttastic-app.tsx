@@ -168,9 +168,25 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
 
   const handleAddTask = (task: Omit<Task, 'id'>) => {
     const newId = `${task.type}-${Date.now()}`;
-    const newTask: Task = { ...task, id: newId };
+    let finalTask: Task;
+
+    if (task.type === 'milestone') {
+        const categoryTasks = tasks.filter(t => t.parentId === task.parentId && t.type === 'task' && t.end);
+        const latestEndDate = categoryTasks.reduce((latest, current) => {
+            return current.end && (!latest || current.end > latest) ? current.end : latest;
+        }, null as Date | null);
+        
+        const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : startOfDay(new Date());
+
+        const dependencies = categoryTasks.map(t => t.id);
+
+        finalTask = { ...task, id: newId, start: milestoneDate, end: milestoneDate, dependencies };
+    } else {
+        finalTask = { ...task, id: newId };
+    }
+
     setTasks(prev => {
-        let newTasks = [...prev, newTask];
+        let newTasks = [...prev, finalTask];
         newTasks = updateDependentTasks(newId, newTasks);
         return newTasks;
     });
@@ -207,16 +223,30 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
   }
 
   const handleUpdateTask = useCallback((updatedTask: Task) => {
+    let finalTask = { ...updatedTask };
+    if (finalTask.type === 'milestone') {
+      const categoryTasks = tasks.filter(t => t.parentId === finalTask.parentId && t.type === 'task' && t.end);
+      const latestEndDate = categoryTasks.reduce((latest, current) => {
+        return current.end && (!latest || current.end > latest) ? current.end : latest;
+      }, null as Date | null);
+      
+      const milestoneDate = latestEndDate ? startOfDay(latestEndDate) : startOfDay(new Date());
+      finalTask.start = milestoneDate;
+      finalTask.end = milestoneDate;
+      finalTask.dependencies = categoryTasks.map(t => t.id);
+    }
+    
     setTasks(prev => {
-      let newTasks = prev.map(task => (task.id === updatedTask.id ? updatedTask : task));
-      newTasks = updateDependentTasks(updatedTask.id, newTasks);
+      let newTasks = prev.map(task => (task.id === finalTask.id ? finalTask : task));
+      newTasks = updateDependentTasks(finalTask.id, newTasks);
       return newTasks;
     });
+
     setTaskEditorOpen(false);
     setCategoryEditorOpen(false);
     setMilestoneEditorOpen(false);
     setSelectedTask(null);
-  }, [updateDependentTasks]);
+  }, [tasks, updateDependentTasks]);
 
 
   const handleDeleteTask = (taskId: string) => {
@@ -402,3 +432,5 @@ export default function GanttasticApp({ isImporterOpen, setImporterOpen, current
     </div>
   );
 }
+
+    
