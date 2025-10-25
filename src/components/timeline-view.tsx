@@ -42,6 +42,7 @@ type TimelineViewProps = {
 export default function TimelineView({ tasks, setTasks, project, teamMembers, setTeamMembers, onTaskClick, onAddTaskClick, onAddCategoryClick, onAddMilestoneClick, onProjectUpdate, onReorderTasks, onTaskUpdate, onQuickAddTask, onAssigneeClick }: TimelineViewProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const calendarScrollRef = useRef<HTMLDivElement>(null);
   const timelineGridRef = useRef<HTMLDivElement>(null);
   const wasDraggedRef = useRef(false);
   const wasResizedRef = useRef(false);
@@ -342,7 +343,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
 
     const snapDeltaPx = xToDayDelta(clampedLeftPx - dragState.startLeftPx) * pxPerDay;
     
-    const scroller = scrollContainerRef.current; 
+    const scroller = calendarScrollRef.current; 
     if (scroller) {
       const margin = 40;
       if (e.clientX > scroller.getBoundingClientRect().right - margin) scroller.scrollLeft += pxPerDay;
@@ -558,7 +559,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
 
   const handleTodayClick = useCallback(() => {
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (!scroller || !timeline || timeline.length === 0) return;
 
     const todayX = dateToX(new Date());
@@ -573,7 +574,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   }, [dateToX, dayWidth, timeline]);
   
   useEffect(() => {
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (scroller) {
         const todayX = dateToX(new Date());
         const scrollerWidth = scroller.clientWidth;
@@ -583,13 +584,13 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   }, [project.id, dateToX, dayWidth]);
 
   useEffect(() => {
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (!scroller) return;
 
     const handleScroll = () => {
       const scrollLeft = scroller.scrollLeft;
       if (timelineGridRef.current) {
-        timelineGridRef.current.scrollLeft = scrollLeft;
+        timelineGridRef.current.style.transform = `translateX(-${scrollLeft}px)`;
       }
 
       const scrollOffset = 300; 
@@ -615,7 +616,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
         animationFrameRef.current = null;
     }
     
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (!scroller) return;
     if ((e.target as HTMLElement).closest("[data-task-bar=\"true\"]") || (e.target as HTMLElement).closest("[data-today-button]")) return;
 
@@ -633,7 +634,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
 
   const handlePanMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (!panState.isPanning || !scroller) return;
     e.preventDefault();
     e.stopPropagation();
@@ -659,7 +660,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
   };
 
   const handlePanEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const scroller = scrollContainerRef.current;
+    const scroller = calendarScrollRef.current;
     if (!panState.isPanning || !scroller) return;
     document.body.style.cursor = "default";
     setPanState(prev => ({ ...prev, isPanning: false }));
@@ -850,60 +851,63 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                   onDragEnd={handleDragEnd}
                   modifiers={[restrictToVerticalAxis]}
               >
-                <ScrollArea
-                    ref={scrollContainerRef}
-                    className="w-full h-full overflow-auto"
-                    onPointerDown={handlePanStart}
-                    onPointerMove={handlePanMove}
-                    onPointerUp={handlePanEnd}
-                    onPointerLeave={handlePanEnd}
-                    onPointerCancel={handlePanEnd}
-                >
-                  <div className="relative w-full grid grid-cols-[300px_1fr]">
-                      <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                          <TimelineTaskList 
-                              displayTasks={displayTasks}
-                              onAddTaskClick={onAddTaskClick}
-                              onAddCategoryClick={onAddCategoryClick}
-                              onAddMilestoneClick={onAddMilestoneClick}
-                              toggleCategory={toggleCategory}
-                              onTaskClick={onTaskClick}
-                              getTaskColor={getTaskColor}
-                              onQuickAddTask={handleQuickAddTask}
-                              openQuickAddId={openQuickAddId}
-                              setOpenQuickAddId={handleSetOpenQuickAddId}
-                              taskNumbering={taskNumbering}
-                          />
-                      </SortableContext>
-                      <TimelineCalendarView
-                          ref={timelineGridRef}
-                          timeline={timeline}
-                          totalDays={totalDays}
-                          dayWidth={dayWidth}
-                          headerGroups={headerGroups}
-                          displayTasks={displayTasks}
-                          tasks={tasks}
-                          taskPositions={taskPositions}
-                          onBarPointerDown={onBarPointerDown}
-                          onBarPointerMove={onBarPointerMove}
-                          onBarPointerUp={onBarPointerUp}
-                          onResizeMove={onResizeMove}
-                          onResizeUp={onResizeUp}
-                          handleBarClick={onTaskClick}
-                          onLeftHandleDown={onLeftHandleDown}
-                          onRightHandleDown={onRightHandleDown}
-                          getVisualPos={getVisualPos}
-                          getTaskColor={getTaskColor}
-                          routeFS={routeFS}
-                          isResizingThis={(task: Task) => resizeState.id === task.id}
-                          isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
-                          onTodayClick={handleTodayClick}
-                          hoveredTaskId={hoveredTaskId}
-                          setHoveredTaskId={setHoveredTaskId}
-                          currentMonthLabel={currentMonthLabel}
-                      />
-                  </div>
-                  <DragOverlay>
+                <div className="grid grid-cols-[300px_1fr] w-full h-full">
+                    <ScrollArea ref={scrollContainerRef} className="h-full overflow-y-auto border-r">
+                        <SortableContext items={displayTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                            <TimelineTaskList 
+                                displayTasks={displayTasks}
+                                onAddTaskClick={onAddTaskClick}
+                                onAddCategoryClick={onAddCategoryClick}
+                                onAddMilestoneClick={onAddMilestoneClick}
+                                toggleCategory={toggleCategory}
+                                onTaskClick={onTaskClick}
+                                getTaskColor={getTaskColor}
+                                onQuickAddTask={handleQuickAddTask}
+                                openQuickAddId={openQuickAddId}
+                                setOpenQuickAddId={handleSetOpenQuickAddId}
+                                taskNumbering={taskNumbering}
+                            />
+                        </SortableContext>
+                    </ScrollArea>
+                    <ScrollArea
+                        ref={calendarScrollRef}
+                        className="w-full h-full overflow-auto"
+                        onPointerDown={handlePanStart}
+                        onPointerMove={handlePanMove}
+                        onPointerUp={handlePanEnd}
+                        onPointerLeave={handlePanEnd}
+                        onPointerCancel={handlePanEnd}
+                    >
+                        <TimelineCalendarView
+                            ref={timelineGridRef}
+                            timeline={timeline}
+                            totalDays={totalDays}
+                            dayWidth={dayWidth}
+                            headerGroups={headerGroups}
+                            displayTasks={displayTasks}
+                            tasks={tasks}
+                            taskPositions={taskPositions}
+                            onBarPointerDown={onBarPointerDown}
+                            onBarPointerMove={onBarPointerMove}
+                            onBarPointerUp={onBarPointerUp}
+                            onResizeMove={onResizeMove}
+                            onResizeUp={onResizeUp}
+                            handleBarClick={onTaskClick}
+                            onLeftHandleDown={onLeftHandleDown}
+                            onRightHandleDown={onRightHandleDown}
+                            getVisualPos={getVisualPos}
+                            getTaskColor={getTaskColor}
+                            routeFS={routeFS}
+                            isResizingThis={(task: Task) => resizeState.id === task.id}
+                            isDraggingThis={(task: Task) => dragState.id === task.id && !resizeState.edge}
+                            onTodayClick={handleTodayClick}
+                            hoveredTaskId={hoveredTaskId}
+                            setHoveredTaskId={setHoveredTaskId}
+                            currentMonthLabel={currentMonthLabel}
+                        />
+                    </ScrollArea>
+                </div>
+                <DragOverlay>
                     {activeTask && (
                         <div className="grid grid-cols-[300px_1fr] w-full">
                             <TaskRow
@@ -919,8 +923,7 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
                             />
                         </div>
                     )}
-                  </DragOverlay>
-                </ScrollArea>
+                </DragOverlay>
               </DndContext>
             );
         case 'list':
@@ -949,3 +952,5 @@ export default function TimelineView({ tasks, setTasks, project, teamMembers, se
     </div>
   );
 }
+
+    

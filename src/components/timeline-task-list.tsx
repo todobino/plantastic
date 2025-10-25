@@ -203,10 +203,10 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
 }, ref) => {
   
   return (
-    <div ref={ref} className="border-r z-20 bg-background flex flex-col h-full overflow-hidden">
+    <div ref={ref} className="bg-background flex flex-col h-full overflow-hidden">
       <div
         style={{ height: `${HEADER_HEIGHT}px` }}
-        className="flex-shrink-0 bg-background z-40 flex flex-col border-b sticky top-0"
+        className="flex-shrink-0 bg-background z-10 flex flex-col border-b sticky top-0"
       >
         <div
           style={{ height: `${MONTH_ROW_HEIGHT}px` }}
@@ -295,3 +295,5 @@ export const TimelineTaskList = forwardRef<HTMLDivElement, TimelineTaskListProps
 });
 
 TimelineTaskList.displayName = "TimelineTaskList";
+
+    
