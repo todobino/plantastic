@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import type { Task, TeamMember } from '@/types';
-import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor, type DragEndEvent, useDraggable, useDroppable } from '@dnd-kit/core';
+import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor, type DragEndEvent, useDraggable, useDroppable, DragOverlay, closestCorners } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -19,7 +19,7 @@ type BoardViewProps = {
   onTaskUpdate: (task: Task) => void;
 };
 
-function TaskCard({ task, teamMembers, onTaskClick }: { task: Task; teamMembers: TeamMember[], onTaskClick: (task: Task) => void; }) {
+function TaskCard({ task, teamMembers, onTaskClick, isOverlay }: { task: Task; teamMembers: TeamMember[], onTaskClick: (task: Task) => void; isOverlay?: boolean }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
     data: { task },
@@ -42,7 +42,7 @@ function TaskCard({ task, teamMembers, onTaskClick }: { task: Task; teamMembers:
       style={style}
       {...listeners}
       {...attributes}
-      className="mb-2 bg-card touch-none"
+      className={cn("mb-2 bg-card touch-none", isOverlay && "shadow-lg")}
       onClick={() => onTaskClick(task)}
     >
       <CardContent className="p-3">
@@ -61,7 +61,7 @@ function TaskCard({ task, teamMembers, onTaskClick }: { task: Task; teamMembers:
   );
 }
 
-function CategoryColumn({ category, tasks, teamMembers, onTaskClick }: { category: Task | { id: string, name: string }; tasks: Task[]; teamMembers: TeamMember[]; onTaskClick: (task: Task) => void; }) {
+function CategoryColumn({ category, tasks, teamMembers, onTaskClick }: { category: Task | { id: string, name: string, color?: string }; tasks: Task[]; teamMembers: TeamMember[]; onTaskClick: (task: Task) => void; }) {
   const { setNodeRef, isOver } = useDroppable({
     id: category.id,
   });
