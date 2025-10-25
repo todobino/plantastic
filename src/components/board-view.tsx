@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Task, TeamMember } from '@/types';
-import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor, type DragEndEvent, useDraggable, useDroppable, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor, type DragStartEvent, type DragEndEvent, useDraggable, useDroppable, DragOverlay, closestCorners } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -19,7 +19,7 @@ type BoardViewProps = {
   onTaskUpdate: (task: Task) => void;
 };
 
-function TaskCard({ task, teamMembers, onTaskClick, isOverlay }: { task: Task; teamMembers: TeamMember[], onTaskClick: (task: Task) => void; isOverlay?: boolean }) {
+function TaskCard({ task, teamMembers, onTaskClick, isOverlay, isDragging }: { task: Task; teamMembers: TeamMember[], onTaskClick: (task: Task) => void; isOverlay?: boolean, isDragging?: boolean }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
     data: { task },
@@ -42,7 +42,7 @@ function TaskCard({ task, teamMembers, onTaskClick, isOverlay }: { task: Task; t
       style={style}
       {...listeners}
       {...attributes}
-      className={cn("mb-2 bg-card touch-none", isOverlay && "shadow-lg")}
+      className={cn("mb-2 bg-card touch-none", isOverlay && "shadow-lg", isDragging && "opacity-30")}
       onClick={() => onTaskClick(task)}
     >
       <CardContent className="p-3">
@@ -61,7 +61,7 @@ function TaskCard({ task, teamMembers, onTaskClick, isOverlay }: { task: Task; t
   );
 }
 
-function CategoryColumn({ category, tasks, teamMembers, onTaskClick }: { category: Task | { id: string, name: string, color?: string }; tasks: Task[]; teamMembers: TeamMember[]; onTaskClick: (task: Task) => void; }) {
+function CategoryColumn({ category, tasks, teamMembers, onTaskClick, activeId }: { category: Task | { id: string, name: string, color?: string }; tasks: Task[]; teamMembers: TeamMember[]; onTaskClick: (task: Task) => void; activeId: string | null; }) {
   const { setNodeRef, isOver } = useDroppable({
     id: category.id,
   });
@@ -77,9 +77,9 @@ function CategoryColumn({ category, tasks, teamMembers, onTaskClick }: { categor
                 </CardTitle>
             </CardHeader>
             <ScrollArea className="flex-grow">
-                <CardContent ref={setNodeRef} className={cn("p-3 min-h-[100px]", isOver && "bg-accent")}>
+                <CardContent ref={setNodeRef} className={cn("p-3 min-h-[100px] transition-colors", isOver && "bg-accent")}>
                     {tasks.map(task => (
-                    <TaskCard key={task.id} task={task} teamMembers={teamMembers} onTaskClick={onTaskClick} />
+                    <TaskCard key={task.id} task={task} teamMembers={teamMembers} onTaskClick={onTaskClick} isDragging={activeId === task.id} />
                     ))}
                 </CardContent>
             </ScrollArea>
@@ -90,6 +90,8 @@ function CategoryColumn({ category, tasks, teamMembers, onTaskClick }: { categor
 
 
 export default function BoardView({ tasks, teamMembers, onTaskClick, onTaskUpdate }: BoardViewProps) {
+    const [activeTask, setActiveTask] = useState<Task | null>(null);
+
     const { categories, tasksByCategoryId } = useMemo(() => {
         const categories = tasks.filter(t => t.type === 'category');
         const tasksByCategoryId = new Map<string, Task[]>();
@@ -125,7 +127,14 @@ export default function BoardView({ tasks, teamMembers, onTaskClick, onTaskUpdat
         })
     );
     
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        const task = (active.data.current as any)?.task as Task;
+        setActiveTask(task);
+    }
+
     const handleDragEnd = (event: DragEndEvent) => {
+        setActiveTask(null);
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
@@ -141,7 +150,7 @@ export default function BoardView({ tasks, teamMembers, onTaskClick, onTaskUpdat
 
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
         <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-4 p-4 h-full">
                 {categories.map(category => (
@@ -151,11 +160,17 @@ export default function BoardView({ tasks, teamMembers, onTaskClick, onTaskUpdat
                         tasks={tasksByCategoryId.get(category.id) || []}
                         teamMembers={teamMembers}
                         onTaskClick={onTaskClick}
+                        activeId={activeTask?.id || null}
                     />
                 ))}
             </div>
             <ScrollBar orientation="horizontal" />
         </ScrollArea>
+        <DragOverlay>
+            {activeTask ? (
+                <TaskCard task={activeTask} teamMembers={teamMembers} onTaskClick={() => {}} isOverlay />
+            ) : null}
+        </DragOverlay>
     </DndContext>
   );
 }
